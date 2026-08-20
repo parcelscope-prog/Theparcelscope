@@ -3,9 +3,8 @@
   --bg-panel: #2a2a2a;
   --navy-accent: #0A1F44;
   --cool-gray: #4A4A4A;
-  --text-muted: #8A8A8A;
+  --text-muted: #A0A0A0;
   --text-light: #F0F0F0;
-  --neon-blue: rgba(0, 240, 255, 0.4);
   --neon-blue-border: #00F0FF;
 }
 
@@ -47,7 +46,7 @@ body, html {
 }
 
 .menu-btn {
-  background-color: var(--bg-panel);
+  background-color: var(--navy-accent);
   border: 1px solid var(--cool-gray);
   color: var(--text-light);
   border-radius: 8px;
@@ -56,12 +55,12 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  transition: background-color 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  transition: border-color 0.2s;
 }
 
 .menu-btn:hover {
-  background-color: var(--navy-accent);
+  border-color: var(--neon-blue-border);
 }
 
 .search-container {
@@ -72,7 +71,7 @@ body, html {
   border: 1px solid var(--cool-gray);
   border-radius: 8px;
   padding: 8px 14px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
 .search-icon {
@@ -99,16 +98,16 @@ body, html {
   color: var(--text-muted);
 }
 
-/* Left Drawer Navigation */
+/* Left Drawer Navigation - NAVY BLUE BACKGROUND */
 .side-menu {
   position: absolute;
   top: 0;
   left: -320px;
   width: 300px;
   height: 100%;
-  background-color: var(--bg-panel);
+  background-color: var(--navy-accent);
   z-index: 20;
-  box-shadow: 4px 0 16px rgba(0,0,0,0.5);
+  box-shadow: 4px 0 20px rgba(0,0,0,0.6);
   transition: left 0.3s ease;
   padding: 24px 20px;
   display: flex;
@@ -125,16 +124,28 @@ body, html {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--cool-gray);
-  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  padding-bottom: 14px;
+}
+
+.brand-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #ffffff;
 }
 
 .close-btn {
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 22px;
+  font-size: 24px;
   cursor: pointer;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #ffffff;
 }
 
 .menu-category {
@@ -153,7 +164,7 @@ body, html {
 }
 
 .menu-item-btn {
-  background-color: var(--bg-charcoal);
+  background-color: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--cool-gray);
   color: var(--text-light);
   padding: 10px 12px;
@@ -166,10 +177,10 @@ body, html {
 
 .menu-item-btn:hover {
   border-color: var(--neon-blue-border);
-  background-color: var(--navy-accent);
+  background-color: rgba(0, 240, 255, 0.1);
 }
 
-/* Full Screen Views & Panels */
+/* Modals */
 .full-screen-modal {
   position: absolute;
   top: 0;
@@ -273,7 +284,7 @@ body, html {
   cursor: pointer;
 }
 
-/* Parcel Detail Modal / Floating Card */
+/* Floating Parcel Card */
 .parcel-card {
   position: absolute;
   bottom: 24px;
@@ -332,7 +343,6 @@ body, html {
   text-decoration: none;
 }
 
-/* Toggles Layout */
 .toggle-row {
   display: flex;
   justify-content: space-between;
@@ -347,7 +357,7 @@ body, html {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.5);
   z-index: 15;
   display: none;
 }
