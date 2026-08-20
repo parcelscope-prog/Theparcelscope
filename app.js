@@ -1,7 +1,7 @@
 /* =========================================================
    PARCELSCOPE IDAHO
    Main Application
-   FINAL VERSION
+   UPDATED VERSION
 ========================================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -56,8 +56,18 @@ document.addEventListener("DOMContentLoaded", () => {
     ===================================================== */
 
     const map = L.map("map", {
+
         zoomControl: true,
-        attributionControl: true
+        attributionControl: true,
+
+        minZoom: 4,
+        maxZoom: 19,
+
+        zoomSnap: 0.25,
+        zoomDelta: 0.5,
+
+        wheelPxPerZoomLevel: 180
+
     });
 
 
@@ -97,6 +107,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let parcelRequestController = null;
     let moveTimer = null;
+
+    let mapWasTooFarOut = false;
+    let pullingMapBack = false;
 
 
     /* =====================================================
@@ -169,7 +182,8 @@ document.addEventListener("DOMContentLoaded", () => {
         searchInput.placeholder =
             "Search something — I'm good, but I can't read minds.";
 
-        searchInput.style.fontSize = "clamp(11px, 2.5vw, 15px)";
+        searchInput.style.fontSize =
+            "clamp(10px, 2.2vw, 13px)";
 
         searchInput.setAttribute(
             "aria-label",
@@ -180,10 +194,70 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
+       MAP ZOOM RESISTANCE / GLITCH
+    ===================================================== */
+
+    map.on("zoomend", () => {
+
+        const zoom = map.getZoom();
+
+        if (zoom <= 4) {
+
+            if (!mapWasTooFarOut) {
+
+                mapWasTooFarOut = true;
+
+                showGlitchMessage(
+                    "THE MAP CAN'T STRETCH THAT FAR",
+                    3000
+                );
+
+            }
+
+            if (!pullingMapBack) {
+
+                pullingMapBack = true;
+
+                setTimeout(() => {
+
+                    if (map.getZoom() <= 4) {
+
+                        map.flyTo(
+                            map.getCenter(),
+                            5,
+                            {
+                                duration: 0.8,
+                                easeLinearity: 0.25
+                            }
+                        );
+
+                    }
+
+                    setTimeout(() => {
+
+                        pullingMapBack = false;
+
+                    }, 850);
+
+                }, 150);
+
+            }
+
+        } else {
+
+            mapWasTooFarOut = false;
+
+        }
+
+    });
+
+
+    /* =====================================================
        GLITCH WARNING OVERLAY
     ===================================================== */
 
-    const glitchStyle = document.createElement("style");
+    const glitchStyle =
+        document.createElement("style");
 
     glitchStyle.textContent = `
 
@@ -192,10 +266,10 @@ document.addEventListener("DOMContentLoaded", () => {
             position: fixed;
 
             left: 50%;
-
             top: 50%;
 
-            transform: translate(-50%, -50%);
+            transform:
+                translate(-50%, -50%);
 
             z-index: 999999;
 
@@ -207,6 +281,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             text-align: center;
 
+            padding: 0 15px;
+
             font-family:
                 "Courier New",
                 monospace;
@@ -214,7 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
             font-weight: 900;
 
             font-size:
-                clamp(28px, 7vw, 90px);
+                clamp(24px, 6vw, 80px);
 
             line-height: 0.9;
 
@@ -295,7 +371,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     `;
 
-    document.head.appendChild(glitchStyle);
+    document.head.appendChild(
+        glitchStyle
+    );
 
 
     const glitchWarning =
@@ -352,10 +430,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const random =
             Math.random();
 
-        /*
-         * 0.1% chance
-         */
-
         if (random < 0.001) {
 
             showGlitchMessage(
@@ -367,24 +441,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
-        /*
-         * Another 0.1% chance
-         */
-
         if (random < 0.002) {
 
             const IdahoPlaces = [
 
                 "SOME PLACE IN IDAHO",
-
                 "PROBABLY IDAHO",
-
                 "SOMEWHERE IN IDAHO",
-
                 "AN EXTREMELY IDAHO PLACE",
-
                 "IDAHO™",
-
                 "YOU FOUND... IDAHO"
 
             ];
@@ -417,14 +482,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function openMenu() {
 
-        sideMenu.classList.add("open");
+        sideMenu.classList.add(
+            "open"
+        );
 
     }
 
 
     function closeMenuPanel() {
 
-        sideMenu.classList.remove("open");
+        sideMenu.classList.remove(
+            "open"
+        );
 
     }
 
@@ -434,7 +503,9 @@ document.addEventListener("DOMContentLoaded", () => {
         () => {
 
             if (
-                sideMenu.classList.contains("open")
+                sideMenu.classList.contains(
+                    "open"
+                )
             ) {
 
                 closeMenuPanel();
@@ -463,7 +534,9 @@ document.addEventListener("DOMContentLoaded", () => {
         "click",
         () => {
 
-            propertyPanel.classList.remove("open");
+            propertyPanel.classList.remove(
+                "open"
+            );
 
         }
     );
@@ -473,7 +546,9 @@ document.addEventListener("DOMContentLoaded", () => {
         "click",
         () => {
 
-            searchResults.classList.remove("open");
+            searchResults.classList.remove(
+                "open"
+            );
 
         }
     );
@@ -483,7 +558,9 @@ document.addEventListener("DOMContentLoaded", () => {
         "click",
         () => {
 
-            appPage.classList.remove("open");
+            appPage.classList.remove(
+                "open"
+            );
 
         }
     );
@@ -504,7 +581,9 @@ document.addEventListener("DOMContentLoaded", () => {
         appPageContent.innerHTML =
             content;
 
-        appPage.classList.add("open");
+        appPage.classList.add(
+            "open"
+        );
 
         closeMenuPanel();
 
@@ -545,7 +624,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             ]);
 
-
             if (
                 !countyResponse.ok ||
                 !idahoResponse.ok
@@ -556,7 +634,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
             }
-
 
             const countyGeoJSON =
                 await countyResponse.json();
@@ -661,7 +738,9 @@ document.addEventListener("DOMContentLoaded", () => {
             map.hasLayer(countyLayer)
         ) {
 
-            map.removeLayer(countyLayer);
+            map.removeLayer(
+                countyLayer
+            );
 
         }
 
@@ -681,7 +760,9 @@ document.addEventListener("DOMContentLoaded", () => {
             map.hasLayer(idahoLayer)
         ) {
 
-            map.removeLayer(idahoLayer);
+            map.removeLayer(
+                idahoLayer
+            );
 
         }
 
@@ -690,7 +771,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* =====================================================
        PARCEL LOADING
-       NORTHERN IDAHO FIX
+       PAGINATED TILE REQUESTS
     ===================================================== */
 
     async function loadParcels() {
@@ -699,7 +780,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (parcelLayer) {
 
-                map.removeLayer(parcelLayer);
+                map.removeLayer(
+                    parcelLayer
+                );
 
             }
 
@@ -708,17 +791,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        /*
-         * Parcels now begin at zoom 9.
-         * This allows large northern properties
-         * to be viewed without requiring zoom 10.
-         */
-
         if (map.getZoom() < 9) {
 
             if (parcelLayer) {
 
-                map.removeLayer(parcelLayer);
+                map.removeLayer(
+                    parcelLayer
+                );
 
             }
 
@@ -742,6 +821,10 @@ document.addEventListener("DOMContentLoaded", () => {
             new AbortController();
 
 
+        const requestSignal =
+            parcelRequestController.signal;
+
+
         try {
 
             setStatus(
@@ -752,17 +835,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const bounds =
                 map.getBounds();
 
-
-            /*
-             * Instead of requesting one huge
-             * rectangle, divide the visible area
-             * into a grid.
-             *
-             * This prevents the ArcGIS 2,000-record
-             * limit from causing entire areas —
-             * especially northern Idaho —
-             * to disappear.
-             */
 
             const west =
                 bounds.getWest();
@@ -783,11 +855,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const height =
                 north - south;
 
-
-            /*
-             * Smaller tiles at lower zooms.
-             * More tiles = much better coverage.
-             */
 
             let columns = 2;
             let rows = 2;
@@ -813,7 +880,206 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
-            const requests = [];
+            const allFeatures = [];
+
+
+            /*
+             * Load one tile at a time.
+             *
+             * If ArcGIS returns exactly 2,000
+             * records, request the next page too.
+             *
+             * This prevents dense areas from having
+             * missing parcel sections.
+             */
+
+            async function loadParcelTile(
+                tileWest,
+                tileSouth,
+                tileEast,
+                tileNorth
+            ) {
+
+                const geometry = [
+
+                    tileWest,
+                    tileSouth,
+                    tileEast,
+                    tileNorth
+
+                ].join(",");
+
+
+                const pageSize = 2000;
+
+                let offset = 0;
+
+
+                while (true) {
+
+                    if (
+                        requestSignal.aborted
+                    ) {
+
+                        throw new DOMException(
+                            "Request aborted",
+                            "AbortError"
+                        );
+
+                    }
+
+
+                    const params =
+                        new URLSearchParams({
+
+                            where: "1=1",
+
+                            geometry:
+                                geometry,
+
+                            geometryType:
+                                "esriGeometryEnvelope",
+
+                            inSR:
+                                "4326",
+
+                            spatialRel:
+                                "esriSpatialRelIntersects",
+
+                            outFields:
+                                "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID",
+
+                            returnGeometry:
+                                "true",
+
+                            outSR:
+                                "4326",
+
+                            resultRecordCount:
+                                String(pageSize),
+
+                            resultOffset:
+                                String(offset),
+
+                            f:
+                                "geojson"
+
+                        });
+
+
+                    let response;
+
+
+                    try {
+
+                        response =
+                            await fetch(
+                                `${PARCEL_URL}/query?${params.toString()}`,
+                                {
+                                    signal:
+                                        requestSignal
+                                }
+                            );
+
+                    } catch (error) {
+
+                        if (
+                            error.name ===
+                            "AbortError"
+                        ) {
+
+                            throw error;
+
+                        }
+
+                        console.warn(
+                            "Parcel tile request failed:",
+                            error
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (!response.ok) {
+
+                        console.warn(
+                            "Parcel tile HTTP error:",
+                            response.status
+                        );
+
+                        return;
+
+                    }
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (
+                        !data ||
+                        !Array.isArray(
+                            data.features
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    allFeatures.push(
+                        ...data.features
+                    );
+
+
+                    const returned =
+                        data.features.length;
+
+
+                    /*
+                     * Less than 2,000 means we've
+                     * reached the end of this tile.
+                     */
+
+                    if (
+                        returned < pageSize
+                    ) {
+
+                        break;
+
+                    }
+
+
+                    offset += pageSize;
+
+
+                    /*
+                     * Safety limit so a broken
+                     * server response cannot cause
+                     * an infinite loop.
+                     */
+
+                    if (
+                        offset >= 20000
+                    ) {
+
+                        console.warn(
+                            "Parcel tile reached pagination safety limit."
+                        );
+
+                        break;
+
+                    }
+
+                }
+
+            }
+
+
+            const tileJobs = [];
 
 
             for (
@@ -849,101 +1115,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         (row + 1);
 
 
-                    const geometry = [
-
-                        tileWest,
-                        tileSouth,
-                        tileEast,
-                        tileNorth
-
-                    ].join(",");
-
-
-                    const params =
-                        new URLSearchParams({
-
-                            where: "1=1",
-
-                            geometry:
-                                geometry,
-
-                            geometryType:
-                                "esriGeometryEnvelope",
-
-                            inSR:
-                                "4326",
-
-                            spatialRel:
-                                "esriSpatialRelIntersects",
-
-                            outFields:
-                                "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID",
-
-                            returnGeometry:
-                                "true",
-
-                            outSR:
-                                "4326",
-
-                            resultRecordCount:
-                                "2000",
-
-                            f:
-                                "geojson"
-
-                        });
-
-
-                    requests.push(
-
-                        fetch(
-                            `${PARCEL_URL}/query?${params.toString()}`,
-                            {
-                                signal:
-                                    parcelRequestController.signal
-                            }
+                    tileJobs.push(
+                        loadParcelTile(
+                            tileWest,
+                            tileSouth,
+                            tileEast,
+                            tileNorth
                         )
-                        .then(
-                            response => {
-
-                                if (
-                                    !response.ok
-                                ) {
-
-                                    throw new Error(
-                                        "Parcel tile failed"
-                                    );
-
-                                }
-
-                                return response.json();
-
-                            }
-                        )
-                        .catch(
-                            error => {
-
-                                if (
-                                    error.name ===
-                                    "AbortError"
-                                ) {
-
-                                    throw error;
-
-                                }
-
-                                console.warn(
-                                    "Parcel tile failed:",
-                                    error
-                                );
-
-                                return {
-                                    features: []
-                                };
-
-                            }
-                        )
-
                     );
 
                 }
@@ -951,42 +1129,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
-            const responses =
-                await Promise.all(
-                    requests
-                );
-
-
-            /*
-             * Combine every tile.
-             */
-
-            const allFeatures = [];
-
-
-            responses.forEach(
-                data => {
-
-                    if (
-                        data &&
-                        Array.isArray(
-                            data.features
-                        )
-                    ) {
-
-                        allFeatures.push(
-                            ...data.features
-                        );
-
-                    }
-
-                }
+            await Promise.all(
+                tileJobs
             );
 
 
             /*
-             * Remove duplicate parcels caused
-             * by neighboring tile boundaries.
+             * Remove duplicates from neighboring
+             * tiles and pagination.
              */
 
             const uniqueParcels =
@@ -1087,7 +1237,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-            parcelLayer.addTo(map);
+            parcelLayer.addTo(
+                map
+            );
 
 
             /*
@@ -1103,6 +1255,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             getParcelID(
                                 layer.feature
                             );
+
 
                         if (
                             id ===
@@ -1124,7 +1277,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
-            if (features.length === 0) {
+            if (
+                features.length === 0
+            ) {
 
                 setStatus(
                     "No parcel boundaries found in this area"
@@ -1220,11 +1375,6 @@ document.addEventListener("DOMContentLoaded", () => {
     async function findParcelAtPoint(
         latlng
     ) {
-
-        /*
-         * Small-area point query works across
-         * northern and southern Idaho.
-         */
 
         const geometry =
             `${latlng.lng},${latlng.lat}`;
@@ -1348,7 +1498,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             </div>
 
-
             <div class="property-field">
 
                 <div class="property-label">
@@ -1360,7 +1509,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
             </div>
-
 
             <div class="property-field">
 
@@ -1492,10 +1640,6 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        /*
-         * Random jokes ONLY when a property is selected.
-         */
-
         maybeShowPropertyJoke();
 
 
@@ -1613,7 +1757,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             </div>
 
-
             <div class="property-field">
 
                 <div class="property-label">
@@ -1629,7 +1772,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             </div>
 
-
             <div class="property-field">
 
                 <div class="property-label">
@@ -1641,7 +1783,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
             </div>
-
 
             <div class="property-field">
 
@@ -1655,7 +1796,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             </div>
 
-
             <div class="property-field">
 
                 <div class="property-label">
@@ -1668,7 +1808,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             </div>
 
-
             <div class="property-field">
 
                 <div class="property-label">
@@ -1680,7 +1819,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
             </div>
-
 
             <div class="property-field">
 
@@ -1698,7 +1836,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
             </div>
-
 
             <button
                 class="save-property"
@@ -1785,9 +1922,7 @@ document.addEventListener("DOMContentLoaded", () => {
         resultsContent.innerHTML = `
 
             <div class="search-result">
-
                 Searching Idaho property records...
-
             </div>
 
         `;
@@ -1884,10 +2019,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
-            /*
-             * Remove duplicate search records.
-             */
-
             const unique =
                 new Map();
 
@@ -1899,6 +2030,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         getParcelID(
                             feature
                         );
+
 
                     if (
                         id &&
@@ -1922,10 +2054,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-            /*
-             * Strong matching filter.
-             */
-
             const normalized =
                 query.toLowerCase();
 
@@ -1945,54 +2073,45 @@ document.addEventListener("DOMContentLoaded", () => {
                             pa.OWNER1
                         ).toLowerCase();
 
-
                     const ownerB =
                         cleanValue(
                             pb.OWNER1
                         ).toLowerCase();
-
 
                     const owner2A =
                         cleanValue(
                             pa.OWNER2
                         ).toLowerCase();
 
-
                     const owner2B =
                         cleanValue(
                             pb.OWNER2
                         ).toLowerCase();
-
 
                     const addressA =
                         cleanValue(
                             pa.SITE_ADD
                         ).toLowerCase();
 
-
                     const addressB =
                         cleanValue(
                             pb.SITE_ADD
                         ).toLowerCase();
-
 
                     const cityA =
                         cleanValue(
                             pa.SITE_CITY
                         ).toLowerCase();
 
-
                     const cityB =
                         cleanValue(
                             pb.SITE_CITY
                         ).toLowerCase();
 
-
                     const parcelA =
                         cleanValue(
                             pa.PARCEL_ID
                         ).toLowerCase();
-
 
                     const parcelB =
                         cleanValue(
@@ -2003,87 +2122,67 @@ document.addEventListener("DOMContentLoaded", () => {
                     const scoreA =
 
                         (ownerA === normalized
-                            ? 150
-                            : 0) +
+                            ? 150 : 0) +
 
                         (ownerA.startsWith(normalized)
-                            ? 60
-                            : 0) +
+                            ? 60 : 0) +
 
                         (ownerA.includes(normalized)
-                            ? 30
-                            : 0) +
+                            ? 30 : 0) +
 
                         (owner2A.includes(normalized)
-                            ? 25
-                            : 0) +
+                            ? 25 : 0) +
 
                         (addressA === normalized
-                            ? 120
-                            : 0) +
+                            ? 120 : 0) +
 
                         (addressA.includes(normalized)
-                            ? 50
-                            : 0) +
+                            ? 50 : 0) +
 
                         (cityA === normalized
-                            ? 90
-                            : 0) +
+                            ? 90 : 0) +
 
                         (cityA.includes(normalized)
-                            ? 30
-                            : 0) +
+                            ? 30 : 0) +
 
                         (parcelA === normalized
-                            ? 200
-                            : 0) +
+                            ? 200 : 0) +
 
                         (parcelA.includes(normalized)
-                            ? 80
-                            : 0);
+                            ? 80 : 0);
 
 
                     const scoreB =
 
                         (ownerB === normalized
-                            ? 150
-                            : 0) +
+                            ? 150 : 0) +
 
                         (ownerB.startsWith(normalized)
-                            ? 60
-                            : 0) +
+                            ? 60 : 0) +
 
                         (ownerB.includes(normalized)
-                            ? 30
-                            : 0) +
+                            ? 30 : 0) +
 
                         (owner2B.includes(normalized)
-                            ? 25
-                            : 0) +
+                            ? 25 : 0) +
 
                         (addressB === normalized
-                            ? 120
-                            : 0) +
+                            ? 120 : 0) +
 
                         (addressB.includes(normalized)
-                            ? 50
-                            : 0) +
+                            ? 50 : 0) +
 
                         (cityB === normalized
-                            ? 90
-                            : 0) +
+                            ? 90 : 0) +
 
                         (cityB.includes(normalized)
-                            ? 30
-                            : 0) +
+                            ? 30 : 0) +
 
                         (parcelB === normalized
-                            ? 200
-                            : 0) +
+                            ? 200 : 0) +
 
                         (parcelB.includes(normalized)
-                            ? 80
-                            : 0);
+                            ? 80 : 0);
 
 
                     return scoreB - scoreA;
@@ -2397,8 +2496,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 "Saved Properties",
                 `
                     <div class="page-card">
-                        <strong>Already Saved</strong>
+
+                        <strong>
+                            Already Saved
+                        </strong>
+
                         This property is already saved.
+
                     </div>
                 `,
                 "SAVED PROPERTIES"
@@ -2484,18 +2588,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const layer =
                 L.geoJSON({
+
                     type: "Feature",
+
                     properties: {},
+
                     geometry: geometry
+
                 });
 
 
-            const center =
-                layer.getBounds()
-                    .getCenter();
-
-
-            return center;
+            return layer
+                .getBounds()
+                .getCenter();
 
         } catch {
 
@@ -2544,60 +2649,37 @@ document.addEventListener("DOMContentLoaded", () => {
         section
     ) {
 
-        if (
-            section ===
-            "counties"
-        ) {
+        if (section === "counties") {
 
             showCounties();
 
         }
 
-
-        if (
-            section ===
-            "saved"
-        ) {
+        if (section === "saved") {
 
             showSavedProperties();
 
         }
 
-
-        if (
-            section ===
-            "sources"
-        ) {
+        if (section === "sources") {
 
             showDataSources();
 
         }
 
-
-        if (
-            section ===
-            "history"
-        ) {
+        if (section === "history") {
 
             showUpdateHistory();
 
         }
 
-
-        if (
-            section ===
-            "settings"
-        ) {
+        if (section === "settings") {
 
             showSettings();
 
         }
 
-
-        if (
-            section ===
-            "about"
-        ) {
+        if (section === "about") {
 
             showAbout();
 
@@ -2675,7 +2757,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
-
                 <div class="county-search">
 
                     <input
@@ -2686,7 +2767,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     >
 
                 </div>
-
 
                 <div
                     id="countyList"
@@ -2752,9 +2832,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             button.style.display =
                                 !query ||
-                                name.includes(
-                                    query
-                                )
+                                name.includes(query)
                                     ? ""
                                     : "none";
 
@@ -2797,9 +2875,7 @@ document.addEventListener("DOMContentLoaded", () => {
         closeMenuPanel();
 
 
-        if (
-            countyLayer
-        ) {
+        if (countyLayer) {
 
             let found = false;
 
@@ -3001,7 +3077,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             </div>
 
-
                             <button
                                 class="remove-saved"
                                 data-remove-index="${index}"
@@ -3153,7 +3228,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
-
                 <div class="page-section">
 
                     <h2>
@@ -3166,7 +3240,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     </p>
 
                 </div>
-
 
                 <div class="page-section">
 
@@ -3181,7 +3254,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
-
                 <div class="page-section">
 
                     <h2>
@@ -3194,7 +3266,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     </p>
 
                 </div>
-
 
                 <div class="page-section">
 
@@ -3264,7 +3335,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     </div>
 
-
                     <button
                         id="refreshNowButton"
                         class="refresh-button"
@@ -3317,7 +3387,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         Map Style
                     </h2>
 
-
                     <div class="setting-row">
 
                         <div>
@@ -3343,7 +3412,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         ></button>
 
                     </div>
-
 
                     <div class="setting-row">
 
@@ -3373,13 +3441,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
-
                 <div class="setting-group">
 
                     <h2>
                         Map Layers
                     </h2>
-
 
                     ${createToggle(
                         "parcels",
@@ -3388,14 +3454,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         settings.parcels
                     )}
 
-
                     ${createToggle(
                         "counties",
                         "County Boundaries",
                         "Idaho county lines",
                         settings.counties
                     )}
-
 
                     ${createToggle(
                         "idaho",
@@ -3527,7 +3591,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
-
                 <button
                     class="toggle ${
                         enabled ? "on" : ""
@@ -3624,7 +3687,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
-
                 <div class="page-section">
 
                     <h2>
@@ -3666,7 +3728,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
-
                 <div class="page-section">
 
                     <h2>
@@ -3681,7 +3742,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     </p>
 
                 </div>
-
 
                 <div class="page-section">
 
@@ -3813,7 +3873,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     console.log(
-        "ParcelScope Idaho initialized — FINAL VERSION."
+        "ParcelScope Idaho initialized — UPDATED VERSION."
     );
 
 });
