@@ -37,13 +37,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       SEARCH PLACEHOLDER
+       SEARCH BAR TEXT
     ===================================================== */
 
     if (searchInput) {
 
         searchInput.placeholder =
-            "Search something. I’m good, but I can’t read minds.";
+            "I'm good, but I can't read minds.";
+
+        searchInput.setAttribute(
+            "aria-label",
+            "Search Idaho property records"
+        );
 
     }
 
@@ -68,7 +73,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const map = L.map("map", {
         zoomControl: true,
-        attributionControl: true
+        attributionControl: true,
+
+        /*
+         * Prevent the map from being zoomed so far out
+         * that it becomes extremely stretched.
+         *
+         * Zoom 3 is approximately a full-U.S. view.
+         */
+        minZoom: 3,
+        maxZoom: 19,
+
+        worldCopyJump: false
     });
 
 
@@ -283,6 +299,235 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
+       RANDOM JOKES
+    ===================================================== */
+
+    function randomMapJoke() {
+
+        /*
+         * Each joke has a 0.1% chance.
+         */
+
+        const roll =
+            Math.random();
+
+        if (roll < 0.001) {
+
+            showGlitchMessage(
+                "CONGRATS! YOU FOUND DIRT"
+            );
+
+            return true;
+
+        }
+
+        if (roll < 0.002) {
+
+            const places = [
+
+                "SOMEWHERE IN IDAHO",
+                "A SECRET PLACE IN IDAHO",
+                "PROBABLY IDAHO",
+                "SOME RANDOM PLACE IN IDAHO",
+                "THE MIDDLE OF NOWHERE, IDAHO",
+                "YOU FOUND IDAHO"
+
+            ];
+
+            const place =
+                places[
+                    Math.floor(
+                        Math.random() *
+                        places.length
+                    )
+                ];
+
+            showGlitchMessage(
+                place
+            );
+
+            return true;
+
+        }
+
+        return false;
+
+    }
+
+
+    function showGlitchMessage(
+        message
+    ) {
+
+        let element =
+            document.getElementById(
+                "parcelScopeGlitchMessage"
+            );
+
+        if (!element) {
+
+            element =
+                document.createElement(
+                    "div"
+                );
+
+            element.id =
+                "parcelScopeGlitchMessage";
+
+            element.style.position =
+                "fixed";
+
+            element.style.left =
+                "50%";
+
+            element.style.top =
+                "50%";
+
+            element.style.transform =
+                "translate(-50%, -50%)";
+
+            element.style.zIndex =
+                "999999";
+
+            element.style.pointerEvents =
+                "none";
+
+            element.style.color =
+                "#ff0000";
+
+            element.style.fontFamily =
+                "monospace";
+
+            element.style.fontWeight =
+                "900";
+
+            element.style.fontSize =
+                "clamp(28px, 7vw, 90px)";
+
+            element.style.textAlign =
+                "center";
+
+            element.style.lineHeight =
+                "0.95";
+
+            element.style.width =
+                "95vw";
+
+            element.style.textShadow =
+                "3px 0 #00ffff, -3px 0 #0000ff";
+
+            element.style.animation =
+                "parcelScopeGlitch 0.12s infinite";
+
+            document.body.appendChild(
+                element
+            );
+
+            if (
+                !document.getElementById(
+                    "parcelScopeGlitchStyle"
+                )
+            ) {
+
+                const style =
+                    document.createElement(
+                        "style"
+                    );
+
+                style.id =
+                    "parcelScopeGlitchStyle";
+
+                style.textContent = `
+
+                    @keyframes parcelScopeGlitch {
+
+                        0% {
+                            transform:
+                                translate(-50%, -50%)
+                                skewX(0deg);
+                        }
+
+                        20% {
+                            transform:
+                                translate(
+                                    calc(-50% + 8px),
+                                    calc(-50% - 4px)
+                                )
+                                skewX(8deg);
+                        }
+
+                        40% {
+                            transform:
+                                translate(
+                                    calc(-50% - 7px),
+                                    calc(-50% + 3px)
+                                )
+                                skewX(-7deg);
+                        }
+
+                        60% {
+                            transform:
+                                translate(
+                                    calc(-50% + 4px),
+                                    calc(-50% + 5px)
+                                )
+                                skewX(5deg);
+                        }
+
+                        80% {
+                            transform:
+                                translate(
+                                    calc(-50% - 5px),
+                                    calc(-50% - 2px)
+                                )
+                                skewX(-4deg);
+                        }
+
+                        100% {
+                            transform:
+                                translate(-50%, -50%)
+                                skewX(0deg);
+                        }
+
+                    }
+
+                `;
+
+                document.head.appendChild(
+                    style
+                );
+
+            }
+
+        }
+
+        element.textContent =
+            message;
+
+        element.style.display =
+            "block";
+
+
+        clearTimeout(
+            element._hideTimer
+        );
+
+
+        element._hideTimer =
+            setTimeout(
+                () => {
+
+                    element.style.display =
+                        "none";
+
+                },
+                3500
+            );
+
+    }
+
+
+    /* =====================================================
        COUNTY + STATE BOUNDARIES
     ===================================================== */
 
@@ -458,7 +703,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (parcelLayer) {
 
-                map.removeLayer(parcelLayer);
+                map.removeLayer(
+                    parcelLayer
+                );
 
             }
 
@@ -468,26 +715,66 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /*
-         * Parcels load at zoom 9 and closer.
-         * This allows large rural properties to be
-         * visible without loading the entire state.
+         * IMPORTANT:
+         *
+         * Parcel data is NOT requested when zoomed
+         * out too far.
+         *
+         * Zoom 3 is approximately a full-U.S. view.
+         * This prevents the map from trying to load
+         * enormous amounts of parcel geometry.
+         *
+         * Parcels begin loading at zoom 9.
          */
 
         if (map.getZoom() < 9) {
 
-            if (parcelLayer) {
+            if (parcelRequestController) {
 
-                map.removeLayer(parcelLayer);
+                parcelRequestController.abort();
+
+                parcelRequestController =
+                    null;
 
             }
 
-            setStatus(
-                "Zoom in to view parcel boundaries"
-            );
+
+            if (parcelLayer) {
+
+                map.removeLayer(
+                    parcelLayer
+                );
+
+                parcelLayer =
+                    null;
+
+            }
+
+
+            if (map.getZoom() <= 4) {
+
+                setStatus(
+                    "Zoom in to explore Idaho parcels"
+                );
+
+            } else {
+
+                setStatus(
+                    "Zoom in to view parcel boundaries"
+                );
+
+            }
 
             return;
 
         }
+
+
+        /*
+         * Random joke check.
+         */
+
+        randomMapJoke();
 
 
         if (parcelRequestController) {
@@ -537,7 +824,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 outSR: "4326",
 
-                resultRecordCount: "1000",
+                resultRecordCount: "2000",
 
                 f: "geojson"
 
@@ -987,203 +1274,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       RARE GLITCH JOKES
-    ===================================================== */
-
-    function showRareJoke(
-        text
-    ) {
-
-        const joke =
-            document.createElement(
-                "div"
-            );
-
-
-        joke.textContent =
-            text;
-
-
-        joke.style.position =
-            "fixed";
-
-        joke.style.top =
-            "50%";
-
-        joke.style.left =
-            "50%";
-
-        joke.style.transform =
-            "translate(-50%, -50%)";
-
-        joke.style.width =
-            "100%";
-
-        joke.style.textAlign =
-            "center";
-
-        joke.style.fontSize =
-            "clamp(40px, 9vw, 120px)";
-
-        joke.style.fontWeight =
-            "900";
-
-        joke.style.fontFamily =
-            "'Courier New', monospace";
-
-        joke.style.letterSpacing =
-            "4px";
-
-        joke.style.color =
-            "#ff0000";
-
-        joke.style.textShadow = `
-            4px 0 #00ffff,
-            -4px 0 #ff00ff,
-            0 0 10px #ff0000,
-            0 0 25px #ff0000
-        `;
-
-        joke.style.zIndex =
-            "999999";
-
-        joke.style.pointerEvents =
-            "none";
-
-        joke.style.animation =
-            "parcelGlitch 0.12s infinite";
-
-
-        document.body.appendChild(
-            joke
-        );
-
-
-        setTimeout(
-            () => {
-
-                joke.remove();
-
-            },
-            3000
-        );
-
-    }
-
-
-    function rareParcelJoke() {
-
-        const roll =
-            Math.random();
-
-
-        if (
-            roll < 0.001
-        ) {
-
-            showRareJoke(
-                "CONGRATS, YOU FOUND DIRT!"
-            );
-
-            return;
-
-        }
-
-
-        if (
-            roll < 0.002
-        ) {
-
-            showRareJoke(
-                "SOME PLACE IN IDAHO"
-            );
-
-            return;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       GLITCH ANIMATION
-    ===================================================== */
-
-    const glitchStyle =
-        document.createElement(
-            "style"
-        );
-
-
-    glitchStyle.textContent = `
-
-        @keyframes parcelGlitch {
-
-            0% {
-
-                transform:
-                    translate(-50%, -50%)
-                    translate(0, 0);
-
-                opacity: 1;
-
-            }
-
-            20% {
-
-                transform:
-                    translate(-50%, -50%)
-                    translate(-8px, 3px);
-
-            }
-
-            40% {
-
-                transform:
-                    translate(-50%, -50%)
-                    translate(7px, -4px);
-
-                opacity: 0.85;
-
-            }
-
-            60% {
-
-                transform:
-                    translate(-50%, -50%)
-                    translate(-3px, 6px);
-
-            }
-
-            80% {
-
-                transform:
-                    translate(-50%, -50%)
-                    translate(5px, -2px);
-
-                opacity: 1;
-
-            }
-
-            100% {
-
-                transform:
-                    translate(-50%, -50%)
-                    translate(0, 0);
-
-            }
-
-        }
-
-    `;
-
-
-    document.head.appendChild(
-        glitchStyle
-    );
-
-
-    /* =====================================================
        SHOW PARCEL
     ===================================================== */
 
@@ -1440,13 +1530,6 @@ document.addEventListener("DOMContentLoaded", () => {
         setStatus(
             "Property selected"
         );
-
-
-        /*
-         * Very rare jokes.
-         */
-
-        rareParcelJoke();
 
     }
 
@@ -1970,13 +2053,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 "Saved Properties",
                 `
                     <div class="page-card">
-
-                        <strong>
-                            Already Saved
-                        </strong>
-
+                        <strong>Already Saved</strong>
                         This property is already saved.
-
                     </div>
                 `,
                 "SAVED PROPERTIES"
@@ -2063,12 +2141,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
 
-            const center =
-                layer.getBounds()
-                    .getCenter();
-
-
-            return center;
+            return layer
+                .getBounds()
+                .getCenter();
 
         } catch {
 
@@ -2117,63 +2192,28 @@ document.addEventListener("DOMContentLoaded", () => {
         section
     ) {
 
-        if (
-            section ===
-            "counties"
-        ) {
-
+        if (section === "counties") {
             showCounties();
-
         }
 
-
-        if (
-            section ===
-            "saved"
-        ) {
-
+        if (section === "saved") {
             showSavedProperties();
-
         }
 
-
-        if (
-            section ===
-            "sources"
-        ) {
-
+        if (section === "sources") {
             showDataSources();
-
         }
 
-
-        if (
-            section ===
-            "history"
-        ) {
-
+        if (section === "history") {
             showUpdateHistory();
-
         }
 
-
-        if (
-            section ===
-            "settings"
-        ) {
-
+        if (section === "settings") {
             showSettings();
-
         }
 
-
-        if (
-            section ===
-            "about"
-        ) {
-
+        if (section === "about") {
             showAbout();
-
         }
 
     }
@@ -2370,9 +2410,7 @@ document.addEventListener("DOMContentLoaded", () => {
         closeMenuPanel();
 
 
-        if (
-            countyLayer
-        ) {
+        if (countyLayer) {
 
             let found = false;
 
@@ -2719,10 +2757,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     </h2>
 
                     <p>
-                        ParcelScope uses the Public Idaho
-                        Parcels statewide GIS service for
-                        parcel boundaries and available
-                        public property attributes.
+                        ParcelScope uses public Idaho GIS
+                        parcel services for parcel boundaries
+                        and available public property attributes.
                     </p>
 
                 </div>
