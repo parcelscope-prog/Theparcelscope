@@ -1,8 +1,3 @@
-/* =========================================================
-   PARCELSCOPE IDAHO
-   Professional Dark GIS Interface
-========================================================= */
-
 :root {
     --bg: #080d14;
     --panel: #0c141e;
@@ -22,11 +17,6 @@
     --success: #5fa878;
 }
 
-
-/* =========================================================
-   RESET
-========================================================= */
-
 * {
     box-sizing: border-box;
     margin: 0;
@@ -37,7 +27,6 @@ html,
 body {
     width: 100%;
     height: 100%;
-
     overflow: hidden;
 
     font-family:
@@ -52,14 +41,16 @@ body {
     color: var(--text);
 }
 
+button,
+input {
+    font: inherit;
+}
 
-/* =========================================================
-   MAP
-========================================================= */
+
+/* MAP */
 
 #map {
     position: fixed;
-
     inset: 0;
 
     width: 100%;
@@ -69,9 +60,7 @@ body {
 }
 
 
-/* =========================================================
-   TOP BAR
-========================================================= */
+/* TOP BAR */
 
 .topbar {
     position: fixed;
@@ -86,13 +75,11 @@ body {
     align-items: center;
 
     gap: 12px;
-
     padding: 6px 8px;
 
     background: rgba(8, 14, 22, 0.96);
 
     border: 1px solid var(--border);
-
     border-radius: 12px;
 
     box-shadow:
@@ -104,72 +91,69 @@ body {
 }
 
 
-/* =========================================================
-   ICON BUTTON
-========================================================= */
+/* BUTTONS */
 
-.icon-button {
-    width: 46px;
-    height: 46px;
-
-    flex-shrink: 0;
-
+.icon-button,
+.close-button {
     display: flex;
     align-items: center;
     justify-content: center;
 
     border: 1px solid var(--border-light);
-
     border-radius: 9px;
 
     background: var(--panel-2);
-
     color: var(--text);
 
     cursor: pointer;
 
     transition:
-        background 0.2s ease,
-        border-color 0.2s ease,
-        transform 0.15s ease;
+        background .2s ease,
+        border-color .2s ease,
+        transform .15s ease;
 }
 
-.icon-button:hover {
-    background: var(--panel-3);
+.icon-button {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+}
 
+.icon-button:hover,
+.close-button:hover {
+    background: var(--panel-3);
     border-color: #46627b;
 }
 
-.icon-button:active {
-    transform: scale(0.95);
+.icon-button:active,
+.close-button:active {
+    transform: scale(.95);
 }
 
-.icon-button svg {
-    width: 21px;
-    height: 21px;
+.icon-button svg,
+.close-button svg {
+    width: 20px;
+    height: 20px;
 
     fill: none;
-
     stroke: currentColor;
-
     stroke-width: 1.8;
-
     stroke-linecap: round;
-
     stroke-linejoin: round;
 }
 
+.close-button {
+    width: 36px;
+    height: 36px;
+}
 
-/* =========================================================
-   BRAND
-========================================================= */
+
+/* BRAND */
 
 .brand {
     display: flex;
     align-items: center;
-
     gap: 9px;
-
     min-width: 170px;
 }
 
@@ -182,7 +166,6 @@ body {
     justify-content: center;
 
     border: 1px solid var(--border-light);
-
     border-radius: 8px;
 
     background: #0f1b28;
@@ -193,30 +176,19 @@ body {
     height: 23px;
 
     fill: none;
-
     stroke: #8db5d4;
-
     stroke-width: 1.5;
-
-    stroke-linejoin: round;
-
-    stroke-linecap: round;
 }
 
 .brand-text {
     display: flex;
-
     flex-direction: column;
-
     line-height: 1.05;
 }
 
 .brand-name {
     font-size: 16px;
-
     font-weight: 700;
-
-    letter-spacing: 0.2px;
 }
 
 .brand-location {
@@ -225,50 +197,36 @@ body {
     color: var(--text-muted);
 
     font-size: 9px;
-
     font-weight: 700;
-
     letter-spacing: 1.7px;
 }
 
 
-/* =========================================================
-   SEARCH
-========================================================= */
+/* SEARCH */
 
 .search-container {
     position: relative;
 
     flex: 1;
-
     height: 46px;
+    min-width: 120px;
 
     display: flex;
     align-items: center;
-
-    min-width: 120px;
 }
 
 .search-icon {
     position: absolute;
-
     left: 14px;
 
     width: 18px;
     height: 18px;
 
     fill: none;
-
     stroke: var(--text-muted);
-
     stroke-width: 1.8;
 
-    stroke-linecap: round;
-
-    stroke-linejoin: round;
-
     pointer-events: none;
-
     z-index: 2;
 }
 
@@ -276,62 +234,47 @@ body {
     width: 100%;
     height: 46px;
 
-    padding:
-        0 100px 0 43px;
+    padding: 0 100px 0 43px;
 
     border: 1px solid var(--border);
-
     border-radius: 9px;
 
     outline: none;
 
     background: #0e1823;
-
     color: var(--text);
 
     font-size: 15px;
-
-    transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
-}
-
-#searchInput::placeholder {
-    color: #718294;
 }
 
 #searchInput:focus {
     border-color: var(--accent);
 
     box-shadow:
-        0 0 0 2px rgba(63, 122, 168, 0.15);
+        0 0 0 2px rgba(63,122,168,.15);
+}
+
+#searchInput::placeholder {
+    color: #718294;
 }
 
 .search-button {
     position: absolute;
-
     right: 5px;
 
     height: 36px;
-
     padding: 0 15px;
 
     border: 0;
-
     border-radius: 7px;
 
     background: var(--accent);
-
     color: white;
 
     font-size: 13px;
-
     font-weight: 600;
 
     cursor: pointer;
-
-    transition:
-        background 0.2s ease;
 }
 
 .search-button:hover {
@@ -339,9 +282,7 @@ body {
 }
 
 
-/* =========================================================
-   SIDE MENU
-========================================================= */
+/* SIDE MENU */
 
 .side-menu {
     position: fixed;
@@ -357,12 +298,12 @@ body {
 
     padding: 18px;
 
-    background: rgba(8, 15, 24, 0.98);
+    background: rgba(8,15,24,.98);
 
     border-right: 1px solid var(--border);
 
     box-shadow:
-        12px 0 40px rgba(0, 0, 0, 0.5);
+        12px 0 40px rgba(0,0,0,.5);
 
     backdrop-filter: blur(15px);
 
@@ -371,99 +312,34 @@ body {
     transform: translateX(-100%);
 
     transition:
-        transform 0.25s ease;
+        transform .25s ease;
 }
 
 .side-menu.open {
     transform: translateX(0);
 }
 
-
-/* =========================================================
-   MENU HEADER
-========================================================= */
-
 .menu-header {
     display: flex;
-
     align-items: center;
-
     justify-content: space-between;
 
     padding-bottom: 17px;
+    margin-bottom: 18px;
 
     border-bottom: 1px solid var(--border);
-
-    margin-bottom: 18px;
 }
 
 .menu-title {
     font-size: 20px;
-
     font-weight: 700;
 }
 
 .menu-subtitle {
     margin-top: 4px;
-
     color: var(--text-muted);
-
     font-size: 11px;
 }
-
-
-/* =========================================================
-   CLOSE BUTTON
-========================================================= */
-
-.close-button {
-    width: 36px;
-    height: 36px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    flex-shrink: 0;
-
-    border: 1px solid var(--border);
-
-    border-radius: 8px;
-
-    background: var(--panel-2);
-
-    color: var(--text-secondary);
-
-    cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        color 0.2s ease;
-}
-
-.close-button:hover {
-    background: var(--panel-3);
-
-    color: white;
-}
-
-.close-button svg {
-    width: 18px;
-    height: 18px;
-
-    fill: none;
-
-    stroke: currentColor;
-
-    stroke-width: 1.8;
-
-    stroke-linecap: round;
-}
-
-
-/* =========================================================
-   MENU SECTION
-========================================================= */
 
 .menu-section {
     margin-bottom: 22px;
@@ -475,101 +351,58 @@ body {
     color: var(--text-muted);
 
     font-size: 9px;
-
     font-weight: 700;
 
     letter-spacing: 1.4px;
 }
 
-
-/* =========================================================
-   MENU ITEMS
-========================================================= */
-
 .menu-item {
     width: 100%;
-
     min-height: 44px;
 
     display: flex;
     align-items: center;
 
     gap: 12px;
-
     margin-bottom: 3px;
-
     padding: 9px 11px;
 
     border: 1px solid transparent;
-
     border-radius: 8px;
 
     background: transparent;
-
     color: var(--text-secondary);
 
     font-size: 14px;
-
     text-align: left;
 
     cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease;
 }
 
 .menu-item:hover {
-    background: rgba(32, 52, 70, 0.55);
-
+    background: rgba(32,52,70,.55);
     border-color: var(--border);
-
     color: var(--text);
 }
 
-.menu-item.active {
-    background: #142638;
-
-    border-color: #29445d;
-
-    color: white;
-}
-
-.menu-item svg {
-    width: 18px;
-    height: 18px;
-
-    flex-shrink: 0;
-
-    fill: none;
-
-    stroke: currentColor;
-
-    stroke-width: 1.6;
-
-    stroke-linecap: round;
-
-    stroke-linejoin: round;
+.menu-icon {
+    width: 20px;
+    text-align: center;
 }
 
 
-/* =========================================================
-   MENU FOOTER
-========================================================= */
+/* FOOTER */
 
 .menu-footer {
     margin-top: auto;
 
     display: flex;
     align-items: center;
-
     gap: 10px;
 
     padding: 13px;
 
     border: 1px solid var(--border);
-
     border-radius: 9px;
 
     background: #0d1722;
@@ -586,29 +419,23 @@ body {
     background: var(--success);
 
     box-shadow:
-        0 0 8px rgba(95, 168, 120, 0.45);
+        0 0 8px rgba(95,168,120,.45);
 }
 
 .status-title {
     color: var(--text);
-
     font-size: 12px;
-
     font-weight: 600;
 }
 
 .status-text {
     margin-top: 2px;
-
     color: var(--text-muted);
-
     font-size: 10px;
 }
 
 
-/* =========================================================
-   PROPERTY PANEL
-========================================================= */
+/* PROPERTY PANEL */
 
 .property-panel {
     position: fixed;
@@ -617,23 +444,20 @@ body {
     bottom: 15px;
 
     width: 430px;
-
     max-width: calc(100% - 30px);
-
     max-height: 75vh;
 
     overflow-y: auto;
 
     padding: 20px;
 
-    background: rgba(8, 15, 24, 0.98);
+    background: rgba(8,15,24,.98);
 
     border: 1px solid var(--border-light);
-
     border-radius: 12px;
 
     box-shadow:
-        0 15px 45px rgba(0, 0, 0, 0.55);
+        0 15px 45px rgba(0,0,0,.55);
 
     backdrop-filter: blur(14px);
 
@@ -646,23 +470,17 @@ body {
     display: block;
 }
 
-
-/* =========================================================
-   PROPERTY HEADER
-========================================================= */
-
-.property-header {
+.property-header,
+.results-header,
+.app-page-header {
     display: flex;
-
     align-items: flex-start;
-
     justify-content: space-between;
 
     gap: 15px;
 
-    margin-bottom: 17px;
-
     padding-bottom: 15px;
+    margin-bottom: 17px;
 
     border-bottom: 1px solid var(--border);
 }
@@ -673,40 +491,25 @@ body {
     color: var(--text-muted);
 
     font-size: 9px;
-
     font-weight: 700;
-
     letter-spacing: 1.4px;
 }
 
 .property-header h2,
 .results-header h2 {
     font-size: 20px;
-
     line-height: 1.2;
 }
-
-
-/* =========================================================
-   EMPTY MESSAGE
-========================================================= */
 
 .empty-message {
     color: var(--text-secondary);
 
     font-size: 13px;
-
     line-height: 1.6;
 }
 
-
-/* =========================================================
-   PROPERTY FIELDS
-========================================================= */
-
 .property-field {
     padding: 12px 0;
-
     border-bottom: 1px solid var(--border);
 }
 
@@ -716,11 +519,8 @@ body {
     color: var(--text-muted);
 
     font-size: 9px;
-
     font-weight: 700;
-
     letter-spacing: 1px;
-
     text-transform: uppercase;
 }
 
@@ -728,16 +528,36 @@ body {
     color: var(--text);
 
     font-size: 14px;
-
     line-height: 1.5;
 
     overflow-wrap: anywhere;
 }
 
 
-/* =========================================================
-   SEARCH RESULTS
-========================================================= */
+/* SAVE BUTTON */
+
+.save-property {
+    width: 100%;
+
+    margin-top: 16px;
+    padding: 12px;
+
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+
+    background: var(--accent);
+    color: white;
+
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.save-property:hover {
+    background: var(--accent-light);
+}
+
+
+/* SEARCH RESULTS */
 
 .search-results {
     position: fixed;
@@ -746,25 +566,20 @@ body {
     left: 15px;
 
     width: 410px;
-
     max-width: calc(100% - 30px);
-
     max-height: 68vh;
 
     overflow-y: auto;
 
     padding: 18px;
 
-    background: rgba(8, 15, 24, 0.98);
+    background: rgba(8,15,24,.98);
 
     border: 1px solid var(--border-light);
-
     border-radius: 12px;
 
     box-shadow:
-        0 15px 45px rgba(0, 0, 0, 0.5);
-
-    backdrop-filter: blur(14px);
+        0 15px 45px rgba(0,0,0,.5);
 
     z-index: 1400;
 
@@ -775,53 +590,20 @@ body {
     display: block;
 }
 
-
-/* =========================================================
-   RESULTS HEADER
-========================================================= */
-
-.results-header {
-    display: flex;
-
-    align-items: flex-start;
-
-    justify-content: space-between;
-
-    gap: 15px;
-
-    margin-bottom: 14px;
-
-    padding-bottom: 14px;
-
-    border-bottom: 1px solid var(--border);
-}
-
-
-/* =========================================================
-   SEARCH RESULT
-========================================================= */
-
 .search-result {
     margin-bottom: 7px;
-
     padding: 13px;
 
     border: 1px solid var(--border);
-
     border-radius: 8px;
 
     background: #0d1722;
 
     cursor: pointer;
-
-    transition:
-        background 0.2s ease,
-        border-color 0.2s ease;
 }
 
 .search-result:hover {
     background: #132333;
-
     border-color: #3b5871;
 }
 
@@ -831,7 +613,6 @@ body {
     color: var(--text);
 
     font-size: 14px;
-
     font-weight: 600;
 }
 
@@ -839,14 +620,301 @@ body {
     color: var(--text-muted);
 
     font-size: 12px;
-
     line-height: 1.5;
 }
 
 
-/* =========================================================
-   MAP STATUS
-========================================================= */
+/* FULL SCREEN PAGES */
+
+.app-page {
+    position: fixed;
+    inset: 0;
+
+    z-index: 3000;
+
+    display: none;
+
+    overflow-y: auto;
+
+    padding: 28px;
+
+    background: #292929;
+    color: white;
+}
+
+.app-page.open {
+    display: block;
+}
+
+.app-page-header {
+    max-width: 1000px;
+    margin: 0 auto 30px;
+
+    padding-bottom: 20px;
+
+    border-color: #4b4b4b;
+}
+
+.app-page h1 {
+    font-size: 30px;
+}
+
+#appPageContent {
+    width: 100%;
+    max-width: 1000px;
+
+    margin: auto;
+}
+
+.page-close {
+    width: 46px;
+    height: 46px;
+
+    border: 1px solid #666;
+    border-radius: 10px;
+
+    background: #383838;
+    color: white;
+
+    font-size: 22px;
+
+    cursor: pointer;
+}
+
+.page-close:hover {
+    background: #444;
+}
+
+
+/* FULL PAGE CONTENT */
+
+.page-section {
+    margin-bottom: 30px;
+}
+
+.page-section h2 {
+    margin-bottom: 10px;
+
+    font-size: 19px;
+}
+
+.page-section p,
+.page-section li {
+    color: #d4d4d4;
+
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.page-section ul {
+    padding-left: 22px;
+}
+
+.page-card {
+    margin-bottom: 10px;
+    padding: 15px;
+
+    border: 1px solid #4a4a4a;
+    border-radius: 10px;
+
+    background: #333;
+}
+
+.page-card strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+
+/* SETTINGS */
+
+.setting-group {
+    margin-bottom: 30px;
+}
+
+.setting-group h2 {
+    margin-bottom: 10px;
+}
+
+.setting-row {
+    min-height: 56px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 12px 0;
+
+    border-bottom: 1px solid #444;
+}
+
+.setting-name {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.setting-description {
+    margin-top: 3px;
+
+    color: #aaa;
+
+    font-size: 11px;
+}
+
+
+/* TOGGLE */
+
+.toggle {
+    position: relative;
+
+    width: 50px;
+    height: 28px;
+
+    flex-shrink: 0;
+
+    border: 0;
+    border-radius: 20px;
+
+    background: #555;
+
+    cursor: pointer;
+}
+
+.toggle::after {
+    content: "";
+
+    position: absolute;
+
+    top: 4px;
+    left: 4px;
+
+    width: 20px;
+    height: 20px;
+
+    border-radius: 50%;
+
+    background: white;
+
+    transition: .2s;
+}
+
+.toggle.on {
+    background: #4f8f68;
+}
+
+.toggle.on::after {
+    left: 26px;
+}
+
+
+/* COUNTY LIST */
+
+.county-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fill, minmax(190px, 1fr));
+
+    gap: 9px;
+}
+
+.county-button {
+    padding: 13px;
+
+    border: 1px solid #4b4b4b;
+    border-radius: 8px;
+
+    background: #333;
+    color: white;
+
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.county-button:hover {
+    background: #3d3d3d;
+    border-color: #6a6a6a;
+}
+
+
+/* SAVED */
+
+.saved-property {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 8px;
+    padding: 13px;
+
+    border: 1px solid #4b4b4b;
+    border-radius: 8px;
+
+    background: #333;
+
+    cursor: pointer;
+}
+
+.saved-property:hover {
+    background: #3b3b3b;
+}
+
+.saved-name {
+    font-weight: 600;
+}
+
+.saved-address {
+    margin-top: 3px;
+
+    color: #aaa;
+
+    font-size: 12px;
+}
+
+.remove-saved {
+    border: 0;
+    background: transparent;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+
+/* REFRESH */
+
+.refresh-button {
+    padding: 12px 17px;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: var(--accent);
+    color: white;
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.refresh-button:hover {
+    background: var(--accent-light);
+}
+
+.last-refresh {
+    margin-bottom: 18px;
+
+    color: #ccc;
+
+    font-size: 14px;
+}
+
+
+/* MAP STATUS */
 
 .map-status {
     position: fixed;
@@ -863,10 +931,9 @@ body {
 
     padding: 8px 12px;
 
-    background: rgba(8, 15, 24, 0.94);
+    background: rgba(8,15,24,.94);
 
     border: 1px solid var(--border);
-
     border-radius: 7px;
 
     color: var(--text-secondary);
@@ -874,21 +941,17 @@ body {
     font-size: 11px;
 
     box-shadow:
-        0 6px 20px rgba(0, 0, 0, 0.4);
+        0 6px 20px rgba(0,0,0,.4);
 
     z-index: 1200;
 }
 
 
-/* =========================================================
-   LEAFLET
-========================================================= */
+/* LEAFLET */
 
 .leaflet-control-zoom a {
     background: #0b1520 !important;
-
     color: white !important;
-
     border-color: var(--border) !important;
 }
 
@@ -897,8 +960,7 @@ body {
 }
 
 .leaflet-control-attribution {
-    background: rgba(8, 15, 24, 0.8) !important;
-
+    background: rgba(8,15,24,.8) !important;
     color: #8193a4 !important;
 }
 
@@ -907,22 +969,17 @@ body {
 }
 
 
-/* =========================================================
-   MOBILE
-========================================================= */
+/* MOBILE */
 
 @media (max-width: 700px) {
 
     .topbar {
         top: 8px;
-
         left: 8px;
         right: 8px;
 
         height: 55px;
-
         gap: 7px;
-
         padding: 5px;
     }
 
@@ -948,7 +1005,6 @@ body {
         height: 42px;
 
         padding-left: 40px;
-
         padding-right: 12px;
 
         font-size: 14px;
@@ -967,7 +1023,6 @@ body {
         bottom: 8px;
 
         width: auto;
-
         max-width: calc(100% - 16px);
 
         max-height: 67vh;
@@ -977,19 +1032,28 @@ body {
 
     .search-results {
         top: 70px;
-
         left: 8px;
 
         width: auto;
-
         max-width: calc(100% - 16px);
 
         max-height: 65vh;
     }
 
+    .app-page {
+        padding: 20px 15px;
+    }
+
+    .app-page h1 {
+        font-size: 24px;
+    }
+
+    .county-grid {
+        grid-template-columns: 1fr;
+    }
+
     .map-status {
         bottom: 9px;
-
         font-size: 10px;
     }
 }
