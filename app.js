@@ -26,8 +26,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const propertyContent = document.getElementById("propertyContent");
     const propertyTitle = document.getElementById("propertyTitle");
 
-    const mapStatus = document.getElementById("mapStatus");
-    const mapStatusText = document.getElementById("mapStatusText");
+    const mapStatusText =
+        document.getElementById("mapStatusText");
 
     const appPage = document.getElementById("appPage");
     const appPageTitle = document.getElementById("appPageTitle");
@@ -84,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       MAP OVERLAYS
+       MAP LAYERS
     ===================================================== */
 
     let countyLayer = null;
@@ -92,8 +92,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let parcelLayer = null;
 
     let selectedParcelLayer = null;
+    let selectedParcelID = null;
 
     let parcelRequestController = null;
+    let moveTimer = null;
 
 
     /* =====================================================
@@ -116,7 +118,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const saved =
                 JSON.parse(
-                    localStorage.getItem("parcelScopeSettings")
+                    localStorage.getItem(
+                        "parcelScopeSettings"
+                    )
                 );
 
             return {
@@ -146,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       INITIAL MAP VIEW
+       INITIAL VIEW
     ===================================================== */
 
     map.setView(
@@ -173,19 +177,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    menuButton.addEventListener("click", () => {
+    menuButton.addEventListener(
+        "click",
+        () => {
 
-        if (sideMenu.classList.contains("open")) {
+            if (
+                sideMenu.classList.contains("open")
+            ) {
 
-            closeMenuPanel();
+                closeMenuPanel();
 
-        } else {
+            } else {
 
-            openMenu();
+                openMenu();
+
+            }
 
         }
-
-    });
+    );
 
 
     closeMenu.addEventListener(
@@ -194,49 +203,54 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
 
-    /* Clicking map closes menu */
-
-    map.on("click", () => {
-
-        closeMenuPanel();
-
-    });
-
-
     /* =====================================================
-       PROPERTY PANEL
+       PANELS
     ===================================================== */
 
-    closeProperty.addEventListener("click", () => {
+    closeProperty.addEventListener(
+        "click",
+        () => {
 
-        propertyPanel.classList.remove("open");
+            propertyPanel.classList.remove("open");
 
-    });
-
-
-    closeResults.addEventListener("click", () => {
-
-        searchResults.classList.remove("open");
-
-    });
+        }
+    );
 
 
-    /* =====================================================
-       PAGE
-    ===================================================== */
+    closeResults.addEventListener(
+        "click",
+        () => {
 
-    closeAppPage.addEventListener("click", () => {
+            searchResults.classList.remove("open");
 
-        appPage.classList.remove("open");
+        }
+    );
 
-    });
+
+    closeAppPage.addEventListener(
+        "click",
+        () => {
+
+            appPage.classList.remove("open");
+
+        }
+    );
 
 
-    function openPage(title, content, kicker = "PARCELSCOPE") {
+    function openPage(
+        title,
+        content,
+        kicker = "PARCELSCOPE"
+    ) {
 
-        appPageKicker.textContent = kicker;
-        appPageTitle.textContent = title;
-        appPageContent.innerHTML = content;
+        appPageKicker.textContent =
+            kicker;
+
+        appPageTitle.textContent =
+            title;
+
+        appPageContent.innerHTML =
+            content;
 
         appPage.classList.add("open");
 
@@ -246,26 +260,51 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       STATE / COUNTY BOUNDARIES
+       MAP CLICK
+    ===================================================== */
+
+    map.on("click", () => {
+
+        closeMenuPanel();
+
+    });
+
+
+    /* =====================================================
+       COUNTY + STATE BOUNDARIES
     ===================================================== */
 
     async function loadBoundaryLayers() {
 
         try {
 
-            const [countyResponse, idahoResponse] =
-                await Promise.all([
-                    fetch(
-                        `${COUNTY_URL}/query?where=1%3D1&outFields=CountyName,CountyFIPS&returnGeometry=true&outSR=4326&f=geojson`
-                    ),
-                    fetch(
-                        `${IDAHO_URL}/query?where=1%3D1&outFields=Name,NameAbbr&returnGeometry=true&outSR=4326&f=geojson`
-                    )
-                ]);
+            const [
+                countyResponse,
+                idahoResponse
+            ] = await Promise.all([
 
-            if (!countyResponse.ok || !idahoResponse.ok) {
-                throw new Error("Boundary request failed");
+                fetch(
+                    `${COUNTY_URL}/query?where=1%3D1&outFields=CountyName,CountyFIPS&returnGeometry=true&outSR=4326&f=geojson`
+                ),
+
+                fetch(
+                    `${IDAHO_URL}/query?where=1%3D1&outFields=Name,NameAbbr&returnGeometry=true&outSR=4326&f=geojson`
+                )
+
+            ]);
+
+
+            if (
+                !countyResponse.ok ||
+                !idahoResponse.ok
+            ) {
+
+                throw new Error(
+                    "Boundary request failed"
+                );
+
             }
+
 
             const countyGeoJSON =
                 await countyResponse.json();
@@ -274,49 +313,62 @@ document.addEventListener("DOMContentLoaded", () => {
                 await idahoResponse.json();
 
 
-            countyLayer = L.geoJSON(
-                countyGeoJSON,
-                {
-                    style: {
-                        color: "#d7a84a",
-                        weight: 1.2,
-                        opacity: 0.9,
-                        fillOpacity: 0
-                    },
+            countyLayer =
+                L.geoJSON(
+                    countyGeoJSON,
+                    {
 
-                    onEachFeature: (
-                        feature,
-                        layer
-                    ) => {
+                        style: {
 
-                        const name =
-                            feature.properties?.CountyName ||
-                            "County";
+                            color: "#d7a84a",
+                            weight: 1.2,
+                            opacity: 0.9,
+                            fillOpacity: 0
 
-                        layer.bindTooltip(name, {
-                            sticky: true,
-                            direction: "center"
-                        });
+                        },
+
+                        onEachFeature:
+                            (feature, layer) => {
+
+                                const name =
+                                    feature.properties
+                                        ?.CountyName ||
+                                    "County";
+
+                                layer.bindTooltip(
+                                    name,
+                                    {
+                                        sticky: true,
+                                        direction: "center"
+                                    }
+                                );
+
+                            }
 
                     }
-                }
-            );
+                );
 
 
-            idahoLayer = L.geoJSON(
-                idahoGeoJSON,
-                {
-                    style: {
-                        color: "#ffffff",
-                        weight: 3,
-                        opacity: 1,
-                        fillOpacity: 0
+            idahoLayer =
+                L.geoJSON(
+                    idahoGeoJSON,
+                    {
+
+                        style: {
+
+                            color: "#ffffff",
+                            weight: 3,
+                            opacity: 1,
+                            fillOpacity: 0
+
+                        }
+
                     }
-                }
-            );
+                );
 
 
             updateBoundaryVisibility();
+
 
         } catch (error) {
 
@@ -332,8 +384,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateBoundaryVisibility() {
 
-        if (!countyLayer || !idahoLayer) {
+        if (
+            !countyLayer ||
+            !idahoLayer
+        ) {
+
             return;
+
         }
 
 
@@ -380,7 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       PARCEL DATA
+       PARCEL LOADING
     ===================================================== */
 
     async function loadParcels() {
@@ -399,9 +456,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /*
-         * Parcel data is loaded for the current map window.
-         * This prevents thousands of statewide parcel polygons
-         * from being downloaded at once.
+         * Don't try to draw the entire state.
+         * Parcels appear once sufficiently zoomed in.
          */
 
         if (map.getZoom() < 10) {
@@ -411,6 +467,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 map.removeLayer(parcelLayer);
 
             }
+
+            setStatus(
+                "Zoom in to view parcel boundaries"
+            );
 
             return;
 
@@ -428,43 +488,47 @@ document.addEventListener("DOMContentLoaded", () => {
             new AbortController();
 
 
-        const bounds = map.getBounds();
+        const bounds =
+            map.getBounds();
 
 
         const geometry = [
+
             bounds.getWest(),
             bounds.getSouth(),
             bounds.getEast(),
             bounds.getNorth()
+
         ].join(",");
 
 
-        const params = new URLSearchParams({
+        const params =
+            new URLSearchParams({
 
-            where: "1=1",
+                where: "1=1",
 
-            geometry: geometry,
+                geometry: geometry,
 
-            geometryType:
-                "esriGeometryEnvelope",
+                geometryType:
+                    "esriGeometryEnvelope",
 
-            inSR: "4326",
+                inSR: "4326",
 
-            spatialRel:
-                "esriSpatialRelIntersects",
+                spatialRel:
+                    "esriSpatialRelIntersects",
 
-            outFields:
-                "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID",
+                outFields:
+                    "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID",
 
-            returnGeometry: "true",
+                returnGeometry: "true",
 
-            outSR: "4326",
+                outSR: "4326",
 
-            resultRecordCount: "2000",
+                resultRecordCount: "2000",
 
-            f: "geojson"
+                f: "geojson"
 
-        });
+            });
 
 
         try {
@@ -485,9 +549,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             if (!response.ok) {
+
                 throw new Error(
                     "Parcel request failed"
                 );
+
             }
 
 
@@ -497,7 +563,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (parcelLayer) {
 
-                map.removeLayer(parcelLayer);
+                map.removeLayer(
+                    parcelLayer
+                );
 
             }
 
@@ -506,48 +574,81 @@ document.addEventListener("DOMContentLoaded", () => {
                 L.geoJSON(
                     data,
                     {
+
                         style: {
+
                             color: "#ffffff",
                             weight: 0.7,
                             opacity: 0.75,
                             fillOpacity: 0
+
                         },
 
-                        onEachFeature: (
-                            feature,
-                            layer
-                        ) => {
+                        onEachFeature:
+                            (feature, layer) => {
 
-                            layer.on(
-                                "click",
-                                (event) => {
+                                layer.on(
+                                    "click",
+                                    event => {
 
-                                    L.DomEvent.stopPropagation(
-                                        event
-                                    );
+                                        L.DomEvent.stopPropagation(
+                                            event
+                                        );
 
-                                    showParcel(
-                                        feature,
-                                        layer
-                                    );
+                                        showParcel(
+                                            feature,
+                                            layer
+                                        );
 
-                                }
-                            );
+                                    }
+                                );
 
-                        }
+                            }
+
                     }
                 );
 
 
-            if (settings.parcels) {
+            parcelLayer.addTo(map);
 
-                parcelLayer.addTo(map);
+
+            /*
+             * Re-highlight the selected parcel if it
+             * was just reloaded after moving the map.
+             */
+
+            if (selectedParcelID) {
+
+                parcelLayer.eachLayer(
+                    layer => {
+
+                        const id =
+                            getParcelID(
+                                layer.feature
+                            );
+
+                        if (
+                            id ===
+                            selectedParcelID
+                        ) {
+
+                            selectedParcelLayer =
+                                layer;
+
+                            highlightParcel(
+                                layer
+                            );
+
+                        }
+
+                    }
+                );
 
             }
 
 
             setStatus(
-                `Parcel boundaries loaded`
+                "Parcel boundaries loaded"
             );
 
 
@@ -582,77 +683,88 @@ document.addEventListener("DOMContentLoaded", () => {
        MAP MOVE / ZOOM
     ===================================================== */
 
-    let moveTimer = null;
+    map.on(
+        "moveend",
+        () => {
 
+            clearTimeout(
+                moveTimer
+            );
 
-    map.on("moveend", () => {
+            moveTimer =
+                setTimeout(
+                    loadParcels,
+                    300
+                );
 
-        clearTimeout(moveTimer);
-
-        moveTimer = setTimeout(
-            loadParcels,
-            250
-        );
-
-    });
+        }
+    );
 
 
     /* =====================================================
-       CLICK LOCATION
+       CLICK A PROPERTY
     ===================================================== */
 
-    map.on("click", async (event) => {
+    map.on(
+        "click",
+        async event => {
 
-        if (map.getZoom() < 10) {
+            if (
+                map.getZoom() < 10
+            ) {
 
-            showMapLocation(
+                showMapLocation(
+                    event.latlng
+                );
+
+                return;
+
+            }
+
+
+            await findParcelAtPoint(
                 event.latlng
             );
 
-            return;
-
         }
+    );
 
 
-        await findParcelAtPoint(
-            event.latlng
-        );
-
-    });
-
-
-    async function findParcelAtPoint(latlng) {
+    async function findParcelAtPoint(
+        latlng
+    ) {
 
         const geometry =
             `${latlng.lng},${latlng.lat}`;
 
 
-        const params = new URLSearchParams({
+        const params =
+            new URLSearchParams({
 
-            where: "1=1",
+                where: "1=1",
 
-            geometry: geometry,
+                geometry: geometry,
 
-            geometryType:
-                "esriGeometryPoint",
+                geometryType:
+                    "esriGeometryPoint",
 
-            inSR: "4326",
+                inSR: "4326",
 
-            spatialRel:
-                "esriSpatialRelIntersects",
+                spatialRel:
+                    "esriSpatialRelIntersects",
 
-            outFields:
-                "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID",
+                outFields:
+                    "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID",
 
-            returnGeometry: "true",
+                returnGeometry: "true",
 
-            outSR: "4326",
+                outSR: "4326",
 
-            resultRecordCount: "1",
+                resultRecordCount: "1",
 
-            f: "geojson"
+                f: "geojson"
 
-        });
+            });
 
 
         try {
@@ -669,9 +781,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             if (!response.ok) {
+
                 throw new Error(
                     "Property query failed"
                 );
+
             }
 
 
@@ -684,11 +798,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 data.features.length
             ) {
 
-                const feature =
-                    data.features[0];
-
                 showParcel(
-                    feature
+                    data.features[0]
                 );
 
             } else {
@@ -698,6 +809,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
             }
+
 
         } catch (error) {
 
@@ -715,17 +827,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       SHOW MAP LOCATION
+       MAP LOCATION
     ===================================================== */
 
-    function showMapLocation(latlng) {
+    function showMapLocation(
+        latlng
+    ) {
 
         propertyTitle.textContent =
             "Map Location";
 
+
         propertyContent.innerHTML = `
 
             <div class="property-field">
+
                 <div class="property-label">
                     Latitude
                 </div>
@@ -733,9 +849,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="property-value">
                     ${latlng.lat.toFixed(6)}
                 </div>
+
             </div>
 
+
             <div class="property-field">
+
                 <div class="property-label">
                     Longitude
                 </div>
@@ -743,9 +862,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="property-value">
                     ${latlng.lng.toFixed(6)}
                 </div>
+
             </div>
 
+
             <div class="property-field">
+
                 <div class="property-label">
                     Parcel
                 </div>
@@ -753,11 +875,101 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="property-value">
                     Zoom in closer to select a parcel.
                 </div>
+
             </div>
 
         `;
 
-        propertyPanel.classList.add("open");
+
+        propertyPanel.classList.add(
+            "open"
+        );
+
+    }
+
+
+    /* =====================================================
+       PARCEL HELPERS
+    ===================================================== */
+
+    function getParcelID(
+        feature
+    ) {
+
+        const p =
+            feature?.properties || {};
+
+
+        return cleanValue(
+            p.PARCEL_ID
+        ) ||
+        cleanValue(
+            p.FP_ID
+        ) ||
+        cleanValue(
+            p.OBJECTID
+        );
+
+    }
+
+
+    function highlightParcel(
+        layer
+    ) {
+
+        if (!layer) {
+
+            return;
+
+        }
+
+
+        layer.setStyle({
+
+            color: "#00e5ff",
+            weight: 3,
+            opacity: 1,
+            fillColor: "#00e5ff",
+            fillOpacity: 0.18
+
+        });
+
+
+        if (
+            layer.bringToFront
+        ) {
+
+            layer.bringToFront();
+
+        }
+
+    }
+
+
+    function clearSelectedParcel() {
+
+        if (
+            selectedParcelLayer &&
+            selectedParcelLayer.setStyle
+        ) {
+
+            selectedParcelLayer.setStyle({
+
+                color: "#ffffff",
+                weight: 0.7,
+                opacity: 0.75,
+                fillOpacity: 0
+
+            });
+
+        }
+
+
+        selectedParcelLayer =
+            null;
+
+        selectedParcelID =
+            null;
 
     }
 
@@ -775,38 +987,58 @@ document.addEventListener("DOMContentLoaded", () => {
             feature.properties || {};
 
 
-        if (selectedParcelLayer) {
+        clearSelectedParcel();
 
-            selectedParcelLayer.setStyle({
-                color: "#ffffff",
-                weight: 0.7,
-                opacity: 0.75,
-                fillOpacity: 0
-            });
 
-        }
+        selectedParcelID =
+            getParcelID(
+                feature
+            );
 
+
+        /*
+         * If the parcel came directly from search
+         * or a point query, create a dedicated layer
+         * from THAT EXACT geometry.
+         */
 
         if (sourceLayer) {
 
             selectedParcelLayer =
                 sourceLayer;
 
+        } else if (
+            feature.geometry
+        ) {
+
+            selectedParcelLayer =
+                L.geoJSON(
+                    feature,
+                    {
+
+                        style: {
+
+                            color: "#00e5ff",
+                            weight: 3,
+                            opacity: 1,
+                            fillColor: "#00e5ff",
+                            fillOpacity: 0.18
+
+                        }
+
+                    }
+                ).addTo(map);
+
         }
 
 
         if (
-            selectedParcelLayer &&
-            selectedParcelLayer.setStyle
+            selectedParcelLayer
         ) {
 
-            selectedParcelLayer.setStyle({
-                color: "#00e5ff",
-                weight: 3,
-                opacity: 1,
-                fillColor: "#00e5ff",
-                fillOpacity: 0.15
-            });
+            highlightParcel(
+                selectedParcelLayer
+            );
 
         }
 
@@ -829,7 +1061,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         const county =
-            cleanValue(p.County) ||
+            cleanValue(
+                p.County
+            ) ||
             "Unavailable";
 
 
@@ -837,24 +1071,31 @@ document.addEventListener("DOMContentLoaded", () => {
             p.ASR_ACRES !== null &&
             p.ASR_ACRES !== undefined &&
             p.ASR_ACRES !== ""
-                ? Number(p.ASR_ACRES)
-                    .toLocaleString(
-                        undefined,
-                        {
-                            maximumFractionDigits: 2
-                        }
-                    )
+                ? Number(
+                    p.ASR_ACRES
+                  ).toLocaleString(
+                    undefined,
+                    {
+                        maximumFractionDigits: 2
+                    }
+                  )
                 : "Unavailable";
 
 
         const parcelID =
-            cleanValue(
-                p.PARCEL_ID
-            ) ||
-            cleanValue(
-                p.FP_ID
-            ) ||
+            selectedParcelID ||
             "Unavailable";
+
+
+        const assessed =
+            p.VAL_TOTAL !== null &&
+            p.VAL_TOTAL !== undefined &&
+            p.VAL_TOTAL !== ""
+                ? "$" +
+                  Number(
+                      p.VAL_TOTAL
+                  ).toLocaleString()
+                : "Unavailable";
 
 
         propertyTitle.textContent =
@@ -938,16 +1179,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
                 <div class="property-value">
-                    ${
-                        p.VAL_TOTAL !== null &&
-                        p.VAL_TOTAL !== undefined &&
-                        p.VAL_TOTAL !== ""
-                            ? "$" +
-                              Number(
-                                  p.VAL_TOTAL
-                              ).toLocaleString()
-                            : "Unavailable"
-                    }
+                    ${escapeHTML(assessed)}
                 </div>
 
             </div>
@@ -961,7 +1193,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 <div class="property-value">
                     ${escapeHTML(
-                        cleanValue(p.STEWARD) ||
+                        cleanValue(
+                            p.STEWARD
+                        ) ||
                         "Unavailable"
                     )}
                 </div>
@@ -973,13 +1207,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 class="save-property"
                 id="savePropertyButton"
             >
-                ⭐ Save Property
+                Save Property
             </button>
 
         `;
 
 
-        propertyPanel.classList.add("open");
+        propertyPanel.classList.add(
+            "open"
+        );
 
 
         document
@@ -1050,9 +1286,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         resultsContent.innerHTML = `
+
             <div class="search-result">
+
                 Searching Idaho property records...
+
             </div>
+
         `;
 
 
@@ -1062,13 +1302,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         const safeQuery =
-            query
-                .replaceAll("'", "''");
+            query.replaceAll(
+                "'",
+                "''"
+            );
 
+
+        /*
+         * Search owner, address, city, parcel ID.
+         */
 
         const where =
             `PARCEL_ID LIKE '%${safeQuery}%' OR ` +
             `OWNER1 LIKE '%${safeQuery}%' OR ` +
+            `OWNER2 LIKE '%${safeQuery}%' OR ` +
             `SITE_ADD LIKE '%${safeQuery}%' OR ` +
             `SITE_CITY LIKE '%${safeQuery}%'`;
 
@@ -1081,13 +1328,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 outFields:
                     "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID",
 
-                returnGeometry: "true",
+                returnGeometry:
+                    "true",
 
-                outSR: "4326",
+                outSR:
+                    "4326",
 
-                resultRecordCount: "30",
+                resultRecordCount:
+                    "50",
 
-                f: "geojson"
+                f:
+                    "geojson"
 
             });
 
@@ -1101,9 +1352,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             if (!response.ok) {
+
                 throw new Error(
                     "Search failed"
                 );
+
             }
 
 
@@ -1117,7 +1370,9 @@ document.addEventListener("DOMContentLoaded", () => {
             ) {
 
                 resultsContent.innerHTML = `
+
                     <div class="search-result">
+
                         <div class="search-result-title">
                             No properties found
                         </div>
@@ -1126,12 +1381,88 @@ document.addEventListener("DOMContentLoaded", () => {
                             Try an owner name, address,
                             parcel ID, or city.
                         </div>
+
                     </div>
+
                 `;
 
                 return;
 
             }
+
+
+            /*
+             * Put the strongest matches first.
+             * This helps when multiple people have
+             * the same or similar name.
+             */
+
+            const normalized =
+                query.toLowerCase();
+
+
+            data.features.sort(
+                (a, b) => {
+
+                    const pa =
+                        a.properties || {};
+
+                    const pb =
+                        b.properties || {};
+
+
+                    const ownerA =
+                        cleanValue(
+                            pa.OWNER1
+                        ).toLowerCase();
+
+
+                    const ownerB =
+                        cleanValue(
+                            pb.OWNER1
+                        ).toLowerCase();
+
+
+                    const addressA =
+                        cleanValue(
+                            pa.SITE_ADD
+                        ).toLowerCase();
+
+
+                    const addressB =
+                        cleanValue(
+                            pb.SITE_ADD
+                        ).toLowerCase();
+
+
+                    const scoreA =
+                        (ownerA === normalized
+                            ? 100
+                            : 0) +
+                        (ownerA.startsWith(normalized)
+                            ? 30
+                            : 0) +
+                        (addressA.includes(normalized)
+                            ? 20
+                            : 0);
+
+
+                    const scoreB =
+                        (ownerB === normalized
+                            ? 100
+                            : 0) +
+                        (ownerB.startsWith(normalized)
+                            ? 30
+                            : 0) +
+                        (addressB.includes(normalized)
+                            ? 20
+                            : 0);
+
+
+                    return scoreB - scoreA;
+
+                }
+            );
 
 
             resultsContent.innerHTML =
@@ -1146,11 +1477,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                 feature.properties ||
                                 {};
 
+
                             const owner =
                                 cleanValue(
                                     p.OWNER1
                                 ) ||
                                 "Owner unavailable";
+
 
                             const address =
                                 [
@@ -1159,10 +1492,19 @@ document.addEventListener("DOMContentLoaded", () => {
                                     ),
                                     cleanValue(
                                         p.SITE_CITY
+                                    ),
+                                    cleanValue(
+                                        p.SITE_ZIP
                                     )
                                 ]
                                 .filter(Boolean)
                                 .join(", ");
+
+
+                            const county =
+                                cleanValue(
+                                    p.County
+                                );
 
 
                             return `
@@ -1175,14 +1517,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <div
                                         class="search-result-title"
                                     >
-                                        ${escapeHTML(
-                                            owner
-                                        )}
+                                        ${escapeHTML(owner)}
                                     </div>
 
                                     <div
                                         class="search-result-details"
                                     >
+
                                         ${
                                             escapeHTML(
                                                 address ||
@@ -1192,15 +1533,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                         <br>
 
+                                        ${
+                                            county
+                                                ? escapeHTML(
+                                                    county
+                                                  ) +
+                                                  " County"
+                                                : ""
+                                        }
+
+                                        <br>
+
                                         Parcel:
                                         ${
                                             escapeHTML(
-                                                cleanValue(
-                                                    p.PARCEL_ID
-                                                ) ||
-                                                "Unavailable"
+                                                getParcelID(
+                                                    feature
+                                                )
                                             )
                                         }
+
                                     </div>
 
                                 </div>
@@ -1225,10 +1577,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
                                 const index =
                                     Number(
-                                        element
-                                            .dataset
+                                        element.dataset
                                             .resultIndex
                                     );
+
 
                                 selectSearchResult(
                                     data.features[
@@ -1249,7 +1601,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 error
             );
 
+
             resultsContent.innerHTML = `
+
                 <div class="search-result">
 
                     <div class="search-result-title">
@@ -1262,6 +1616,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
 
                 </div>
+
             `;
 
         }
@@ -1269,45 +1624,109 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    /* =====================================================
+       SELECT SEARCH RESULT
+    ===================================================== */
+
     function selectSearchResult(
         feature
     ) {
 
-        const geometry =
-            feature.geometry;
-
-
-        if (
-            geometry &&
-            geometry.type ===
-            "Polygon"
-        ) {
-
-            const tempLayer =
-                L.geoJSON(feature);
-
-
-            map.fitBounds(
-                tempLayer.getBounds(),
-                {
-                    padding: [
-                        60,
-                        60
-                    ],
-                    maxZoom: 17
-                }
-            );
-
-        }
-
+        /*
+         * Close the results first.
+         */
 
         searchResults.classList.remove(
             "open"
         );
 
 
+        /*
+         * Remove the old selected parcel.
+         */
+
+        clearSelectedParcel();
+
+
+        /*
+         * The search result contains the ACTUAL
+         * parcel geometry. Use it directly.
+         */
+
+        if (
+            feature.geometry
+        ) {
+
+            const exactLayer =
+                L.geoJSON(
+                    feature
+                );
+
+
+            const bounds =
+                exactLayer.getBounds();
+
+
+            if (
+                bounds.isValid()
+            ) {
+
+                map.fitBounds(
+                    bounds,
+                    {
+
+                        padding: [
+                            60,
+                            60
+                        ],
+
+                        maxZoom: 17
+
+                    }
+                );
+
+            }
+
+
+            /*
+             * Draw the exact searched parcel
+             * immediately.
+             */
+
+            selectedParcelLayer =
+                L.geoJSON(
+                    feature,
+                    {
+
+                        style: {
+
+                            color: "#00e5ff",
+                            weight: 3,
+                            opacity: 1,
+                            fillColor: "#00e5ff",
+                            fillOpacity: 0.18
+
+                        }
+
+                    }
+                ).addTo(map);
+
+
+            selectedParcelID =
+                getParcelID(
+                    feature
+                );
+
+        }
+
+
+        /*
+         * Show the exact record that was clicked.
+         */
+
         showParcel(
-            feature
+            feature,
+            selectedParcelLayer
         );
 
     }
@@ -1345,11 +1764,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         const parcelID =
-            cleanValue(
-                p.PARCEL_ID
-            ) ||
-            cleanValue(
-                p.FP_ID
+            getParcelID(
+                feature
             );
 
 
@@ -1364,23 +1780,20 @@ document.addEventListener("DOMContentLoaded", () => {
             getSavedProperties();
 
 
-        const alreadySaved =
+        if (
             saved.some(
                 item =>
                     item.parcelID ===
                     parcelID
-            );
-
-
-        if (alreadySaved) {
+            )
+        ) {
 
             openPage(
                 "Saved Properties",
                 `
                     <div class="page-card">
                         <strong>Already Saved</strong>
-                        This property is already in
-                        your saved properties.
+                        This property is already saved.
                     </div>
                 `,
                 "SAVED PROPERTIES"
@@ -1391,17 +1804,29 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
+        const center =
+            feature.geometry
+                ? getFeatureCenter(
+                    feature.geometry
+                  )
+                : null;
+
+
         saved.push({
 
-            parcelID: parcelID,
+            parcelID:
+
+                parcelID,
 
             owner:
+
                 cleanValue(
                     p.OWNER1
                 ) ||
                 "Owner unavailable",
 
             address:
+
                 [
                     cleanValue(
                         p.SITE_ADD
@@ -1417,27 +1842,61 @@ document.addEventListener("DOMContentLoaded", () => {
                 .join(", "),
 
             latitude:
-                Number(
-                    p.LAT_DD
-                ) || null,
+
+                center
+                    ? center.lat
+                    : null,
 
             longitude:
-                Number(
-                    p.LONG_DD
-                ) || null
+
+                center
+                    ? center.lng
+                    : null
 
         });
 
 
         localStorage.setItem(
             "parcelScopeSaved",
-            JSON.stringify(saved)
+            JSON.stringify(
+                saved
+            )
         );
 
 
         propertyPanel.classList.remove(
             "open"
         );
+
+    }
+
+
+    function getFeatureCenter(
+        geometry
+    ) {
+
+        try {
+
+            const layer =
+                L.geoJSON({
+                    type: "Feature",
+                    properties: {},
+                    geometry: geometry
+                });
+
+
+            const center =
+                layer.getBounds()
+                    .getCenter();
+
+
+            return center;
+
+        } catch {
+
+            return null;
+
+        }
 
     }
 
@@ -1459,6 +1918,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         const section =
                             button.dataset.section;
+
 
                         if (section) {
 
@@ -1597,47 +2057,106 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function showCounties() {
 
-        const html = `
-
-            <div class="page-section">
-
-                <p>
-                    Select an Idaho county to move the map
-                    to that county.
-                </p>
-
-            </div>
-
-            <div class="county-grid">
-
-                ${
-                    counties
-                        .map(
-                            county => `
-                                <button
-                                    class="county-button"
-                                    data-county="${escapeHTML(
-                                        county
-                                    )}"
-                                >
-                                    ${escapeHTML(
-                                        county
-                                    )} County
-                                </button>
-                            `
-                        )
-                        .join("")
-                }
-
-            </div>
-
-        `;
-
-
         openPage(
             "Counties",
-            html,
+            `
+
+                <div class="page-section">
+
+                    <p>
+                        Search for an Idaho county or
+                        select one below.
+                    </p>
+
+                </div>
+
+
+                <div class="county-search">
+
+                    <input
+                        id="countySearchInput"
+                        type="search"
+                        placeholder="Search counties..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+
+                <div
+                    id="countyList"
+                    class="county-grid"
+                >
+
+                    ${
+                        counties
+                            .map(
+                                county => `
+
+                                    <button
+                                        class="county-button"
+                                        data-county="${escapeHTML(
+                                            county
+                                        )}"
+                                    >
+                                        ${escapeHTML(
+                                            county
+                                        )} County
+                                    </button>
+
+                                `
+                            )
+                            .join("")
+                    }
+
+                </div>
+
+            `,
             "IDAHO COUNTIES"
+        );
+
+
+        const countySearchInput =
+            document.getElementById(
+                "countySearchInput"
+            );
+
+
+        countySearchInput.addEventListener(
+            "input",
+            () => {
+
+                const query =
+                    countySearchInput.value
+                        .trim()
+                        .toLowerCase();
+
+
+                document
+                    .querySelectorAll(
+                        ".county-button"
+                    )
+                    .forEach(
+                        button => {
+
+                            const name =
+                                button.dataset
+                                    .county
+                                    .toLowerCase();
+
+
+                            button.style.display =
+                                !query ||
+                                name.includes(
+                                    query
+                                )
+                                    ? ""
+                                    : "none";
+
+                        }
+                    );
+
+            }
         );
 
 
@@ -1653,7 +2172,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         () => {
 
                             selectCounty(
-                                button.dataset.county
+                                button.dataset
+                                    .county
                             );
 
                         }
@@ -1668,6 +2188,68 @@ document.addEventListener("DOMContentLoaded", () => {
     async function selectCounty(
         county
     ) {
+
+        closeMenuPanel();
+
+
+        if (
+            countyLayer
+        ) {
+
+            let found = false;
+
+
+            countyLayer.eachLayer(
+                layer => {
+
+                    const name =
+                        layer.feature
+                            ?.properties
+                            ?.CountyName;
+
+
+                    if (
+                        name &&
+                        name.toLowerCase() ===
+                        county.toLowerCase()
+                    ) {
+
+                        map.fitBounds(
+                            layer.getBounds(),
+                            {
+                                padding: [
+                                    30,
+                                    30
+                                ]
+                            }
+                        );
+
+
+                        found = true;
+
+                    }
+
+                }
+            );
+
+
+            if (found) {
+
+                appPage.classList.remove(
+                    "open"
+                );
+
+                return;
+
+            }
+
+        }
+
+
+        /*
+         * Fallback if the county boundary layer
+         * isn't available.
+         */
 
         const safeCounty =
             county.replaceAll(
@@ -1708,13 +2290,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-            if (!response.ok) {
-                throw new Error(
-                    "County search failed"
-                );
-            }
-
-
             const data =
                 await response.json();
 
@@ -1740,70 +2315,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 );
 
-            } else {
-
-                /*
-                 * Fall back to the official county
-                 * boundary layer.
-                 */
-
-                if (
-                    countyLayer
-                ) {
-
-                    let found =
-                        false;
-
-
-                    countyLayer.eachLayer(
-                        layer => {
-
-                            const name =
-                                layer.feature
-                                    ?.properties
-                                    ?.CountyName;
-
-
-                            if (
-                                name &&
-                                name.toLowerCase() ===
-                                county.toLowerCase()
-                            ) {
-
-                                map.fitBounds(
-                                    layer.getBounds(),
-                                    {
-                                        padding: [
-                                            30,
-                                            30
-                                        ]
-                                    }
-                                );
-
-                                found = true;
-
-                            }
-
-                        }
-                    );
-
-
-                    if (!found) {
-
-                        alert(
-                            "County boundary not found."
-                        );
-
-                    }
-
-                }
-
             }
 
 
         } catch (error) {
 
             console.error(
+                "County selection error:",
                 error
             );
 
@@ -1814,13 +2332,11 @@ document.addEventListener("DOMContentLoaded", () => {
             "open"
         );
 
-        closeMenuPanel();
-
     }
 
 
     /* =====================================================
-       SAVED PAGE
+       SAVED PROPERTIES PAGE
     ===================================================== */
 
     function showSavedProperties() {
@@ -1840,7 +2356,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             No Saved Properties
                         </strong>
 
-                        Select a parcel and press
+                        Select a property and press
                         "Save Property" to add it here.
 
                     </div>
@@ -1885,12 +2401,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             </div>
 
+
                             <button
                                 class="remove-saved"
                                 data-remove-index="${index}"
-                                aria-label="Remove saved property"
                             >
-                                ✕
+                                X
                             </button>
 
                         </div>
@@ -1919,10 +2435,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         event => {
 
                             if (
-                                event.target
-                                    .closest(
-                                        ".remove-saved"
-                                    )
+                                event.target.closest(
+                                    ".remove-saved"
+                                )
                             ) {
 
                                 return;
@@ -1932,8 +2447,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             const index =
                                 Number(
-                                    element
-                                        .dataset
+                                    element.dataset
                                         .savedIndex
                                 );
 
@@ -1962,10 +2476,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             event.stopPropagation();
 
+
                             const index =
                                 Number(
-                                    button
-                                        .dataset
+                                    button.dataset
                                         .removeIndex
                                 );
 
@@ -2003,24 +2517,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "open"
         );
 
-
         closeMenuPanel();
-
-
-        if (
-            saved.latitude &&
-            saved.longitude
-        ) {
-
-            map.setView(
-                [
-                    saved.latitude,
-                    saved.longitude
-                ],
-                16
-            );
-
-        }
 
 
         searchInput.value =
@@ -2050,11 +2547,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     <p>
                         ParcelScope uses the Public Idaho
-                        Parcels statewide GIS service. The
-                        service contains standardized parcel
-                        polygons and public property attributes
-                        supplied through Idaho's statewide
-                        parcel data program.
+                        Parcels statewide GIS service for
+                        parcel boundaries and available
+                        public property attributes.
                     </p>
 
                 </div>
@@ -2063,13 +2558,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="page-section">
 
                     <h2>
-                        Idaho State & County Boundaries
+                        Idaho Boundaries
                     </h2>
 
                     <p>
-                        State and county boundary layers come
-                        from the Idaho Transportation Department's
-                        public Political Boundaries GIS service.
+                        State and county boundary information
+                        comes from Idaho public GIS services.
                     </p>
 
                 </div>
@@ -2106,36 +2600,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="page-section">
 
                     <h2>
-                        Data Updates
-                    </h2>
-
-                    <p>
-                        Parcel data is maintained by the
-                        participating county data providers
-                        and updated as new statewide data is
-                        received. ParcelScope requests the
-                        current public GIS data whenever the
-                        application starts and when you manually
-                        refresh the site.
-                    </p>
-
-                </div>
-
-
-                <div class="page-section">
-
-                    <h2>
                         Important Notice
                     </h2>
 
                     <p>
                         ParcelScope displays public GIS
-                        information. The underlying records
-                        belong to their respective data
-                        providers. Property information can
-                        change and should be verified with
-                        the appropriate county or government
-                        agency when accuracy is important.
+                        information. Records can change and
+                        should be verified with the appropriate
+                        county or government agency when an
+                        official record is required.
                     </p>
 
                 </div>
@@ -2162,13 +2635,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function setLastRefresh() {
 
-        const now =
-            new Date().toLocaleString();
-
-
         localStorage.setItem(
             "parcelScopeLastRefresh",
-            now
+            new Date().toLocaleString()
         );
 
     }
@@ -2201,23 +2670,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         id="refreshNowButton"
                         class="refresh-button"
                     >
-                        ↻ Refresh Now
+                        Refresh Now
                     </button>
-
-                </div>
-
-
-                <div class="page-section">
-
-                    <h2>
-                        Automatic Refresh
-                    </h2>
-
-                    <p>
-                        ParcelScope requests fresh public
-                        GIS information when the application
-                        opens.
-                    </p>
 
                 </div>
 
@@ -2270,7 +2724,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div>
 
                             <div class="setting-name">
-                                🛰️ Satellite
+                                Satellite
                             </div>
 
                             <div class="setting-description">
@@ -2297,7 +2751,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div>
 
                             <div class="setting-name">
-                                🗺️ Standard
+                                Standard
                             </div>
 
                             <div class="setting-description">
@@ -2330,7 +2784,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     ${createToggle(
                         "parcels",
-                        "🏠 Parcel Boundaries",
+                        "Parcel Boundaries",
                         "Property parcel outlines",
                         settings.parcels
                     )}
@@ -2338,7 +2792,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     ${createToggle(
                         "counties",
-                        "🏛️ County Boundaries",
+                        "County Boundaries",
                         "Idaho county lines",
                         settings.counties
                     )}
@@ -2346,7 +2800,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     ${createToggle(
                         "idaho",
-                        "🟦 Idaho State Boundary",
+                        "Idaho State Boundary",
                         "Official Idaho outline",
                         settings.idaho
                     )}
@@ -2370,8 +2824,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         () => {
 
                             setMapStyle(
-                                button
-                                    .dataset
+                                button.dataset
                                     .mapStyle
                             );
 
@@ -2396,8 +2849,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         () => {
 
                             const layer =
-                                button
-                                    .dataset
+                                button.dataset
                                     .layerToggle;
 
 
@@ -2433,10 +2885,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                             if (
-                                layer ===
-                                "counties" ||
-                                layer ===
-                                "idaho"
+                                layer === "counties" ||
+                                layer === "idaho"
                             ) {
 
                                 updateBoundaryVisibility();
@@ -2478,11 +2928,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
+
                 <button
                     class="toggle ${
-                        enabled
-                            ? "on"
-                            : ""
+                        enabled ? "on" : ""
                     }"
                     data-layer-toggle="${key}"
                 ></button>
@@ -2569,9 +3018,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     <p>
                         ParcelScope Idaho is a public-data
-                        property research tool designed to make
-                        it easier to explore property information
-                        across Idaho.
+                        property research tool for exploring
+                        property parcels and available public
+                        property information across Idaho.
                     </p>
 
                 </div>
@@ -2586,16 +3035,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     <ul>
 
                         <li>
-                            Explore Idaho property parcels
-                            on an interactive map.
+                            Explore Idaho property parcels.
                         </li>
 
                         <li>
-                            View property boundaries.
+                            View parcel boundaries.
                         </li>
 
                         <li>
-                            Select individual parcels.
+                            Select individual properties.
                         </li>
 
                         <li>
@@ -2604,12 +3052,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         </li>
 
                         <li>
-                            View available ownership and
-                            property information.
+                            View available property information.
                         </li>
 
                         <li>
-                            Explore county boundaries.
+                            Explore counties.
                         </li>
 
                         <li>
@@ -2624,63 +3071,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="page-section">
 
                     <h2>
-                        Data & Accuracy
+                        Accuracy
                     </h2>
 
                     <p>
-                        ParcelScope uses publicly available
-                        GIS and property information from
-                        Idaho public GIS sources.
-                    </p>
-
-                    <p>
-                        Property information may change as
-                        counties update their records.
                         ParcelScope displays information from
-                        those sources and does not independently
-                        verify the underlying records.
-                    </p>
-
-                </div>
-
-
-                <div class="page-section">
-
-                    <h2>
-                        Map Information
-                    </h2>
-
-                    <p>
-                        Satellite imagery:
-                        Esri World Imagery
-                    </p>
-
-                    <p>
-                        Standard map:
-                        OpenStreetMap
-                    </p>
-
-                    <p>
-                        Boundary data:
-                        Idaho Transportation Department
-                    </p>
-
-                </div>
-
-
-                <div class="page-section">
-
-                    <h2>
-                        Important Notice
-                    </h2>
-
-                    <p>
-                        ParcelScope is a property research
-                        interface and is not a county assessor.
-                        Information shown by the application
-                        should be verified with the appropriate
-                        official government agency when an
-                        official record is required.
+                        public GIS sources and does not
+                        independently verify the underlying
+                        records.
                     </p>
 
                 </div>
@@ -2722,7 +3120,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
-        return String(value).trim();
+
+        return String(
+            value
+        ).trim();
 
     }
 
@@ -2734,26 +3135,26 @@ document.addEventListener("DOMContentLoaded", () => {
         return String(
             value ?? ""
         )
-            .replaceAll(
-                "&",
-                "&amp;"
-            )
-            .replaceAll(
-                "<",
-                "&lt;"
-            )
-            .replaceAll(
-                ">",
-                "&gt;"
-            )
-            .replaceAll(
-                '"',
-                "&quot;"
-            )
-            .replaceAll(
-                "'",
-                "&#039;"
-            );
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 
     }
 
@@ -2762,8 +3163,12 @@ document.addEventListener("DOMContentLoaded", () => {
         text
     ) {
 
-        mapStatusText.textContent =
-            text;
+        if (mapStatusText) {
+
+            mapStatusText.textContent =
+                text;
+
+        }
 
     }
 
@@ -2787,12 +3192,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadBoundaryLayers();
 
-
-    /*
-     * Load parcel data when the app opens.
-     * It will wait until the user zooms in enough
-     * to avoid downloading the entire state's parcels.
-     */
 
     loadParcels();
 
