@@ -11,10 +11,7 @@
 
     <title>ParcelScope Idaho</title>
 
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+    <link rel="stylesheet" href="style.css">
 
     <link
         rel="stylesheet"
@@ -26,9 +23,7 @@
 
     <main id="map"></main>
 
-
     <!-- TOP BAR -->
-
     <header class="topbar">
 
         <button
@@ -37,12 +32,9 @@
             aria-label="Open navigation"
         >
             <svg viewBox="0 0 24 24">
-                <path d="M4 6h16"/>
-                <path d="M4 12h16"/>
-                <path d="M4 18h16"/>
+                <path d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
         </button>
-
 
         <div class="brand">
 
@@ -68,7 +60,6 @@
 
         </div>
 
-
         <!-- SEARCH -->
 
         <div class="search-container">
@@ -77,14 +68,9 @@
                 class="search-icon"
                 viewBox="0 0 24 24"
             >
-                <circle
-                    cx="11"
-                    cy="11"
-                    r="6.5"
-                />
+                <circle cx="11" cy="11" r="6.5"/>
                 <path d="M16 16l5 5"/>
             </svg>
-
 
             <input
                 id="searchInput"
@@ -92,7 +78,6 @@
                 placeholder="Search owner, address, or parcel"
                 autocomplete="off"
             >
-
 
             <button
                 id="searchButton"
@@ -108,10 +93,7 @@
 
     <!-- SIDE MENU -->
 
-    <aside
-        id="sideMenu"
-        class="side-menu"
-    >
+    <aside id="sideMenu" class="side-menu">
 
         <div class="menu-header">
 
@@ -127,11 +109,9 @@
 
             </div>
 
-
             <button
                 id="closeMenu"
                 class="close-button"
-                aria-label="Close menu"
             >
 
                 <svg viewBox="0 0 24 24">
@@ -152,7 +132,6 @@
                 NAVIGATION
             </div>
 
-
             <button class="menu-item active">
 
                 <svg viewBox="0 0 24 24">
@@ -169,11 +148,7 @@
             <button class="menu-item">
 
                 <svg viewBox="0 0 24 24">
-                    <circle
-                        cx="11"
-                        cy="11"
-                        r="6.5"
-                    />
+                    <circle cx="11" cy="11" r="6.5"/>
                     <path d="M16 16l5 5"/>
                 </svg>
 
@@ -220,7 +195,6 @@
                 DATA
             </div>
 
-
             <button class="menu-item">
 
                 <svg viewBox="0 0 24 24">
@@ -261,11 +235,7 @@
             <button class="menu-item">
 
                 <svg viewBox="0 0 24 24">
-                    <circle
-                        cx="12"
-                        cy="12"
-                        r="3"
-                    />
+                    <circle cx="12" cy="12" r="3"/>
                     <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.1h-2.6v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1A1.7 1.7 0 0 0 8 15a1.7 1.7 0 0 0-1.5-1H6v-2.6h.5A1.7 1.7 0 0 0 8 10a1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1V14h-.1a1.7 1.7 0 0 0-1.5 1z"/>
                 </svg>
 
@@ -277,17 +247,9 @@
             <button class="menu-item">
 
                 <svg viewBox="0 0 24 24">
-                    <circle
-                        cx="12"
-                        cy="12"
-                        r="9"
-                    />
+                    <circle cx="12" cy="12" r="9"/>
                     <path d="M12 10v6"/>
-                    <circle
-                        cx="12"
-                        cy="7"
-                        r=".7"
-                    />
+                    <circle cx="12" cy="7" r=".7"/>
                 </svg>
 
                 <span>About</span>
@@ -296,6 +258,8 @@
 
         </div>
 
+
+        <!-- FOOTER -->
 
         <div class="menu-footer">
 
@@ -339,11 +303,9 @@
 
             </div>
 
-
             <button
                 id="closeProperty"
                 class="close-button"
-                aria-label="Close property"
             >
 
                 <svg viewBox="0 0 24 24">
@@ -359,7 +321,7 @@
         <div id="propertyContent">
 
             <p class="empty-message">
-                Select a parcel on the map to view
+                Select a property on the map to view
                 available public information.
             </p>
 
@@ -383,15 +345,15 @@
                     PROPERTY SEARCH
                 </div>
 
-                <h2>Results</h2>
+                <h2>
+                    Results
+                </h2>
 
             </div>
-
 
             <button
                 id="closeResults"
                 class="close-button"
-                aria-label="Close search results"
             >
 
                 <svg viewBox="0 0 24 24">
@@ -409,7 +371,7 @@
     </section>
 
 
-    <!-- STATUS -->
+    <!-- MAP STATUS -->
 
     <div
         id="mapStatus"
@@ -419,7 +381,7 @@
         <span class="status-dot"></span>
 
         <span>
-            Loading Idaho parcel data
+            Loading map
         </span>
 
     </div>
@@ -429,13 +391,6 @@
 
     <script
         src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    ></script>
-
-
-    <!-- ESRI LEAFLET -->
-
-    <script
-        src="https://unpkg.com/esri-leaflet@3.0.16/dist/esri-leaflet.js"
     ></script>
 
 
