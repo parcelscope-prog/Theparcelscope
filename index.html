@@ -3,492 +3,178 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Idaho Property Map</title>
-  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
-  <style>
-    :root {
-      --charcoal: #1c1c1c;
-      --charcoal-2: #2a2a2a;
-      --navy: #0a1f44;
-      --navy-2: #1a365d;
-      --gray: #4a4a4a;
-      --gray-light: #8a8a8a;
-      --white: #f5f5f5;
-      --neon: #00e5ff;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body, html { height: 100%; font-family: system-ui, -apple-system, sans-serif; background: var(--charcoal); color: var(--white); overflow: hidden; }
-    #map { position: absolute; inset: 0; }
-
-    /* Top bar */
-    .topbar {
-      position: absolute; top: 0; left: 0; right: 0; z-index: 20;
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 16px; background: linear-gradient(to bottom, rgba(28,28,28,0.95), rgba(28,28,28,0.7));
-    }
-    .menu-btn {
-      width: 42px; height: 42px; border: none; border-radius: 8px;
-      background: var(--navy); color: white; font-size: 20px; cursor: pointer;
-    }
-    .search-wrap {
-      flex: 1; display: flex; align-items: center; background: var(--charcoal-2);
-      border: 1px solid var(--gray); border-radius: 10px; padding: 0 14px; height: 42px;
-    }
-    .search-wrap svg { width: 18px; height: 18px; fill: white; margin-right: 10px; flex-shrink: 0; }
-    .search-wrap input {
-      flex: 1; background: transparent; border: none; outline: none;
-      color: white; font-size: 15px;
-    }
-    .search-wrap input::placeholder { color: var(--gray-light); }
-
-    /* Side menu */
-    .side-menu {
-      position: absolute; top: 0; left: 0; width: 300px; height: 100%;
-      background: var(--charcoal); z-index: 30; transform: translateX(-100%);
-      transition: transform 0.25s ease; border-right: 1px solid var(--gray);
-      overflow-y: auto; padding: 70px 0 20px;
-    }
-    .side-menu.open { transform: translateX(0); }
-    .cat { padding: 18px 20px 6px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--gray-light); }
-    .menu-item {
-      display: block; width: 100%; padding: 13px 20px; background: none; border: none;
-      color: white; text-align: left; font-size: 15px; cursor: pointer;
-    }
-    .menu-item:hover { background: var(--navy); }
-
-    /* Full-screen panels */
-    .panel {
-      position: absolute; inset: 0; background: var(--charcoal); z-index: 40;
-      display: none; flex-direction: column;
-    }
-    .panel.open { display: flex; }
-    .panel-header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 16px 20px; background: var(--navy); border-bottom: 1px solid var(--gray);
-    }
-    .panel-header h2 { font-size: 18px; font-weight: 600; }
-    .close-x {
-      width: 36px; height: 36px; border: none; background: transparent;
-      color: white; font-size: 24px; cursor: pointer; line-height: 1;
-    }
-    .panel-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
-    .panel-search {
-      width: 100%; padding: 12px 14px; margin-bottom: 16px;
-      background: var(--charcoal-2); border: 1px solid var(--gray);
-      border-radius: 8px; color: white; font-size: 15px;
-    }
-    .county-item, .saved-item {
-      padding: 14px 0; border-bottom: 1px solid var(--gray);
-      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-    }
-    .county-item:hover { color: var(--neon); }
-    .saved-item .info { flex: 1; }
-    .saved-item .remove {
-      background: none; border: none; color: var(--gray-light); font-size: 20px; cursor: pointer;
-    }
-    .empty-msg { color: var(--gray-light); text-align: center; margin-top: 40px; line-height: 1.5; }
-
-    /* Settings toggles */
-    .toggle-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 14px 0; border-bottom: 1px solid var(--gray);
-    }
-    .toggle {
-      width: 48px; height: 26px; background: var(--gray); border-radius: 13px;
-      position: relative; cursor: pointer; transition: 0.2s;
-    }
-    .toggle.on { background: var(--neon); }
-    .toggle::after {
-      content: ''; position: absolute; width: 20px; height: 20px; background: white;
-      border-radius: 50%; top: 3px; left: 3px; transition: 0.2s;
-    }
-    .toggle.on::after { left: 25px; }
-    .radio-group { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-    .radio-group label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
-
-    /* Property popup / info card */
-    .info-card {
-      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-      width: min(420px, 92vw); background: var(--charcoal-2); border: 1px solid var(--navy-2);
-      border-radius: 12px; padding: 18px; z-index: 25; display: none;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-    }
-    .info-card.visible { display: block; }
-    .info-card h3 { font-size: 16px; margin-bottom: 8px; color: var(--neon); }
-    .info-card p { font-size: 14px; color: var(--gray-light); margin: 4px 0; }
-    .info-actions { display: flex; gap: 10px; margin-top: 14px; }
-    .btn {
-      flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;
-    }
-    .btn-primary { background: var(--navy); color: white; }
-    .btn-secondary { background: var(--gray); color: white; }
-
-    .maplibregl-ctrl-attrib { font-size: 10px !important; }
-  </style>
+  <title>ParcelScope - Idaho Property Information Map</title>
+  
+  <!-- MapLibre GL JS CSS -->
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
+  <!-- Map Container -->
   <div id="map"></div>
 
-  <!-- Top bar -->
-  <div class="topbar">
-    <button class="menu-btn" id="menuBtn">☰</button>
-    <div class="search-wrap">
-      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-      <input type="text" id="mainSearch" placeholder="Try searching for address, name, company…" />
+  <!-- Top Search Bar Overlay -->
+  <div class="top-bar">
+    <button class="menu-btn" id="openMenu" aria-label="Open Menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+    <div class="search-container">
+      <svg class="search-icon" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" class="search-input" placeholder="Try searching for address, name, company..." />
     </div>
   </div>
 
-  <!-- Side Menu -->
+  <!-- Left Navigation Drawer -->
+  <div class="backdrop" id="backdrop"></div>
   <div class="side-menu" id="sideMenu">
-    <div class="cat">Property</div>
-    <button class="menu-item" data-panel="counties">Counties</button>
-    <button class="menu-item" data-panel="saved">Saved Properties</button>
-
-    <div class="cat">Data</div>
-    <button class="menu-item" data-panel="sources">Data Sources</button>
-    <button class="menu-item" data-panel="refresh">Refresh History</button>
-
-    <div class="cat">System</div>
-    <button class="menu-item" data-panel="settings">Settings</button>
-    <button class="menu-item" data-panel="about">About</button>
-  </div>
-
-  <!-- Counties Panel -->
-  <div class="panel" id="countiesPanel">
-    <div class="panel-header">
-      <h2>Counties</h2>
-      <button class="close-x" data-close>×</button>
+    <div class="menu-header">
+      <span class="brand-title">ParcelScope</span>
+      <button class="close-btn" id="closeMenu">&times;</button>
     </div>
-    <div class="panel-body">
-      <input class="panel-search" id="countySearch" placeholder="Search Idaho counties…" />
-      <div id="countyList"></div>
-    </div>
-  </div>
 
-  <!-- Saved Properties Panel -->
-  <div class="panel" id="savedPanel">
-    <div class="panel-header">
-      <h2>Saved Properties</h2>
-      <button class="close-x" data-close>×</button>
+    <div class="menu-category">
+      <span class="category-label">Property</span>
+      <button class="menu-item-btn" id="btnCounties">Counties</button>
+      <button class="menu-item-btn" id="btnSaved">Saved Properties</button>
     </div>
-    <div class="panel-body" id="savedList">
-      <p class="empty-msg">Saved properties will appear here once you save a property.</p>
+
+    <div class="menu-category">
+      <span class="category-label">Data</span>
+      <button class="menu-item-btn" id="btnSources">Data Sources</button>
+      <button class="menu-item-btn" id="btnRefresh">Refresh History</button>
+    </div>
+
+    <div class="menu-category">
+      <span class="category-label">System</span>
+      <button class="menu-item-btn" id="btnSettings">Settings</button>
+      <button class="menu-item-btn" id="btnAbout">About</button>
     </div>
   </div>
 
-  <!-- Data Sources Panel -->
-  <div class="panel" id="sourcesPanel">
-    <div class="panel-header">
-      <h2>Data Sources</h2>
-      <button class="close-x" data-close>×</button>
+  <!-- Parcel Details Floating Card -->
+  <div class="parcel-card" id="parcelCard">
+    <div class="parcel-card-header">
+      <span class="parcel-card-title">Parcel Details</span>
+      <button class="close-btn" id="closeParcelCard">&times;</button>
     </div>
-    <div class="panel-body" style="line-height:1.6; font-size:14px;">
-      <p><strong>Satellite & Aerial Imagery</strong><br>
-      • Esri World Imagery (Maxar, Earthstar Geographics, GIS User Community)<br>
-      • USDA NAIP (National Agriculture Imagery Program) – high-resolution aerial for the U.S.</p>
-      <p><strong>Street Map</strong><br>
-      OpenFreeMap Dark (OpenStreetMap data)</p>
-      <p><strong>Parcel Boundaries</strong><br>
-      Idaho Department of Water Resources Reference Parcels + individual county assessor GIS services (Ada, Canyon, etc.)</p>
-      <p><strong>County & State Boundaries</strong><br>
-      U.S. Census Bureau TIGER/Line</p>
-      <p><strong>Addresses, Parcel IDs, Owner Names, Assessed Values & Taxes</strong><br>
-      Official county assessor and treasurer portals (Public Access Now and county-specific systems). Owner names follow Idaho public records rules (Idaho Code 74-120).</p>
-      <p style="margin-top:20px; color:var(--gray-light);">All data is for informational purposes. Always verify critical information with the appropriate county office.</p>
+    <div class="parcel-detail-row">
+      <span class="parcel-detail-label">Parcel ID</span>
+      <span id="cardParcelId">Select a parcel</span>
+    </div>
+    <div class="parcel-detail-row">
+      <span class="parcel-detail-label">Owner / Entity Name</span>
+      <span id="cardOwnerName">--</span>
+    </div>
+    <div class="parcel-detail-row">
+      <span class="parcel-detail-label">Situs Address</span>
+      <span id="cardAddress">--</span>
+    </div>
+    <div class="parcel-detail-row">
+      <span class="parcel-detail-label">Assessed Value / Taxes</span>
+      <span id="cardTaxes">--</span>
+    </div>
+    <button class="menu-item-btn" id="savePropertyBtn" style="margin-top: 4px;">Save Property</button>
+    <a href="https://idaho-assessors.org" target="_blank" class="tax-btn">Taxes Info & Valuation Portal</a>
+  </div>
+
+  <!-- Counties Modal -->
+  <div class="full-screen-modal" id="modalCounties">
+    <div class="modal-header">
+      <span class="modal-title">Idaho Counties</span>
+      <button class="modal-close-btn">&times;</button>
+    </div>
+    <input type="text" class="county-search" id="countySearchInput" placeholder="Search Idaho counties..." />
+    <ul class="county-list" id="countyList"></ul>
+  </div>
+
+  <!-- Saved Properties Modal -->
+  <div class="full-screen-modal" id="modalSaved">
+    <div class="modal-header">
+      <span class="modal-title">Saved Properties</span>
+      <button class="modal-close-btn">&times;</button>
+    </div>
+    <div id="savedPropertiesContainer">
+      <p id="emptySavedMsg" style="color: var(--text-muted);">Saved properties will appear here once you save a property.</p>
+      <div id="savedList" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
     </div>
   </div>
 
-  <!-- Refresh History Panel -->
-  <div class="panel" id="refreshPanel">
-    <div class="panel-header">
-      <h2>Refresh History</h2>
-      <button class="close-x" data-close>×</button>
+  <!-- Data Sources Modal -->
+  <div class="full-screen-modal" id="modalSources">
+    <div class="modal-header">
+      <span class="modal-title">Data Sources</span>
+      <button class="modal-close-btn">&times;</button>
     </div>
-    <div class="panel-body">
-      <p>Last refreshed: <span id="lastRefresh">Never</span></p>
-      <button class="btn btn-primary" style="margin-top:20px; width:100%;" id="refreshBtn">Refresh</button>
+    <div class="panel-content">
+      <p>This website uses the following public data services:</p>
+      <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+        <li><strong>OpenFreeMap Dark Basemap:</strong> Free tile service based on OpenStreetMap.</li>
+        <li><strong>Satellite & Imagery:</strong> Esri World Imagery & USDA NAIP Imagery.</li>
+        <li><strong>Parcel Layers & Data:</strong> IDWR Reference Parcels & County ArcGIS endpoints.</li>
+        <li><strong>Tax & Assessment Portals:</strong> Public Access Now & County Assessor/Treasurer records.</li>
+      </ul>
+      <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Under Idaho Code 74-120, owner names may be withheld on public layers. When names are unlisted, the situs address is provided as fallback context.</p>
     </div>
   </div>
 
-  <!-- Settings Panel -->
-  <div class="panel" id="settingsPanel">
-    <div class="panel-header">
-      <h2>Settings</h2>
-      <button class="close-x" data-close>×</button>
+  <!-- Refresh History Modal -->
+  <div class="full-screen-modal" id="modalRefresh">
+    <div class="modal-header">
+      <span class="modal-title">Refresh History</span>
+      <button class="modal-close-btn">&times;</button>
     </div>
-    <div class="panel-body">
+    <div class="panel-content">
+      <p>Last time site data was refreshed: <span id="lastRefreshTime">Today</span></p>
+      <button class="menu-item-btn" id="executeRefreshBtn" style="width: max-content; margin-top: 10px;">Refresh Page</button>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="full-screen-modal" id="modalSettings">
+    <div class="modal-header">
+      <span class="modal-title">Settings</span>
+      <button class="modal-close-btn">&times;</button>
+    </div>
+    <div class="panel-content">
       <div class="toggle-row">
-        <span>Street Map / Satellite</span>
-        <div class="toggle" id="toggleImagery"></div>
-      </div>
-      <div id="satOptions" style="display:none; margin:10px 0 20px 0;">
-        <div class="radio-group">
-          <label><input type="radio" name="sat" value="esri" checked> Esri World Imagery</label>
-          <label><input type="radio" name="sat" value="naip"> USDA NAIP</label>
-        </div>
+        <span>Street Map Layer (OpenFreeMap Dark)</span>
+        <input type="radio" name="basemap" id="radioStreet" />
       </div>
       <div class="toggle-row">
-        <span>County Boundaries</span>
-        <div class="toggle on" id="toggleCounties"></div>
+        <span>Satellite Layer (Esri World Imagery)</span>
+        <input type="radio" name="basemap" id="radioEsri" checked />
       </div>
       <div class="toggle-row">
-        <span>Other State Boundaries</span>
-        <div class="toggle" id="toggleOtherStates"></div>
+        <span>Satellite Layer (USDA NAIP)</span>
+        <input type="radio" name="basemap" id="radioNaip" />
       </div>
       <div class="toggle-row">
-        <span>Parcel Boundaries</span>
-        <div class="toggle on" id="toggleParcels"></div>
+        <span>Parcel Boundaries (White Outlines)</span>
+        <input type="checkbox" id="toggleParcels" checked />
       </div>
     </div>
   </div>
 
-  <!-- About Panel -->
-  <div class="panel" id="aboutPanel">
-    <div class="panel-header">
-      <h2>About</h2>
-      <button class="close-x" data-close>×</button>
+  <!-- About Modal -->
+  <div class="full-screen-modal" id="modalAbout">
+    <div class="modal-header">
+      <span class="modal-title">About ParcelScope</span>
+      <button class="modal-close-btn">&times;</button>
     </div>
-    <div class="panel-body" style="line-height:1.6;">
-      <p>This website is designed to provide easy access to property information across the state of Idaho using high-resolution satellite imagery combined with accurate GIS boundary data.</p>
-      <p style="margin-top:12px;">Users can explore parcel boundaries, county boundaries, and the state boundary of Idaho on an interactive map. The platform allows searching by address, name, or company, saving properties of interest, and viewing key property details such as parcel ID, owner name, address, assessed value, and property taxes.</p>
-      <p style="margin-top:12px;">The goal is to offer a clear, modern, and efficient tool for anyone needing to view and research land and property information in Idaho.</p>
+    <div class="panel-content">
+      <p>ParcelScope provides statewide property details and 3D globe spatial maps across Idaho.</p>
     </div>
   </div>
 
-  <!-- Property Info Card -->
-  <div class="info-card" id="infoCard">
-    <h3 id="infoName">—</h3>
-    <p id="infoAddress">—</p>
-    <p id="infoParcel">Parcel: —</p>
-    <p id="infoOwner">Owner: —</p>
-    <p id="infoValue">Assessed Value: —</p>
-    <p id="infoTax">Property Tax: —</p>
-    <div class="info-actions">
-      <button class="btn btn-primary" id="savePropBtn">Save Property</button>
-      <button class="btn btn-secondary" id="taxesBtn">Taxes Info</button>
-    </div>
-  </div>
-
-  <script>
-    // ========== DATA ==========
-    const IDAHO_COUNTIES = [
-      "Ada","Adams","Bannock","Bear Lake","Benewah","Bingham","Blaine","Boise",
-      "Bonner","Bonneville","Boundary","Butte","Camas","Canyon","Caribou","Cassia",
-      "Clark","Clearwater","Custer","Elmore","Franklin","Fremont","Gem","Gooding",
-      "Idaho","Jefferson","Jerome","Kootenai","Latah","Lemhi","Lewis","Lincoln",
-      "Madison","Minidoka","Nez Perce","Oneida","Owyhee","Payette","Power",
-      "Shoshone","Teton","Twin Falls","Valley","Washington"
-    ].sort();
-
-    let savedProperties = JSON.parse(localStorage.getItem("idahoSaved") || "[]");
-    let currentParcel = null;
-
-    // ========== MAP ==========
-    const map = new maplibregl.Map({
-      container: "map",
-      style: {
-        version: 8,
-        sources: {
-          "osm-dark": {
-            type: "raster",
-            tiles: ["https://tiles.openfreemap.org/styles/dark/{z}/{x}/{y}.png"],
-            tileSize: 256,
-            attribution: "© OpenFreeMap © OpenStreetMap"
-          },
-          "esri": {
-            type: "raster",
-            tiles: ["https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
-            tileSize: 256,
-            attribution: "Esri, Maxar, Earthstar Geographics, GIS User Community"
-          },
-          "naip": {
-            type: "raster",
-            tiles: ["https://gis.apfo.usda.gov/arcgis/rest/services/NAIP/ImageServer/tile/{z}/{y}/{x}"],
-            tileSize: 256,
-            attribution: "USDA NAIP"
-          }
-        },
-        layers: [
-          { id: "base", type: "raster", source: "esri" }
-        ]
-      },
-      center: [-114.742, 44.068],
-      zoom: 6.2,
-      maxBounds: [[-118.5, 41.5], [-110.5, 49.5]]
-    });
-
-    map.addControl(new maplibregl.NavigationControl(), "bottom-right");
-
-    // Simple state boundary (approximate for demo – replace with full GeoJSON in production)
-    map.on("load", () => {
-      // In production load real TIGER GeoJSON or ArcGIS FeatureServer
-      // Example structure for counties / parcels would be added here via FeatureServer queries
-      console.log("Map ready – add real parcel/county layers via public ArcGIS services");
-    });
-
-    // ========== UI LOGIC ==========
-    const sideMenu = document.getElementById("sideMenu");
-    const menuBtn = document.getElementById("menuBtn");
-
-    menuBtn.onclick = () => sideMenu.classList.toggle("open");
-
-    // Close everything on map click
-    map.on("click", () => {
-      sideMenu.classList.remove("open");
-      document.querySelectorAll(".panel").forEach(p => p.classList.remove("open"));
-      document.getElementById("infoCard").classList.remove("visible");
-    });
-
-    // Open panels
-    document.querySelectorAll(".menu-item").forEach(btn => {
-      btn.onclick = () => {
-        const id = btn.dataset.panel + "Panel";
-        sideMenu.classList.remove("open");
-        document.getElementById(id).classList.add("open");
-        if (id === "countiesPanel") renderCounties();
-        if (id === "savedPanel") renderSaved();
-        if (id === "refreshPanel") {
-          document.getElementById("lastRefresh").textContent =
-            localStorage.getItem("lastRefresh") || "Never";
-        }
-      };
-    });
-
-    document.querySelectorAll("[data-close]").forEach(btn => {
-      btn.onclick = () => btn.closest(".panel").classList.remove("open");
-    });
-
-    // Counties list
-    function renderCounties(filter = "") {
-      const list = document.getElementById("countyList");
-      list.innerHTML = "";
-      IDAHO_COUNTIES.filter(c => c.toLowerCase().includes(filter.toLowerCase()))
-        .forEach(c => {
-          const div = document.createElement("div");
-          div.className = "county-item";
-          div.textContent = c + " County";
-          div.onclick = () => {
-            // Zoom to county (in production use real bounds)
-            map.flyTo({ center: [-114.742, 44.068], zoom: 8 });
-            document.getElementById("countiesPanel").classList.remove("open");
-          };
-          list.appendChild(div);
-        });
-    }
-    document.getElementById("countySearch").oninput = e => renderCounties(e.target.value);
-
-    // Saved properties
-    function renderSaved() {
-      const list = document.getElementById("savedList");
-      if (!savedProperties.length) {
-        list.innerHTML = `<p class="empty-msg">Saved properties will appear here once you save a property.</p>`;
-        return;
-      }
-      list.innerHTML = "";
-      savedProperties.forEach((p, i) => {
-        const div = document.createElement("div");
-        div.className = "saved-item";
-        div.innerHTML = `
-          <div class="info">
-            <strong>${p.name}</strong><br>
-            <span style="font-size:13px;color:var(--gray-light)">${p.owner || "—"}</span><br>
-            <span style="font-size:13px;color:var(--gray-light)">${p.address || "—"}</span>
-          </div>
-          <button class="remove" data-i="${i}">×</button>`;
-        list.appendChild(div);
-      });
-      list.querySelectorAll(".remove").forEach(btn => {
-        btn.onclick = e => {
-          e.stopPropagation();
-          savedProperties.splice(+btn.dataset.i, 1);
-          localStorage.setItem("idahoSaved", JSON.stringify(savedProperties));
-          renderSaved();
-        };
-      });
-    }
-
-    // Settings toggles
-    function setupToggle(id, cb) {
-      const el = document.getElementById(id);
-      el.onclick = () => {
-        el.classList.toggle("on");
-        cb(el.classList.contains("on"));
-      };
-    }
-
-    setupToggle("toggleImagery", on => {
-      document.getElementById("satOptions").style.display = on ? "none" : "block";
-      // Switch base layer logic here
-    });
-    setupToggle("toggleCounties", on => console.log("Counties", on));
-    setupToggle("toggleOtherStates", on => console.log("Other states", on));
-    setupToggle("toggleParcels", on => console.log("Parcels", on));
-
-    document.getElementById("refreshBtn").onclick = () => {
-      const now = new Date().toLocaleString();
-      localStorage.setItem("lastRefresh", now);
-      document.getElementById("lastRefresh").textContent = now;
-      location.reload();
-    };
-
-    // Name preference logic (as requested)
-    function chooseDisplayName(name, address) {
-      if (name && name.trim() && name.toLowerCase() !== "unknown" && name.toLowerCase() !== "n/a") {
-        return name.trim();
-      }
-      // Double-check: only fall back to address if no usable name
-      return address || "Unknown Property";
-    }
-
-    // Example: when a parcel is selected (hook this to real click handler)
-    function showParcelInfo(data) {
-      currentParcel = data;
-      const displayName = chooseDisplayName(data.ownerName || data.name, data.address);
-      document.getElementById("infoName").textContent = displayName;
-      document.getElementById("infoAddress").textContent = data.address || "—";
-      document.getElementById("infoParcel").textContent = "Parcel: " + (data.parcelId || "—");
-      document.getElementById("infoOwner").textContent = "Owner: " + (data.ownerName || "—");
-      document.getElementById("infoValue").textContent = "Assessed Value: " + (data.assessedValue || "See county assessor");
-      document.getElementById("infoTax").textContent = "Property Tax: " + (data.tax || "See county treasurer");
-      document.getElementById("infoCard").classList.add("visible");
-    }
-
-    document.getElementById("savePropBtn").onclick = () => {
-      if (!currentParcel) return;
-      const entry = {
-        name: chooseDisplayName(currentParcel.ownerName, currentParcel.address),
-        owner: currentParcel.ownerName || "—",
-        address: currentParcel.address || "—",
-        parcelId: currentParcel.parcelId
-      };
-      // Simple duplicate filter
-      const exists = savedProperties.some(p => p.parcelId === entry.parcelId);
-      if (!exists) {
-        savedProperties.unshift(entry);
-        localStorage.setItem("idahoSaved", JSON.stringify(savedProperties));
-      }
-      alert("Property saved");
-    };
-
-    document.getElementById("taxesBtn").onclick = () => {
-      // Best practice: deep-link to the correct county assessor/treasurer when possible
-      // Many Idaho counties use Public Access Now
-      const county = (currentParcel && currentParcel.county) || "Ada";
-      const urls = {
-        "Ada": "https://adacounty.id.gov/assessor/property-assessments-records/assessors-property-records/",
-        "Canyon": "https://id-canyon.publicaccessnow.com/Assessor/PropertySearch.aspx",
-        "Kootenai": "https://id-kootenai.publicaccessnow.com/Assessor/PropertySearch.aspx"
-        // Add more as needed
-      };
-      window.open(urls[county] || "https://tax.idaho.gov/taxes/property/", "_blank");
-    };
-
-    // Demo: click anywhere on map for now shows a sample card (replace with real parcel query)
-    map.on("click", e => {
-      // In production: query ArcGIS FeatureServer or WFS by point
-      // Example call would go here
-    });
-  </script>
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
