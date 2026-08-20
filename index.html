@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>ParcelScope Idaho</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <!-- Leaflet -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         MAP
+    ====================================================== -->
+
+    <main id="map"></main>
+
+
+    <!-- =====================================================
+         TOP NAVIGATION
+    ====================================================== -->
+
+    <header class="topbar">
+
+
+        <button
+            id="menuButton"
+            class="icon-button"
+            aria-label="Open navigation"
+        >
+
+            <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+            >
+
+                <path d="M4 6h16"/>
+                <path d="M4 12h16"/>
+                <path d="M4 18h16"/>
+
+            </svg>
+
+        </button>
+
+
+        <div class="brand">
+
+
+            <div class="brand-mark">
+
+                <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+
+                    <path d="M4 6.5L12 3l8 3.5v11L12 21l-8-3.5z"/>
+                    <path d="M12 3v18"/>
+                    <path d="M4 6.5L12 10l8-3.5"/>
+
+                </svg>
+
+            </div>
+
+
+            <div class="brand-text">
+
+                <div class="brand-name">
+                    ParcelScope
+                </div>
+
+                <div class="brand-location">
+                    IDAHO
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+             SEARCH
+        ================================================== -->
+
+        <div class="search-container">
+
+
+            <svg
+                class="search-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+            >
+
+                <circle
+                    cx="11"
+                    cy="11"
+                    r="6.5"
+                />
+
+                <path d="M16 16l5 5"/>
+
+            </svg>
+
+
+            <input
+                id="searchInput"
+                type="search"
+                placeholder="Search owner, address, or parcel"
+                autocomplete="off"
+            >
+
+
+            <button
+                id="searchButton"
+                class="search-button"
+            >
+                Search
+            </button>
+
+
+        </div>
+
+
+    </header>
+
+
+    <!-- =====================================================
+         SIDE MENU
+    ====================================================== -->
+
+    <aside
+        id="sideMenu"
+        class="side-menu"
+    >
+
+
+        <div class="menu-header">
+
+
+            <div>
+
+                <div class="menu-title">
+                    ParcelScope
+                </div>
+
+                <div class="menu-subtitle">
+                    Idaho Property Research
+                </div>
+
+            </div>
+
+
+            <button
+                id="closeMenu"
+                class="close-button"
+                aria-label="Close menu"
+            >
+
+                <svg viewBox="0 0 24 24">
+
+                    <path d="M6 6l12 12"/>
+                    <path d="M18 6L6 18"/>
+
+                </svg>
+
+            </button>
+
+
+        </div>
+
+
+        <!-- =================================================
+             NAVIGATION
+        ================================================== -->
+
+        <div class="menu-section">
+
+
+            <div class="menu-section-title">
+                NAVIGATION
+            </div>
+
+
+            <button class="menu-item active">
+
+                <svg viewBox="0 0 24 24">
+
+                    <path d="M3 11l9-8 9 8"/>
+                    <path d="M5 10v10h14V10"/>
+                    <path d="M9 20v-6h6v6"/>
+
+                </svg>
+
+                <span>
+                    Map
+                </span>
+
+            </button>
+
+
+            <button class="menu-item">
+
+                <svg viewBox="0 0 24 24">
+
+                    <circle
+                        cx="11"
+                        cy="11"
+                        r="6.5"
+                    />
+
+                    <path d="M16 16l5 5"/>
+
+                </svg>
+
+                <span>
+                    Search
+                </span>
+
+            </button>
+
+
+            <button class="menu-item">
+
+                <svg viewBox="0 0 24 24">
+
+                    <path d="M3 11l9-8 9 8"/>
+                    <path d="M5 10v10h14V10"/>
+                    <path d="M9 20v-6h6v6"/>
+
+                </svg>
+
+                <span>
+                    Counties
+                </span>
+
+            </button>
+
+
+            <button class="menu-item">
+
+                <svg viewBox="0 0 24 24">
+
+                    <path d="M6 3h12v18H6z"/>
+                    <path d="M9 7h6"/>
+                    <path d="M9 11h6"/>
+                    <path d="M9 15h4"/>
+
+                </svg>
+
+                <span>
+                    Saved Properties
+                </span>
+
+            </button>
+
+
+        </div>
+
+
+        <!-- =================================================
+             DATA
+        ================================================== -->
+
+        <div class="menu-section">
+
+
+            <div class="menu-section-title">
+                DATA
+            </div>
+
+
+            <button class="menu-item">
+
+                <svg viewBox="0 0 24 24">
+
+                    <path d="M4 5h16v14H4z"/>
+                    <path d="M8 9h8"/>
+                    <path d="M8 13h8"/>
+                    <path d="M8 17h5"/>
+
+                </svg>
+
+                <span>
+                    Data Sources
+                </span>
+
+            </button>
+
+
+            <button class="menu-item">
+
+                <svg viewBox="0 0 24 24">
+
+                    <path d="M12 3a9 9 0 1 0 9 9"/>
+                    <path d="M12 7v5l3 2"/>
+
+                </svg>
+
+                <span>
+                    Update History
+                </span>
+
+            </button>
+
+
+        </div>
+
+
+        <!-- =================================================
+             SYSTEM
+        ================================================== -->
+
+        <div class="menu-section">
+
+
+            <div class="menu-section-title">
+                SYSTEM
+            </div>
+
+
+            <button class="menu-item">
+
+                <svg viewBox="0 0 24 24">
+
+                    <circle
+                        cx="12"
+                        cy="12"
+                        r="3"
+                    />
+
+                    <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5v.1h-2.6v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1A1.7 1.7 0 0 0 8 15a1.7 1.7 0 0 0-1.5-1H6v-2.6h.5A1.7 1.7 0 0 0 8 10a1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1 1.5V5h2.6v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1h.1V14h-.1a1.7 1.7 0 0 0-1.5 1z"/>
+
+                </svg>
+
+                <span>
+                    Settings
+                </span>
+
+            </button>
+
+
+            <button class="menu-item">
+
+                <svg viewBox="0 0 24 24">
+
+                    <circle
+                        cx="12"
+                        cy="12"
+                        r="9"
+                    />
+
+                    <path d="M12 10v6"/>
+
+                    <circle
+                        cx="12"
+                        cy="7"
+                        r=".7"
+                    />
+
+                </svg>
+
+                <span>
+                    About
+                </span>
+
+            </button>
+
+
+        </div>
+
+
+        <!-- =================================================
+             FOOTER
+        ================================================== -->
+
+        <div class="menu-footer">
+
+
+            <div class="status-dot"></div>
+
+
+            <div>
+
+                <div class="status-title">
+                    ParcelScope Online
+                </div>
+
+                <div class="status-text">
+                    Public data research system
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+    </aside>
+
+
+    <!-- =====================================================
+         PROPERTY PANEL
+    ====================================================== -->
+
+    <section
+        id="propertyPanel"
+        class="property-panel"
+    >
+
+
+        <div class="property-header">
+
+
+            <div>
+
+                <div class="property-kicker">
+                    PROPERTY RECORD
+                </div>
+
+                <h2 id="propertyTitle">
+                    Property Information
+                </h2>
+
+            </div>
+
+
+            <button
+                id="closeProperty"
+                class="close-button"
+                aria-label="Close property"
+            >
+
+                <svg viewBox="0 0 24 24">
+
+                    <path d="M6 6l12 12"/>
+                    <path d="M18 6L6 18"/>
+
+                </svg>
+
+            </button>
+
+
+        </div>
+
+
+        <div id="propertyContent">
+
+
+            <p class="empty-message">
+
+                Select a property on the map to view
+                available public information.
+
+            </p>
+
+
+        </div>
+
+
+    </section>
+
+
+    <!-- =====================================================
+         SEARCH RESULTS
+    ====================================================== -->
+
+    <section
+        id="searchResults"
+        class="search-results"
+    >
+
+
+        <div class="results-header">
+
+
+            <div>
+
+                <div class="property-kicker">
+                    PROPERTY SEARCH
+                </div>
+
+                <h2>
+                    Results
+                </h2>
+
+            </div>
+
+
+            <button
+                id="closeResults"
+                class="close-button"
+                aria-label="Close search results"
+            >
+
+                <svg viewBox="0 0 24 24">
+
+                    <path d="M6 6l12 12"/>
+                    <path d="M18 6L6 18"/>
+
+                </svg>
+
+            </button>
+
+
+        </div>
+
+
+        <div id="resultsContent"></div>
+
+
+    </section>
+
+
+    <!-- =====================================================
+         MAP STATUS
+    ====================================================== -->
+
+    <div
+        id="mapStatus"
+        class="map-status"
+    >
+
+        <span class="status-dot"></span>
+
+        <span>
+            Connecting to Idaho parcel data...
+        </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         LEAFLET
+    ====================================================== -->
+
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    ></script>
+
+
+    <!-- =====================================================
+         ESRI LEAFLET
+         
+         Required for the Idaho ArcGIS parcel service.
+    ====================================================== -->
+
+    <script
+        src="https://unpkg.com/esri-leaflet@3.0.16/dist/esri-leaflet.js"
+    ></script>
+
+
+    <!-- =====================================================
+         PARCELSCOPE APPLICATION
+    ====================================================== -->
+
+    <script
+        src="app.js"
+    ></script>
+
+
+</body>
+
+</html>
