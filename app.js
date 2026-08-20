@@ -1,908 +1,1180 @@
 /* =========================================================
    PARCELSCOPE IDAHO
    Version: 5781683
-
-   State parcel source:
-   Idaho Public Parcel Framework
    ========================================================= */
 
 const VERSION = "5781683";
-
-const PARCEL_SERVICE =
-    "https://services1.arcgis.com/CNPdEkvnGl65jCX8/ArcGIS/rest/services/Public_Idaho_Parcels_/FeatureServer/7";
-
-const GEOCODER =
-    "https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates";
-
-let map;
-let parcelLayer = null;
-let selectedProperty = null;
-
-let savedProperties =
-    JSON.parse(localStorage.getItem("parcelscope_saved") || "[]");
-
 
 /* =========================================================
    MAP
    ========================================================= */
 
-function startMap() {
+const map = L.map("map", {
+    center: [44.0682, -114.7420],
+    zoom: 7,
+    zoomControl: true,
+    preferCanvas: true
+});
 
-    map = L.map("map", {
-        zoomControl: true,
-        preferCanvas: true,
-        zoomAnimation: false,
-        fadeAnimation: false,
-        markerZoomAnimation: false
-    }).setView([44.0682, -114.7420], 7);
+/* Normal map */
 
-    L.tileLayer(
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        {
-            maxZoom: 19,
-            attribution:
-                '&copy; OpenStreetMap contributors'
-        }
-    ).addTo(map);
+const streetLayer = L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }
+);
 
-    setStatus("ParcelScope ready");
+/* Satellite */
 
-    setTimeout(() => {
-        map.invalidateSize();
-    }, 100);
-}
+const satelliteLayer = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    {
+        maxZoom: 19,
+        attribution: "Tiles &copy; Esri"
+    }
+);
 
+/* Start with satellite */
+
+satelliteLayer.addTo(map);
+
+/* =========================================================
+   IDAHO PARCEL SERVICE
+   ========================================================= */
+
+const PARCEL_SERVICE =
+    "https://services1.arcgis.com/CNPdEkvnGl65jCX8/ArcGIS/rest/services/Public_Idaho_Parcels_/FeatureServer/7";
+
+const PARCEL_QUERY = `${PARCEL_SERVICE}/query`;
+
+let parcelLayer = null;
+let selectedParcel = null;
+
+/* =========================================================
+   STATE
+   ========================================================= */
+
+let settings = {
+    satellite: true,
+    showParcelLines: true,
+    autoZoom: true
+};
+
+let savedProperties =
+    JSON.parse(localStorage.getItem("parcelscope_saved") || "[]");
+
+/* =========================================================
+   ELEMENTS
+   ========================================================= */
+
+const menuButton =
+    document.getElementById("menuButton");
+
+const closeMenu =
+    document.getElementById("closeMenu");
+
+const sideMenu =
+    document.getElementById("sideMenu");
+
+const propertyPanel =
+    document.getElementById("propertyPanel");
+
+const closeProperty =
+    document.getElementById("closeProperty");
+
+const propertyTitle =
+    document.getElementById("propertyTitle");
+
+const propertyContent =
+    document.getElementById("propertyContent");
+
+const searchResults =
+    document.getElementById("searchResults");
+
+const resultsContent =
+    document.getElementById("resultsContent");
+
+const closeResults =
+    document.getElementById("closeResults");
+
+const searchInput =
+    document.getElementById("searchInput");
+
+const searchButton =
+    document.getElementById("searchButton");
+
+const appPage =
+    document.getElementById("appPage");
+
+const appPageTitle =
+    document.getElementById("appPageTitle");
+
+const appPageKicker =
+    document.getElementById("appPageKicker");
+
+const appPageContent =
+    document.getElementById("appPageContent");
+
+const closeAppPage =
+    document.getElementById("closeAppPage");
+
+const mapStatusText =
+    document.getElementById("mapStatusText");
 
 /* =========================================================
    STATUS
    ========================================================= */
 
 function setStatus(text) {
-
-    const status =
-        document.getElementById("mapStatusText");
-
-    if (status) {
-        status.textContent = text;
+    if (mapStatusText) {
+        mapStatusText.textContent = text;
     }
 }
-
 
 /* =========================================================
-   BASIC HELPERS
+   MENU
    ========================================================= */
 
-function esc(value) {
-
-    if (value === null ||
-        value === undefined ||
-        value === "") {
-
-        return "Unavailable";
-    }
-
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-
-function clean(value) {
-
-    if (
-        value === null ||
-        value === undefined ||
-        String(value).trim() === ""
-    ) {
-        return "";
-    }
-
-    return String(value).trim();
-}
-
-
-function formatMoney(value) {
-
-    if (
-        value === null ||
-        value === undefined ||
-        value === ""
-    ) {
-        return "Unavailable";
-    }
-
-    const number = Number(value);
-
-    if (Number.isNaN(number)) {
-        return esc(value);
-    }
-
-    return number.toLocaleString(
-        "en-US",
-        {
-            style: "currency",
-            currency: "USD",
-            maximumFractionDigits: 0
-        }
-    );
-}
-
-
-function formatAcres(value) {
-
-    if (
-        value === null ||
-        value === undefined ||
-        value === ""
-    ) {
-        return "Unavailable";
-    }
-
-    const number = Number(value);
-
-    if (Number.isNaN(number)) {
-        return esc(value);
-    }
-
-    return number.toLocaleString(
-        "en-US",
-        {
-            maximumFractionDigits: 2
-        }
-    ) + " acres";
-}
-
-
-/* =========================================================
-   ARC GIS QUERY
-   ========================================================= */
-
-async function arcgisQuery(where, options = {}) {
-
-    const params = new URLSearchParams();
-
-    params.set("where", where);
-    params.set(
-        "outFields",
-        options.outFields ||
-        "*"
-    );
-
-    params.set(
-        "returnGeometry",
-        options.returnGeometry === false
-            ? "false"
-            : "true"
-    );
-
-    params.set(
-        "outSR",
-        "4326"
-    );
-
-    params.set(
-        "f",
-        "json"
-    );
-
-    if (options.resultRecordCount) {
-        params.set(
-            "resultRecordCount",
-            String(options.resultRecordCount)
-        );
-    }
-
-    const url =
-        PARCEL_SERVICE +
-        "/query?" +
-        params.toString();
-
-    const response =
-        await fetch(url);
-
-    if (!response.ok) {
-        throw new Error(
-            "Parcel service returned " +
-            response.status
-        );
-    }
-
-    const data =
-        await response.json();
-
-    if (data.error) {
-        throw new Error(
-            data.error.message ||
-            "ArcGIS query failed"
-        );
-    }
-
-    return data;
-}
-
-
-/* =========================================================
-   SEARCH
-   ========================================================= */
-
-async function searchParcels(rawSearch) {
-
-    const search =
-        clean(rawSearch);
-
-    if (!search) {
-        setStatus(
-            "Enter an address, owner, or parcel ID"
-        );
-
-        return;
-    }
-
-    setStatus("Searching Idaho parcel records...");
-
-    closePropertyPanel();
-
-    const searchResults =
-        document.getElementById("searchResults");
-
-    const resultsContent =
-        document.getElementById("resultsContent");
-
-    searchResults.classList.add("open");
-
-    resultsContent.innerHTML = `
-        <div class="page-card">
-            Searching statewide parcel data...
-        </div>
-    `;
-
-    try {
-
-        const safe =
-            search
-                .replace(/'/g, "''")
-                .trim();
-
-        const compact =
-            safe
-                .replace(/[\s,.-]/g, "");
-
-        /*
-         * Search several useful statewide fields.
-         *
-         * Exact/partial parcel ID
-         * Site address
-         * Owner
-         * City
-         */
-
-        const where = `
-            UPPER(PARCEL_ID) LIKE UPPER('%${safe}%')
-            OR UPPER(SITE_ADD) LIKE UPPER('%${safe}%')
-            OR UPPER(SITE_CITY) LIKE UPPER('%${safe}%')
-            OR UPPER(OWNER1) LIKE UPPER('%${safe}%')
-            OR UPPER(OWNER2) LIKE UPPER('%${safe}%')
-            OR UPPER(MAIL_ADD1) LIKE UPPER('%${safe}%')
-            OR UPPER(MAIL_CITY) LIKE UPPER('%${safe}%')
-        `;
-
-        let data =
-            await arcgisQuery(
-                where,
-                {
-                    returnGeometry: true,
-                    resultRecordCount: 30
-                }
-            );
-
-        let features =
-            data.features || [];
-
-        /*
-         * If the first search returned nothing,
-         * try a compact parcel-ID search.
-         */
-
-        if (
-            features.length === 0 &&
-            compact !== safe
-        ) {
-
-            const idWhere =
-                `UPPER(PARCEL_ID) LIKE UPPER('%${compact}%')`;
-
-            data =
-                await arcgisQuery(
-                    idWhere,
-                    {
-                        returnGeometry: true,
-                        resultRecordCount: 30
-                    }
-                );
-
-            features =
-                data.features || [];
-        }
-
-        if (features.length === 0) {
-
-            resultsContent.innerHTML = `
-                <div class="page-card">
-                    <strong>No parcels found</strong>
-                    <div style="margin-top:6px;color:#aaa;">
-                        Try a full or partial street address,
-                        owner name, or parcel ID.
-                    </div>
-                </div>
-            `;
-
-            setStatus("No parcel matches found");
-
-            return;
-        }
-
-        renderSearchResults(features);
-
-        setStatus(
-            `${features.length} parcel` +
-            (features.length === 1 ? "" : "s") +
-            " found"
-        );
-
-    } catch (error) {
-
-        console.error(error);
-
-        resultsContent.innerHTML = `
-            <div class="page-card">
-                <strong>Parcel search failed</strong>
-
-                <div style="margin-top:7px;color:#aaa;">
-                    The statewide parcel service could not
-                    be reached right now.
-                </div>
-
-                <div style="margin-top:7px;color:#777;font-size:11px;">
-                    ${esc(error.message)}
-                </div>
-            </div>
-        `;
-
-        setStatus("Parcel service unavailable");
-    }
-}
-
-
-/* =========================================================
-   RESULTS
-   ========================================================= */
-
-function renderSearchResults(features) {
-
-    const resultsContent =
-        document.getElementById("resultsContent");
-
-    resultsContent.innerHTML = "";
-
-    features.forEach((feature, index) => {
-
-        const a =
-            feature.attributes || {};
-
-        const address =
-            buildSiteAddress(a);
-
-        const owner =
-            clean(a.OWNER1) ||
-            clean(a.OWNER2);
-
-        const parcelId =
-            clean(a.PARCEL_ID);
-
-        const county =
-            clean(a.COUNTY);
-
-        const result =
-            document.createElement("div");
-
-        result.className =
-            "search-result";
-
-        result.innerHTML = `
-
-            <div class="search-result-title">
-                ${esc(address || "Parcel " + (index + 1))}
-            </div>
-
-            <div class="search-result-details">
-
-                ${
-                    parcelId
-                        ? `Parcel ID: ${esc(parcelId)}`
-                        : ""
-                }
-
-                ${
-                    owner
-                        ? `<br>Owner: ${esc(owner)}`
-                        : ""
-                }
-
-                ${
-                    county
-                        ? `<br>County: ${esc(county)}`
-                        : ""
-                }
-
-            </div>
-        `;
-
-        result.addEventListener(
-            "click",
-            () => selectParcel(feature)
-        );
-
-        resultsContent.appendChild(result);
-    });
-}
-
-
-/* =========================================================
-   ADDRESS
-   ========================================================= */
-
-function buildSiteAddress(a) {
-
-    const parts = [];
-
-    const address =
-        clean(a.SITE_ADD);
-
-    const city =
-        clean(a.SITE_CITY);
-
-    const zip =
-        clean(a.SITE_ZIP);
-
-    if (address) {
-        parts.push(address);
-    }
-
-    if (city) {
-        parts.push(city);
-    }
-
-    if (zip) {
-        parts.push(zip);
-    }
-
-    return parts.join(", ");
-}
-
-
-/* =========================================================
-   SELECT PARCEL
-   ========================================================= */
-
-function selectParcel(feature) {
-
-    selectedProperty =
-        feature;
-
-    const attributes =
-        feature.attributes || {};
-
-    const geometry =
-        feature.geometry;
-
-    drawParcel(feature);
-
-    openPropertyPanel(
-        attributes,
-        geometry
-    );
-
-    document
-        .getElementById("searchResults")
-        .classList.remove("open");
-
-    setStatus("Parcel selected");
-}
-
-
-/* =========================================================
-   DRAW PARCEL
-   ========================================================= */
-
-function drawParcel(feature) {
-
-    if (parcelLayer) {
-
-        map.removeLayer(
-            parcelLayer
-        );
-
-        parcelLayer = null;
-    }
-
-    if (
-        !feature ||
-        !feature.geometry
-    ) {
-        return;
-    }
-
-    try {
-
-        parcelLayer =
-            L.geoJSON(
-                {
-                    type: "Feature",
-                    properties:
-                        feature.attributes || {},
-                    geometry:
-                        feature.geometry
-                },
-                {
-                    style: {
-                        color: "#62a7d6",
-                        weight: 3,
-                        opacity: 1,
-                        fillColor: "#3f7aa8",
-                        fillOpacity: 0.22
-                    }
-                }
-            ).addTo(map);
-
-        const bounds =
-            parcelLayer.getBounds();
-
-        if (bounds.isValid()) {
-
-            map.fitBounds(
-                bounds,
-                {
-                    padding: [80, 80],
-                    maxZoom: 18
-                }
-            );
-        }
-
-    } catch (error) {
-
-        console.error(
-            "Could not draw parcel:",
-            error
-        );
-    }
-}
-
-
-/* =========================================================
-   PROPERTY PANEL
-   ========================================================= */
-
-function openPropertyPanel(a) {
-
-    const panel =
-        document.getElementById(
-            "propertyPanel"
-        );
-
-    const title =
-        document.getElementById(
-            "propertyTitle"
-        );
-
-    const content =
-        document.getElementById(
-            "propertyContent"
-        );
-
-    const address =
-        buildSiteAddress(a);
-
-    title.textContent =
-        address ||
-        clean(a.PARCEL_ID) ||
-        "Property Information";
-
-    const owner =
-        clean(a.OWNER1) ||
-        clean(a.OWNER2);
-
-    const owner2 =
-        clean(a.OWNER2);
-
-    let html = "";
-
-    html += field(
-        "Parcel ID",
-        a.PARCEL_ID
-    );
-
-    html += field(
-        "County",
-        a.COUNTY
-    );
-
-    html += field(
-        "Site Address",
-        address
-    );
-
-    html += field(
-        "Owner",
-        owner
-    );
-
-    if (owner2 && owner2 !== owner) {
-
-        html += field(
-            "Additional Owner",
-            owner2
-        );
-    }
-
-    html += field(
-        "Acreage",
-        formatAcres(a.ASR_ACRES)
-    );
-
-    html += field(
-        "Property Category",
-        a.ASR_CATS
-    );
-
-    html += field(
-        "Legal Description",
-        a.LGL_DESCR
-    );
-
-    html += field(
-        "Land Value",
-        formatMoney(a.VAL_LAND)
-    );
-
-    html += field(
-        "Improvement Value",
-        formatMoney(a.VAL_IMPVTS)
-    );
-
-    html += field(
-        "Total Assessed Value",
-        formatMoney(a.VAL_TOTAL)
-    );
-
-    html += field(
-        "Homeowner Exemption",
-        formatYesNo(a.HOME_EXMPT)
-    );
-
-    html += field(
-        "Data Steward",
-        a.STEWARD
-    );
-
-    html += field(
-        "Data Updated",
-        a.UPDATED
-    );
-
-    html += `
-        <button
-            class="save-property"
-            id="savePropertyButton"
-        >
-            Save Property
-        </button>
-    `;
-
-    content.innerHTML =
-        html;
-
-    panel.classList.add("open");
-
-    document
-        .getElementById(
-            "savePropertyButton"
-        )
-        .addEventListener(
-            "click",
-            saveCurrentProperty
-        );
-}
-
-
-function field(label, value) {
-
-    return `
-        <div class="property-field">
-
-            <div class="property-label">
-                ${esc(label)}
-            </div>
-
-            <div class="property-value">
-                ${esc(value)}
-            </div>
-
-        </div>
-    `;
-}
-
-
-function formatYesNo(value) {
-
-    if (
-        value === true ||
-        value === 1 ||
-        value === "1" ||
-        String(value).toLowerCase() === "yes" ||
-        String(value).toLowerCase() === "y"
-    ) {
-        return "Yes";
-    }
-
-    if (
-        value === false ||
-        value === 0 ||
-        value === "0" ||
-        String(value).toLowerCase() === "no" ||
-        String(value).toLowerCase() === "n"
-    ) {
-        return "No";
-    }
-
-    return value || "Unavailable";
-}
-
-
-/* =========================================================
-   SAVE
-   ========================================================= */
-
-function saveCurrentProperty() {
-
-    if (!selectedProperty) {
-        return;
-    }
-
-    const a =
-        selectedProperty.attributes || {};
-
-    const id =
-        clean(a.PARCEL_ID);
-
-    if (!id) {
-        return;
-    }
-
-    const existing =
-        savedProperties.find(
-            p => p.PARCEL_ID === id
-        );
-
-    if (!existing) {
-
-        savedProperties.push(a);
-
-        localStorage.setItem(
-            "parcelscope_saved",
-            JSON.stringify(
-                savedProperties
-            )
-        );
-    }
-
-    const button =
-        document.getElementById(
-            "savePropertyButton"
-        );
-
-    if (button) {
-
-        button.textContent =
-            "Property Saved";
-
-        button.style.background =
-            "#4f8f68";
-    }
-}
-
+menuButton?.addEventListener("click", () => {
+    sideMenu.classList.add("open");
+});
+
+closeMenu?.addEventListener("click", () => {
+    sideMenu.classList.remove("open");
+});
 
 /* =========================================================
    CLOSE PANELS
    ========================================================= */
 
-function closePropertyPanel() {
+closeProperty?.addEventListener("click", () => {
+    propertyPanel.classList.remove("open");
 
-    document
-        .getElementById(
-            "propertyPanel"
-        )
-        .classList.remove("open");
-}
+    if (selectedParcel) {
+        selectedParcel.setStyle({
+            weight: 1,
+            color: "#5f8eaf",
+            fillOpacity: 0.04
+        });
+    }
 
+    selectedParcel = null;
+});
 
-function closeResults() {
+closeResults?.addEventListener("click", () => {
+    searchResults.classList.remove("open");
+});
 
-    document
-        .getElementById(
-            "searchResults"
-        )
-        .classList.remove("open");
-}
-
-
-/* =========================================================
-   SIDE MENU
-   ========================================================= */
-
-function openMenu() {
-
-    document
-        .getElementById(
-            "sideMenu"
-        )
-        .classList.add("open");
-}
-
-
-function closeMenu() {
-
-    document
-        .getElementById(
-            "sideMenu"
-        )
-        .classList.remove("open");
-}
-
+closeAppPage?.addEventListener("click", () => {
+    appPage.classList.remove("open");
+});
 
 /* =========================================================
-   FULL PAGES
+   MAP LAYERS
    ========================================================= */
 
-function openAppPage(
-    title,
-    kicker,
-    html
+function setSatellite(enabled) {
+
+    settings.satellite = enabled;
+
+    if (enabled) {
+
+        if (map.hasLayer(streetLayer)) {
+            map.removeLayer(streetLayer);
+        }
+
+        if (!map.hasLayer(satelliteLayer)) {
+            satelliteLayer.addTo(map);
+        }
+
+    } else {
+
+        if (map.hasLayer(satelliteLayer)) {
+            map.removeLayer(satelliteLayer);
+        }
+
+        if (!map.hasLayer(streetLayer)) {
+            streetLayer.addTo(map);
+        }
+    }
+
+    localStorage.setItem(
+        "parcelscope_settings",
+        JSON.stringify(settings)
+    );
+}
+
+/* =========================================================
+   PARCEL DISPLAY
+   ========================================================= */
+
+function createParcelLayer() {
+
+    if (parcelLayer) {
+        map.removeLayer(parcelLayer);
+    }
+
+    parcelLayer = L.geoJSON(null, {
+        style: {
+            color: "#70a9d2",
+            weight: 1,
+            opacity: 0.85,
+            fillColor: "#3f7aa8",
+            fillOpacity: 0.035
+        },
+
+        onEachFeature: function(feature, layer) {
+
+            layer.on("click", function() {
+                showParcel(feature, layer);
+            });
+
+            layer.on("mouseover", function() {
+
+                layer.setStyle({
+                    weight: 2,
+                    color: "#8fc4e8",
+                    fillOpacity: 0.10
+                });
+
+                if (layer.bringToFront) {
+                    layer.bringToFront();
+                }
+            });
+
+            layer.on("mouseout", function() {
+
+                if (selectedParcel !== layer) {
+
+                    layer.setStyle({
+                        weight: 1,
+                        color: "#5f8eaf",
+                        fillOpacity: 0.04
+                    });
+                }
+            });
+        }
+    });
+
+    if (settings.showParcelLines) {
+        parcelLayer.addTo(map);
+    }
+}
+
+/* =========================================================
+   LOAD PARCELS IN VIEW
+   ========================================================= */
+
+let parcelLoadTimer = null;
+
+function loadParcelsInView() {
+
+    if (!settings.showParcelLines) {
+        return;
+    }
+
+    clearTimeout(parcelLoadTimer);
+
+    parcelLoadTimer = setTimeout(async () => {
+
+        /*
+         * Don't request thousands of parcels while zoomed
+         * way out. The map can still be used normally.
+         */
+
+        if (map.getZoom() < 12) {
+
+            if (parcelLayer) {
+                parcelLayer.clearLayers();
+            }
+
+            setStatus("Zoom in to view parcel boundaries");
+            return;
+        }
+
+        const bounds = map.getBounds();
+
+        const geometry = [
+            bounds.getWest(),
+            bounds.getSouth(),
+            bounds.getEast(),
+            bounds.getNorth()
+        ].join(",");
+
+        const params = new URLSearchParams({
+
+            where: "1=1",
+
+            geometry: geometry,
+
+            geometryType: "esriGeometryEnvelope",
+
+            inSR: "4326",
+
+            spatialRel:
+                "esriSpatialRelIntersects",
+
+            outFields:
+                "*",
+
+            returnGeometry:
+                "true",
+
+            outSR:
+                "4326",
+
+            resultRecordCount:
+                "1000",
+
+            f:
+                "geojson"
+        });
+
+        try {
+
+            setStatus("Loading parcels...");
+
+            const response =
+                await fetch(
+                    `${PARCEL_QUERY}?${params.toString()}`
+                );
+
+            if (!response.ok) {
+                throw new Error(
+                    `HTTP ${response.status}`
+                );
+            }
+
+            const data =
+                await response.json();
+
+            if (!data.features) {
+                throw new Error(
+                    "Parcel service returned no features"
+                );
+            }
+
+            parcelLayer.clearLayers();
+
+            parcelLayer.addData(data);
+
+            setStatus(
+                `${data.features.length} parcels loaded`
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Parcel loading error:",
+                error
+            );
+
+            setStatus(
+                "Parcel layer unavailable — try zooming in"
+            );
+        }
+
+    }, 350);
+}
+
+createParcelLayer();
+
+map.on("moveend", loadParcelsInView);
+map.on("zoomend", loadParcelsInView);
+
+/* =========================================================
+   PROPERTY DISPLAY
+   ========================================================= */
+
+function getField(feature, names) {
+
+    const props =
+        feature?.properties || {};
+
+    for (const name of names) {
+
+        if (
+            props[name] !== undefined &&
+            props[name] !== null &&
+            String(props[name]).trim() !== ""
+        ) {
+            return props[name];
+        }
+    }
+
+    return "Not available";
+}
+
+function showParcel(feature, layer) {
+
+    const props =
+        feature.properties || {};
+
+    if (selectedParcel && selectedParcel !== layer) {
+
+        selectedParcel.setStyle({
+            weight: 1,
+            color: "#5f8eaf",
+            fillOpacity: 0.04
+        });
+    }
+
+    selectedParcel = layer;
+
+    layer.setStyle({
+        weight: 3,
+        color: "#9dd2f3",
+        fillOpacity: 0.16
+    });
+
+    if (layer.bringToFront) {
+        layer.bringToFront();
+    }
+
+    const parcelId =
+        getField(feature, [
+            "PARCEL_ID",
+            "PIN",
+            "PARCELID",
+            "Parcel_ID",
+            "parcel_id"
+        ]);
+
+    const owner =
+        getField(feature, [
+            "OWNER",
+            "Owner",
+            "owner"
+        ]);
+
+    const county =
+        getField(feature, [
+            "COUNTY",
+            "County",
+            "county"
+        ]);
+
+    const address =
+        getField(feature, [
+            "SITE_ADDRESS",
+            "SITEADDR",
+            "ADDRESS",
+            "Address",
+            "SITE_ADDR",
+            "LOCATION"
+        ]);
+
+    propertyTitle.textContent =
+        address !== "Not available"
+            ? address
+            : `Parcel ${parcelId}`;
+
+    propertyContent.innerHTML = `
+
+        <div class="property-field">
+            <div class="property-label">
+                Parcel ID
+            </div>
+
+            <div class="property-value">
+                ${escapeHtml(parcelId)}
+            </div>
+        </div>
+
+        <div class="property-field">
+            <div class="property-label">
+                Address
+            </div>
+
+            <div class="property-value">
+                ${escapeHtml(address)}
+            </div>
+        </div>
+
+        <div class="property-field">
+            <div class="property-label">
+                County
+            </div>
+
+            <div class="property-value">
+                ${escapeHtml(county)}
+            </div>
+        </div>
+
+        <div class="property-field">
+            <div class="property-label">
+                Owner / Record
+            </div>
+
+            <div class="property-value">
+                ${escapeHtml(owner)}
+            </div>
+        </div>
+
+        <button
+            class="save-property"
+            id="saveCurrentProperty"
+        >
+            Save Property
+        </button>
+    `;
+
+    document
+        .getElementById("saveCurrentProperty")
+        ?.addEventListener(
+            "click",
+            () => saveProperty(feature)
+        );
+
+    propertyPanel.classList.add("open");
+}
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
+async function searchProperties() {
+
+    const raw =
+        searchInput.value.trim();
+
+    if (!raw) {
+        return;
+    }
+
+    setStatus("Searching Idaho parcels...");
+
+    resultsContent.innerHTML = `
+        <div class="page-card">
+            Searching parcel records...
+        </div>
+    `;
+
+    searchResults.classList.add("open");
+
+    /*
+     * Search several likely fields instead of depending on
+     * one specific county's field naming.
+     */
+
+    const safe =
+        raw.replace(/'/g, "''");
+
+    const where = `
+        PARCEL_ID LIKE '%${safe}%'
+        OR OWNER LIKE '%${safe}%'
+        OR SITE_ADDRESS LIKE '%${safe}%'
+    `;
+
+    const params =
+        new URLSearchParams({
+
+            where: where,
+
+            outFields: "*",
+
+            returnGeometry: "true",
+
+            outSR: "4326",
+
+            resultRecordCount: "50",
+
+            f: "geojson"
+        });
+
+    try {
+
+        let response =
+            await fetch(
+                `${PARCEL_QUERY}?${params.toString()}`
+            );
+
+        let data =
+            await response.json();
+
+        /*
+         * Some records may not have all optional fields.
+         * If the first field-based query fails, try a
+         * broader text query against the parcel ID.
+         */
+
+        if (
+            data.error ||
+            !Array.isArray(data.features)
+        ) {
+
+            const fallbackParams =
+                new URLSearchParams({
+
+                    where:
+                        `PARCEL_ID LIKE '%${safe}%'`,
+
+                    outFields: "*",
+
+                    returnGeometry: "true",
+
+                    outSR: "4326",
+
+                    resultRecordCount: "50",
+
+                    f: "geojson"
+                });
+
+            response =
+                await fetch(
+                    `${PARCEL_QUERY}?${fallbackParams.toString()}`
+                );
+
+            data =
+                await response.json();
+        }
+
+        if (
+            !data.features ||
+            data.features.length === 0
+        ) {
+
+            /*
+             * If it looks like an address, use the public
+             * geocoder to find the location first, then
+             * locate the parcel around that point.
+             */
+
+            const geocodeResult =
+                await geocodeAddress(raw);
+
+            if (geocodeResult) {
+
+                await searchParcelAtPoint(
+                    geocodeResult.lat,
+                    geocodeResult.lng,
+                    raw
+                );
+
+                return;
+            }
+
+            resultsContent.innerHTML = `
+                <div class="page-card">
+                    <strong>No parcels found</strong>
+                    <div>
+                        Try a parcel ID, street address,
+                        owner name, or a shorter search.
+                    </div>
+                </div>
+            `;
+
+            setStatus("No matching parcels");
+
+            return;
+        }
+
+        displaySearchResults(
+            data.features
+        );
+
+        setStatus(
+            `${data.features.length} result${
+                data.features.length === 1 ? "" : "s"
+            } found`
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Search error:",
+            error
+        );
+
+        resultsContent.innerHTML = `
+            <div class="page-card">
+                <strong>Search temporarily unavailable</strong>
+                <div>
+                    Try again or zoom to the area and
+                    click the parcel directly.
+                </div>
+            </div>
+        `;
+
+        setStatus("Search unavailable");
+    }
+}
+
+searchButton?.addEventListener(
+    "click",
+    searchProperties
+);
+
+searchInput?.addEventListener(
+    "keydown",
+    event => {
+
+        if (event.key === "Enter") {
+            event.preventDefault();
+            searchProperties();
+        }
+    }
+);
+
+/* =========================================================
+   GEOCODING
+   ========================================================= */
+
+async function geocodeAddress(address) {
+
+    try {
+
+        const params =
+            new URLSearchParams({
+
+                q:
+                    `${address}, Idaho`,
+
+                format:
+                    "json",
+
+                limit:
+                    "1",
+
+                countrycodes:
+                    "us"
+            });
+
+        const response =
+            await fetch(
+                `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+                {
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    }
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (
+            !data ||
+            data.length === 0
+        ) {
+            return null;
+        }
+
+        return {
+            lat:
+                Number(data[0].lat),
+
+            lng:
+                Number(data[0].lon)
+        };
+
+    } catch (error) {
+
+        console.error(
+            "Geocoder error:",
+            error
+        );
+
+        return null;
+    }
+}
+
+/* =========================================================
+   FIND PARCEL AT ADDRESS POINT
+   ========================================================= */
+
+async function searchParcelAtPoint(
+    lat,
+    lng,
+    originalSearch
 ) {
 
-    document
-        .getElementById("appPageTitle")
-        .textContent = title;
+    const params =
+        new URLSearchParams({
 
-    document
-        .getElementById("appPageKicker")
-        .textContent = kicker;
+            geometry:
+                `${lng},${lat}`,
 
-    document
-        .getElementById("appPageContent")
-        .innerHTML = html;
+            geometryType:
+                "esriGeometryPoint",
 
-    document
-        .getElementById("appPage")
-        .classList.add("open");
+            inSR:
+                "4326",
+
+            spatialRel:
+                "esriSpatialRelIntersects",
+
+            outFields:
+                "*",
+
+            returnGeometry:
+                "true",
+
+            outSR:
+                "4326",
+
+            f:
+                "geojson"
+        });
+
+    try {
+
+        const response =
+            await fetch(
+                `${PARCEL_QUERY}?${params.toString()}`
+            );
+
+        const data =
+            await response.json();
+
+        if (
+            !data.features ||
+            data.features.length === 0
+        ) {
+
+            /*
+             * No parcel directly underneath the geocoded
+             * point. Still show the location.
+             */
+
+            map.setView(
+                [lat, lng],
+                17
+            );
+
+            resultsContent.innerHTML = `
+                <div class="page-card">
+                    <strong>Address located</strong>
+                    <div>
+                        ${escapeHtml(originalSearch)}
+                    </div>
+                    <div style="margin-top:8px;color:#aaa">
+                        No matching public parcel was found
+                        at that exact location.
+                    </div>
+                </div>
+            `;
+
+            setStatus(
+                "Address located — no parcel found"
+            );
+
+            return;
+        }
+
+        displaySearchResults(
+            data.features
+        );
+
+        map.setView(
+            [lat, lng],
+            17
+        );
+
+        setStatus(
+            `${data.features.length} parcel${
+                data.features.length === 1 ? "" : "s"
+            } found near address`
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Point parcel search error:",
+            error
+        );
+
+        setStatus(
+            "Could not locate parcel"
+        );
+    }
 }
 
+/* =========================================================
+   SEARCH RESULT UI
+   ========================================================= */
 
-function closeAppPage() {
+function displaySearchResults(features) {
 
-    document
-        .getElementById("appPage")
-        .classList.remove("open");
+    resultsContent.innerHTML = "";
+
+    features.forEach(
+        (feature, index) => {
+
+            const props =
+                feature.properties || {};
+
+            const parcelId =
+                getField(feature, [
+                    "PARCEL_ID",
+                    "PIN",
+                    "PARCELID"
+                ]);
+
+            const owner =
+                getField(feature, [
+                    "OWNER",
+                    "Owner"
+                ]);
+
+            const address =
+                getField(feature, [
+                    "SITE_ADDRESS",
+                    "SITEADDR",
+                    "ADDRESS",
+                    "Address",
+                    "SITE_ADDR",
+                    "LOCATION"
+                ]);
+
+            const county =
+                getField(feature, [
+                    "COUNTY",
+                    "County"
+                ]);
+
+            const item =
+                document.createElement("div");
+
+            item.className =
+                "search-result";
+
+            item.innerHTML = `
+
+                <div class="search-result-title">
+                    ${
+                        address !== "Not available"
+                            ? escapeHtml(address)
+                            : `Parcel ${escapeHtml(parcelId)}`
+                    }
+                </div>
+
+                <div class="search-result-details">
+                    Parcel ID:
+                    ${escapeHtml(parcelId)}
+                    <br>
+
+                    County:
+                    ${escapeHtml(county)}
+                    <br>
+
+                    Record:
+                    ${escapeHtml(owner)}
+                </div>
+            `;
+
+            item.addEventListener(
+                "click",
+                () => {
+
+                    if (
+                        feature.geometry &&
+                        feature.geometry.coordinates
+                    ) {
+
+                        const bounds =
+                            L.geoJSON(
+                                feature
+                            ).getBounds();
+
+                        if (
+                            bounds.isValid()
+                        ) {
+
+                            map.fitBounds(
+                                bounds,
+                                {
+                                    padding:
+                                        [80, 80],
+                                    maxZoom:
+                                        18
+                                }
+                            );
+                        }
+                    }
+
+                    /*
+                     * Add this result to the visible
+                     * parcel layer so the user can select it.
+                     */
+
+                    const tempLayer =
+                        L.geoJSON(
+                            feature,
+                            {
+                                style: {
+                                    color:
+                                        "#9dd2f3",
+                                    weight:
+                                        3,
+                                    fillColor:
+                                        "#3f7aa8",
+                                    fillOpacity:
+                                        0.15
+                                }
+                            }
+                        ).addTo(map);
+
+                    showParcel(
+                        feature,
+                        tempLayer
+                    );
+
+                    searchResults.classList.remove(
+                        "open"
+                    );
+                }
+            );
+
+            resultsContent.appendChild(
+                item
+            );
+        }
+    );
 }
 
+/* =========================================================
+   SAVE PROPERTY
+   ========================================================= */
+
+function saveProperty(feature) {
+
+    const parcelId =
+        getField(feature, [
+            "PARCEL_ID",
+            "PIN",
+            "PARCELID"
+        ]);
+
+    const owner =
+        getField(feature, [
+            "OWNER",
+            "Owner"
+        ]);
+
+    const address =
+        getField(feature, [
+            "SITE_ADDRESS",
+            "SITEADDR",
+            "ADDRESS",
+            "Address",
+            "SITE_ADDR",
+            "LOCATION"
+        ]);
+
+    const county =
+        getField(feature, [
+            "COUNTY",
+            "County"
+        ]);
+
+    const existing =
+        savedProperties.find(
+            item =>
+                item.parcelId === parcelId
+        );
+
+    if (existing) {
+
+        setStatus(
+            "Property already saved"
+        );
+
+        return;
+    }
+
+    savedProperties.push({
+
+        parcelId,
+        owner,
+        address,
+        county,
+
+        savedAt:
+            new Date().toISOString(),
+
+        feature
+    });
+
+    localStorage.setItem(
+        "parcelscope_saved",
+        JSON.stringify(
+            savedProperties
+        )
+    );
+
+    setStatus(
+        "Property saved"
+    );
+}
+
+/* =========================================================
+   MENU PAGES
+   ========================================================= */
+
+document
+    .querySelectorAll(".menu-item")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                const section =
+                    button.dataset.section;
+
+                sideMenu.classList.remove(
+                    "open"
+                );
+
+                openAppPage(section);
+            }
+        );
+    });
+
+function openAppPage(section) {
+
+    appPage.classList.add("open");
+
+    switch (section) {
+
+        case "counties":
+            showCountiesPage();
+            break;
+
+        case "saved":
+            showSavedPage();
+            break;
+
+        case "sources":
+            showSourcesPage();
+            break;
+
+        case "history":
+            showHistoryPage();
+            break;
+
+        case "settings":
+            showSettingsPage();
+            break;
+
+        case "about":
+            showAboutPage();
+            break;
+
+        default:
+            showAboutPage();
+    }
+}
 
 /* =========================================================
    COUNTIES
    ========================================================= */
 
-const IDAHO_COUNTIES = [
+const counties = [
     "Ada",
     "Adams",
     "Bannock",
@@ -949,61 +1221,65 @@ const IDAHO_COUNTIES = [
     "Washington"
 ];
 
+function showCountiesPage() {
 
-function showCounties() {
+    appPageKicker.textContent =
+        "PROPERTY";
 
-    const buttons =
-        IDAHO_COUNTIES
-            .map(
-                county => `
-                    <button
-                        class="county-button"
-                        data-county="${esc(county)}"
-                    >
-                        ${esc(county)} County
-                    </button>
-                `
-            )
-            .join("");
+    appPageTitle.textContent =
+        "Idaho Counties";
 
-    openAppPage(
-        "Idaho Counties",
-        "PROPERTY",
-        `
-            <div class="page-section">
+    appPageContent.innerHTML = `
 
-                <h2>
-                    Search a county
-                </h2>
+        <div class="page-section">
 
-                <div class="county-search">
+            <p>
+                Select a county to use as a starting
+                point for parcel research.
+            </p>
 
-                    <input
-                        id="countyFilter"
-                        type="search"
-                        placeholder="Filter counties..."
-                    >
+            <div class="county-search">
 
-                </div>
-
-                <div class="county-grid">
-                    ${buttons}
-                </div>
+                <input
+                    id="countyFilter"
+                    type="search"
+                    placeholder="Search counties..."
+                    autocomplete="off"
+                >
 
             </div>
-        `
-    );
+
+            <div
+                id="countyGrid"
+                class="county-grid"
+            >
+
+                ${counties.map(
+                    county => `
+                        <button
+                            class="county-button"
+                            data-county="${escapeHtml(county)}"
+                        >
+                            ${escapeHtml(county)} County
+                        </button>
+                    `
+                ).join("")}
+
+            </div>
+
+        </div>
+    `;
 
     const filter =
         document.getElementById(
             "countyFilter"
         );
 
-    filter.addEventListener(
+    filter?.addEventListener(
         "input",
         () => {
 
-            const query =
+            const value =
                 filter.value
                     .toLowerCase()
                     .trim();
@@ -1014,11 +1290,14 @@ function showCounties() {
                 )
                 .forEach(button => {
 
+                    const name =
+                        button.dataset
+                            .county
+                            .toLowerCase();
+
                     button.classList.toggle(
                         "hidden",
-                        !button.textContent
-                            .toLowerCase()
-                            .includes(query)
+                        !name.includes(value)
                     );
                 });
         }
@@ -1034,141 +1313,99 @@ function showCounties() {
                 "click",
                 () => {
 
-                    document
-                        .getElementById(
-                            "searchInput"
-                        )
-                        .value =
-                        button.dataset.county +
-                        " County";
+                    const county =
+                        button.dataset.county;
 
-                    closeAppPage();
+                    searchInput.value =
+                        county;
 
-                    searchParcels(
-                        button.dataset.county
+                    appPage.classList.remove(
+                        "open"
                     );
+
+                    searchProperties();
                 }
             );
         });
 }
 
-
 /* =========================================================
-   SAVED PROPERTIES
+   SAVED PAGE
    ========================================================= */
 
-function showSaved() {
+function showSavedPage() {
 
-    if (savedProperties.length === 0) {
+    appPageKicker.textContent =
+        "PROPERTY";
 
-        openAppPage(
-            "Saved Properties",
-            "PROPERTY",
-            `
-                <div class="page-card">
-                    <strong>No saved properties</strong>
+    appPageTitle.textContent =
+        "Saved Properties";
 
-                    <div style="margin-top:6px;color:#aaa;">
-                        Search for a parcel and use
-                        "Save Property" to keep it here.
-                    </div>
+    if (
+        savedProperties.length === 0
+    ) {
+
+        appPageContent.innerHTML = `
+
+            <div class="page-card">
+
+                <strong>
+                    No saved properties
+                </strong>
+
+                <div>
+                    Properties you save will
+                    appear here.
                 </div>
-            `
-        );
+
+            </div>
+        `;
 
         return;
     }
 
-    const html =
-        savedProperties
-            .map(
-                (p, index) => {
+    appPageContent.innerHTML =
+        savedProperties.map(
+            (item, index) => `
 
-                    const address =
-                        buildSiteAddress(p);
+                <div
+                    class="saved-property"
+                    data-index="${index}"
+                >
 
-                    return `
-                        <div
-                            class="saved-property"
-                            data-index="${index}"
-                        >
+                    <div>
 
-                            <div>
-
-                                <div class="saved-name">
-                                    ${
-                                        esc(
-                                            address ||
-                                            p.PARCEL_ID
-                                        )
-                                    }
-                                </div>
-
-                                <div class="saved-address">
-                                    Parcel ID:
-                                    ${esc(p.PARCEL_ID)}
-                                </div>
-
-                            </div>
-
-                            <button
-                                class="remove-saved"
-                                data-remove="${index}"
-                            >
-                                ×
-                            </button>
-
+                        <div class="saved-name">
+                            ${
+                                escapeHtml(
+                                    item.address ||
+                                    `Parcel ${item.parcelId}`
+                                )
+                            }
                         </div>
-                    `;
-                }
-            )
-            .join("");
 
-    openAppPage(
-        "Saved Properties",
-        "PROPERTY",
-        html
-    );
+                        <div class="saved-address">
+                            Parcel ID:
+                            ${escapeHtml(item.parcelId)}
+                            <br>
 
-    document
-        .querySelectorAll(
-            ".saved-property"
-        )
-        .forEach(item => {
+                            ${escapeHtml(item.county)}
+                            County
+                        </div>
 
-            item.addEventListener(
-                "click",
-                event => {
+                    </div>
 
-                    if (
-                        event.target
-                            .closest(
-                                ".remove-saved"
-                            )
-                    ) {
-                        return;
-                    }
+                    <button
+                        class="remove-saved"
+                        data-remove="${index}"
+                        aria-label="Remove saved property"
+                    >
+                        ×
+                    </button>
 
-                    const index =
-                        Number(
-                            item.dataset.index
-                        );
-
-                    const property =
-                        savedProperties[index];
-
-                    if (!property) {
-                        return;
-                    }
-
-                    closeAppPage();
-
-                    searchParcels(
-                        property.PARCEL_ID
-                    );
-                }
-            );
-        });
+                </div>
+            `
+        ).join("");
 
     document
         .querySelectorAll(
@@ -1199,404 +1436,535 @@ function showSaved() {
                         )
                     );
 
-                    showSaved();
+                    showSavedPage();
                 }
             );
         });
 }
-
 
 /* =========================================================
    DATA SOURCES
    ========================================================= */
 
-function showSources() {
+function showSourcesPage() {
 
-    openAppPage(
-        "Data Sources",
-        "DATA",
-        `
-            <div class="page-section">
+    appPageKicker.textContent =
+        "DATA";
 
-                <h2>
-                    Idaho Statewide Parcel Framework
-                </h2>
+    appPageTitle.textContent =
+        "Data Sources";
 
-                <div class="page-card">
+    appPageContent.innerHTML = `
 
-                    <strong>
-                        Idaho Public Parcel Data
-                    </strong>
+        <div class="page-section">
 
-                    <div>
-                        ParcelScope uses the statewide
-                        standardized Idaho parcel layer
-                        for parcel lookup and mapping.
-                    </div>
+            <h2>Idaho Parcel Data</h2>
 
-                </div>
+            <p>
+                ParcelScope uses publicly available
+                Idaho parcel data published through
+                ArcGIS services.
+            </p>
 
-                <div class="page-card">
+        </div>
 
-                    <strong>
-                        County Data
-                    </strong>
+        <div class="page-card">
 
-                    <div>
-                        The statewide layer is assembled
-                        from participating Idaho counties.
-                        County assessor offices remain the
-                        authoritative source for questions
-                        about individual records.
-                    </div>
+            <strong>
+                Statewide Idaho Parcel Layer
+            </strong>
 
-                </div>
-
-                <div class="page-card">
-
-                    <strong>
-                        Map
-                    </strong>
-
-                    <div>
-                        OpenStreetMap is used as the
-                        background map.
-                    </div>
-
-                </div>
-
+            <div>
+                Public parcel polygons and attributes
+                supplied through Idaho's statewide
+                parcel initiative.
             </div>
-        `
-    );
-}
 
+        </div>
+
+        <div class="page-card">
+
+            <strong>
+                Map Imagery
+            </strong>
+
+            <div>
+                Satellite imagery is provided through
+                Esri World Imagery.
+            </div>
+
+        </div>
+
+        <div class="page-card">
+
+            <strong>
+                Address Search
+            </strong>
+
+            <div>
+                Address searches use public geocoding
+                to locate an address before attempting
+                to identify the parcel beneath it.
+            </div>
+
+        </div>
+
+        <div class="page-section">
+
+            <p>
+                Parcel information can vary by county
+                and should be verified with the
+                appropriate county assessor before
+                being relied upon for official purposes.
+            </p>
+
+        </div>
+    `;
+}
 
 /* =========================================================
-   UPDATE HISTORY
+   HISTORY
    ========================================================= */
 
-function showHistory() {
+function showHistoryPage() {
 
-    openAppPage(
-        "Update History",
-        "DATA",
-        `
-            <div class="page-section">
+    appPageKicker.textContent =
+        "DATA";
 
-                <div class="page-card">
+    appPageTitle.textContent =
+        "Update History";
 
-                    <strong>
-                        ParcelScope Version
-                    </strong>
+    appPageContent.innerHTML = `
 
-                    <div>
-                        ${VERSION}
-                    </div>
+        <div class="page-card">
 
-                </div>
+            <strong>
+                Version ${VERSION}
+            </strong>
 
-                <div class="page-card">
-
-                    <strong>
-                        Parcel Data
-                    </strong>
-
-                    <div>
-                        Parcel records are supplied through
-                        the statewide Idaho parcel framework
-                        and may change as county data is updated.
-                    </div>
-
-                </div>
-
+            <div>
+                Current ParcelScope build.
             </div>
-        `
-    );
-}
 
+        </div>
+
+        <div class="page-card">
+
+            <strong>
+                Parcel Search
+            </strong>
+
+            <div>
+                Improved parcel-ID, property-record,
+                and address searching.
+            </div>
+
+        </div>
+
+        <div class="page-card">
+
+            <strong>
+                Mapping
+            </strong>
+
+            <div>
+                Satellite imagery and parcel
+                boundaries restored.
+            </div>
+
+        </div>
+
+    `;
+}
 
 /* =========================================================
    SETTINGS
    ========================================================= */
 
-function showSettings() {
+function showSettingsPage() {
 
-    openAppPage(
-        "Settings",
-        "SYSTEM",
-        `
-            <div class="setting-group">
+    appPageKicker.textContent =
+        "SYSTEM";
 
-                <h2>
-                    Map
-                </h2>
+    appPageTitle.textContent =
+        "Settings";
 
-                <div class="setting-row">
+    appPageContent.innerHTML = `
 
-                    <div>
+        <div class="setting-group">
 
-                        <div class="setting-name">
-                            Keep map position
-                        </div>
+            <h2>Map</h2>
 
-                        <div class="setting-description">
-                            Prevent ParcelScope from changing
-                            the map view while you browse.
-                        </div>
+            <div class="setting-row">
 
+                <div>
+
+                    <div class="setting-name">
+                        Satellite imagery
                     </div>
 
-                    <button
-                        class="toggle"
-                        id="lockMapToggle"
-                    ></button>
+                    <div class="setting-description">
+                        Use satellite imagery as the
+                        primary map.
+                    </div>
 
                 </div>
 
+                <button
+                    id="satelliteToggle"
+                    class="toggle ${
+                        settings.satellite
+                            ? "on"
+                            : ""
+                    }"
+                    aria-label="Toggle satellite imagery"
+                ></button>
+
             </div>
-        `
-    );
 
-    const toggle =
-        document.getElementById(
-            "lockMapToggle"
-        );
+            <div class="setting-row">
 
-    const locked =
-        localStorage.getItem(
-            "parcelscope_lock_map"
-        ) === "true";
+                <div>
 
-    if (locked) {
-        toggle.classList.add("on");
-    }
+                    <div class="setting-name">
+                        Parcel boundaries
+                    </div>
 
-    toggle.addEventListener(
-        "click",
-        () => {
+                    <div class="setting-description">
+                        Display parcel outlines when
+                        zoomed in.
+                    </div>
 
-            const next =
-                !toggle.classList.contains(
-                    "on"
+                </div>
+
+                <button
+                    id="parcelToggle"
+                    class="toggle ${
+                        settings.showParcelLines
+                            ? "on"
+                            : ""
+                    }"
+                    aria-label="Toggle parcel boundaries"
+                ></button>
+
+            </div>
+
+            <div class="setting-row">
+
+                <div>
+
+                    <div class="setting-name">
+                        Automatic map zoom
+                    </div>
+
+                    <div class="setting-description">
+                        Automatically zoom to selected
+                        search results.
+                    </div>
+
+                </div>
+
+                <button
+                    id="autoZoomToggle"
+                    class="toggle ${
+                        settings.autoZoom
+                            ? "on"
+                            : ""
+                    }"
+                    aria-label="Toggle automatic zoom"
+                ></button>
+
+            </div>
+
+        </div>
+
+        <div class="setting-group">
+
+            <h2>Application</h2>
+
+            <div class="setting-row">
+
+                <div>
+
+                    <div class="setting-name">
+                        Version
+                    </div>
+
+                    <div class="setting-description">
+                        ParcelScope build number.
+                    </div>
+
+                </div>
+
+                <div>
+                    ${VERSION}
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="setting-group">
+
+            <button
+                id="resetSettings"
+                class="refresh-button"
+            >
+                Reset Settings
+            </button>
+
+        </div>
+    `;
+
+    document
+        .getElementById(
+            "satelliteToggle"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                setSatellite(
+                    !settings.satellite
                 );
 
-            toggle.classList.toggle(
-                "on",
-                next
-            );
+                showSettingsPage();
+            }
+        );
 
-            localStorage.setItem(
-                "parcelscope_lock_map",
-                String(next)
-            );
-        }
-    );
+    document
+        .getElementById(
+            "parcelToggle"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                settings.showParcelLines =
+                    !settings.showParcelLines;
+
+                localStorage.setItem(
+                    "parcelscope_settings",
+                    JSON.stringify(settings)
+                );
+
+                if (
+                    settings.showParcelLines
+                ) {
+
+                    if (!parcelLayer) {
+                        createParcelLayer();
+                    } else {
+                        parcelLayer.addTo(map);
+                    }
+
+                    loadParcelsInView();
+
+                } else if (parcelLayer) {
+
+                    map.removeLayer(
+                        parcelLayer
+                    );
+                }
+
+                showSettingsPage();
+            }
+        );
+
+    document
+        .getElementById(
+            "autoZoomToggle"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                settings.autoZoom =
+                    !settings.autoZoom;
+
+                localStorage.setItem(
+                    "parcelscope_settings",
+                    JSON.stringify(settings)
+                );
+
+                showSettingsPage();
+            }
+        );
+
+    document
+        .getElementById(
+            "resetSettings"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                settings = {
+                    satellite: true,
+                    showParcelLines: true,
+                    autoZoom: true
+                };
+
+                localStorage.setItem(
+                    "parcelscope_settings",
+                    JSON.stringify(settings)
+                );
+
+                setSatellite(true);
+
+                if (parcelLayer) {
+                    parcelLayer.addTo(map);
+                }
+
+                showSettingsPage();
+
+                loadParcelsInView();
+            }
+        );
 }
-
 
 /* =========================================================
    ABOUT
    ========================================================= */
 
-function showAbout() {
+function showAboutPage() {
 
-    openAppPage(
-        "About ParcelScope",
-        "PARCELSCOPE",
-        `
-            <div class="page-section">
+    appPageKicker.textContent =
+        "PARCELSCOPE";
 
-                <div class="page-card">
+    appPageTitle.textContent =
+        "About";
 
-                    <strong>
-                        ParcelScope Idaho
-                    </strong>
+    appPageContent.innerHTML = `
 
-                    <div>
-                        Version ${VERSION}
-                    </div>
+        <div class="page-section">
 
-                </div>
+            <h2>ParcelScope Idaho</h2>
 
-                <div class="page-card">
+            <p>
+                A public-data property research map
+                for Idaho.
+            </p>
 
-                    <strong>
-                        What it does
-                    </strong>
+        </div>
 
-                    <div>
-                        ParcelScope is a public-data research
-                        interface for exploring Idaho parcel
-                        information.
-                    </div>
+        <div class="page-card">
 
-                </div>
+            <strong>
+                Version
+            </strong>
 
-                <div class="page-card">
-
-                    <strong>
-                        Important
-                    </strong>
-
-                    <div>
-                        Parcel information can change and may
-                        contain errors or omissions. Always
-                        verify important property information
-                        with the appropriate county assessor.
-                    </div>
-
-                </div>
-
+            <div>
+                ${VERSION}
             </div>
-        `
+
+        </div>
+
+        <div class="page-card">
+
+            <strong>
+                Purpose
+            </strong>
+
+            <div>
+                ParcelScope makes it easier to explore
+                publicly available parcel information,
+                map locations, and property records.
+            </div>
+
+        </div>
+
+        <div class="page-section">
+
+            <p>
+                ParcelScope is not an official county
+                assessor website and does not replace
+                official property records.
+            </p>
+
+        </div>
+    `;
+}
+
+/* =========================================================
+   LOAD SETTINGS
+   ========================================================= */
+
+try {
+
+    const stored =
+        JSON.parse(
+            localStorage.getItem(
+                "parcelscope_settings"
+            )
+        );
+
+    if (stored) {
+
+        settings = {
+            ...settings,
+            ...stored
+        };
+    }
+
+} catch (error) {
+
+    console.warn(
+        "Could not load saved settings",
+        error
     );
 }
 
+/* Apply startup map */
 
-/* =========================================================
-   MENU ROUTING
-   ========================================================= */
+setSatellite(
+    settings.satellite
+);
 
-function handleMenuSection(section) {
+if (!settings.showParcelLines) {
 
-    closeMenu();
-
-    switch (section) {
-
-        case "counties":
-            showCounties();
-            break;
-
-        case "saved":
-            showSaved();
-            break;
-
-        case "sources":
-            showSources();
-            break;
-
-        case "history":
-            showHistory();
-            break;
-
-        case "settings":
-            showSettings();
-            break;
-
-        case "about":
-            showAbout();
-            break;
+    if (parcelLayer) {
+        map.removeLayer(
+            parcelLayer
+        );
     }
 }
 
-
 /* =========================================================
-   EVENT LISTENERS
+   SEARCH PLACEHOLDER
    ========================================================= */
 
-function setupEvents() {
+if (searchInput) {
 
-    document
-        .getElementById("menuButton")
-        .addEventListener(
-            "click",
-            openMenu
-        );
-
-    document
-        .getElementById("closeMenu")
-        .addEventListener(
-            "click",
-            closeMenu
-        );
-
-    document
-        .getElementById("closeProperty")
-        .addEventListener(
-            "click",
-            closePropertyPanel
-        );
-
-    document
-        .getElementById("closeResults")
-        .addEventListener(
-            "click",
-            closeResults
-        );
-
-    document
-        .getElementById("closeAppPage")
-        .addEventListener(
-            "click",
-            closeAppPage
-        );
-
-    document
-        .getElementById("searchButton")
-        .addEventListener(
-            "click",
-            () => {
-
-                searchParcels(
-                    document
-                        .getElementById(
-                            "searchInput"
-                        )
-                        .value
-                );
-            }
-        );
-
-    document
-        .getElementById("searchInput")
-        .addEventListener(
-            "keydown",
-            event => {
-
-                if (
-                    event.key === "Enter"
-                ) {
-
-                    searchParcels(
-                        event.target.value
-                    );
-                }
-            }
-        );
-
-    document
-        .querySelectorAll(
-            ".menu-item"
-        )
-        .forEach(item => {
-
-            item.addEventListener(
-                "click",
-                () => {
-
-                    handleMenuSection(
-                        item.dataset.section
-                    );
-                }
-            );
-        });
+    searchInput.placeholder =
+        "Search address, owner, or parcel ID...";
 }
 
-
 /* =========================================================
-   START
+   ESCAPE HTML
    ========================================================= */
 
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
+function escapeHtml(value) {
 
-        startMap();
-
-        setupEvents();
-
-        setStatus(
-            `ParcelScope ${VERSION} ready`
-        );
+    if (
+        value === undefined ||
+        value === null
+    ) {
+        return "";
     }
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+/* =========================================================
+   INITIAL STATUS
+   ========================================================= */
+
+setStatus(
+    "ParcelScope ready"
 );
