@@ -1,6 +1,7 @@
 /* =========================================================
    PARCELSCOPE IDAHO
    Main Application
+   Multi-source parcel loading + duplicate filtering
 ========================================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -22,7 +23,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const propertyContent = document.getElementById("propertyContent");
     const propertyTitle = document.getElementById("propertyTitle");
 
-    const mapStatusText = document.getElementById("mapStatusText");
+    const mapStatusText =
+        document.getElementById("mapStatusText");
 
     const appPage = document.getElementById("appPage");
     const appPageTitle = document.getElementById("appPageTitle");
@@ -30,12 +32,41 @@ document.addEventListener("DOMContentLoaded", () => {
     const appPageContent = document.getElementById("appPageContent");
     const closeAppPage = document.getElementById("closeAppPage");
 
+
     /* =====================================================
        DATA SOURCES
     ===================================================== */
 
-    const PARCEL_URL =
-        "https://services1.arcgis.com/CNPdEkvnGl65jCX8/ArcGIS/rest/services/Public_Idaho_Parcels_/FeatureServer/7";
+    const PARCEL_SOURCES = [
+
+        {
+            name: "Idaho Statewide Parcels",
+
+            url:
+                "https://services1.arcgis.com/CNPdEkvnGl65jCX8/ArcGIS/rest/services/Public_Idaho_Parcels_/FeatureServer/7",
+
+            priority: 100
+        }
+
+        /*
+         * Additional verified county sources can be added here.
+         *
+         * Example:
+         *
+         * {
+         *     name: "Bonner County",
+         *     url: "VERIFIED_ENDPOINT_HERE",
+         *     priority: 200
+         * }
+         *
+         * {
+         *     name: "Boundary County",
+         *     url: "VERIFIED_ENDPOINT_HERE",
+         *     priority: 200
+         * }
+         */
+    ];
+
 
     const COUNTY_URL =
         "https://gisp.itd.idaho.gov/server/rest/services/GDWarehouse/PoliticalBoundaries/FeatureServer/2";
@@ -43,8 +74,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const IDAHO_URL =
         "https://gisp.itd.idaho.gov/server/rest/services/GDWarehouse/PoliticalBoundaries/FeatureServer/3";
 
-    const PARCEL_FIELDS =
-        "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID";
 
     /* =====================================================
        MAP
@@ -55,6 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
         attributionControl: true
     });
 
+
     const satelliteLayer = L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         {
@@ -62,6 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
             attribution: "Tiles © Esri"
         }
     );
+
 
     const standardLayer = L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -71,7 +102,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     );
 
+
     satelliteLayer.addTo(map);
+
+
+    /* =====================================================
+       MAP LAYERS
+    ===================================================== */
 
     let countyLayer = null;
     let idahoLayer = null;
@@ -83,96 +120,189 @@ document.addEventListener("DOMContentLoaded", () => {
     let parcelRequestController = null;
     let moveTimer = null;
 
+
     /* =====================================================
        SETTINGS
     ===================================================== */
 
     const defaultSettings = {
+
         mapStyle: "satellite",
+
         parcels: true,
+
         counties: true,
+
         idaho: true
+
     };
+
 
     let settings = loadSettings();
 
+
     function loadSettings() {
+
         try {
-            const saved = JSON.parse(
-                localStorage.getItem("parcelScopeSettings")
-            );
+
+            const saved =
+                JSON.parse(
+                    localStorage.getItem(
+                        "parcelScopeSettings"
+                    )
+                );
+
 
             return {
+
                 ...defaultSettings,
+
                 ...(saved || {})
+
             };
+
         } catch {
-            return { ...defaultSettings };
+
+            return {
+
+                ...defaultSettings
+
+            };
+
         }
+
     }
 
+
     function saveSettings() {
+
         localStorage.setItem(
+
             "parcelScopeSettings",
+
             JSON.stringify(settings)
+
         );
+
     }
+
 
     /* =====================================================
        INITIAL VIEW
     ===================================================== */
 
-    map.setView([44.0682, -114.7420], 6);
+    map.setView(
+        [44.0682, -114.7420],
+        6
+    );
+
 
     /* =====================================================
        MENU
     ===================================================== */
 
     function openMenu() {
+
         sideMenu.classList.add("open");
+
     }
+
 
     function closeMenuPanel() {
+
         sideMenu.classList.remove("open");
+
     }
 
-    menuButton.addEventListener("click", () => {
-        if (sideMenu.classList.contains("open")) {
-            closeMenuPanel();
-        } else {
-            openMenu();
-        }
-    });
 
-    closeMenu.addEventListener("click", closeMenuPanel);
+    menuButton.addEventListener(
+        "click",
+        () => {
+
+            if (
+                sideMenu.classList.contains("open")
+            ) {
+
+                closeMenuPanel();
+
+            } else {
+
+                openMenu();
+
+            }
+
+        }
+    );
+
+
+    closeMenu.addEventListener(
+        "click",
+        closeMenuPanel
+    );
+
 
     /* =====================================================
        PANELS
     ===================================================== */
 
-    closeProperty.addEventListener("click", () => {
-        propertyPanel.classList.remove("open");
-    });
+    closeProperty.addEventListener(
+        "click",
+        () => {
 
-    closeResults.addEventListener("click", () => {
-        searchResults.classList.remove("open");
-    });
+            propertyPanel.classList.remove("open");
 
-    closeAppPage.addEventListener("click", () => {
-        appPage.classList.remove("open");
-    });
+        }
+    );
 
-    function openPage(title, content, kicker = "PARCELSCOPE") {
-        appPageKicker.textContent = kicker;
-        appPageTitle.textContent = title;
-        appPageContent.innerHTML = content;
+
+    closeResults.addEventListener(
+        "click",
+        () => {
+
+            searchResults.classList.remove("open");
+
+        }
+    );
+
+
+    closeAppPage.addEventListener(
+        "click",
+        () => {
+
+            appPage.classList.remove("open");
+
+        }
+    );
+
+
+    function openPage(
+        title,
+        content,
+        kicker = "PARCELSCOPE"
+    ) {
+
+        appPageKicker.textContent =
+            kicker;
+
+        appPageTitle.textContent =
+            title;
+
+        appPageContent.innerHTML =
+            content;
+
         appPage.classList.add("open");
+
         closeMenuPanel();
+
     }
 
+
     map.on("click", () => {
+
         closeMenuPanel();
+
     });
+
 
     /* =====================================================
        COUNTY + STATE BOUNDARIES
@@ -197,54 +327,90 @@ document.addEventListener("DOMContentLoaded", () => {
 
             ]);
 
-            if (!countyResponse.ok || !idahoResponse.ok) {
-                throw new Error("Boundary request failed");
+
+            if (
+                !countyResponse.ok ||
+                !idahoResponse.ok
+            ) {
+
+                throw new Error(
+                    "Boundary request failed"
+                );
+
             }
 
-            const countyGeoJSON = await countyResponse.json();
-            const idahoGeoJSON = await idahoResponse.json();
 
-            countyLayer = L.geoJSON(
-                countyGeoJSON,
-                {
-                    style: {
-                        color: "#d7a84a",
-                        weight: 1.2,
-                        opacity: 0.9,
-                        fillOpacity: 0
-                    },
+            const countyGeoJSON =
+                await countyResponse.json();
 
-                    onEachFeature: (feature, layer) => {
+            const idahoGeoJSON =
+                await idahoResponse.json();
 
-                        const name =
-                            feature.properties?.CountyName ||
-                            "County";
 
-                        layer.bindTooltip(
-                            name,
-                            {
-                                sticky: true,
-                                direction: "center"
+            countyLayer =
+                L.geoJSON(
+                    countyGeoJSON,
+                    {
+
+                        style: {
+
+                            color: "#d7a84a",
+
+                            weight: 1.2,
+
+                            opacity: 0.9,
+
+                            fillOpacity: 0
+
+                        },
+
+
+                        onEachFeature:
+                            (feature, layer) => {
+
+                                const name =
+                                    feature.properties
+                                        ?.CountyName ||
+                                    "County";
+
+
+                                layer.bindTooltip(
+                                    name,
+                                    {
+                                        sticky: true,
+                                        direction: "center"
+                                    }
+                                );
+
                             }
-                        );
 
                     }
-                }
-            );
+                );
 
-            idahoLayer = L.geoJSON(
-                idahoGeoJSON,
-                {
-                    style: {
-                        color: "#ffffff",
-                        weight: 3,
-                        opacity: 1,
-                        fillOpacity: 0
+
+            idahoLayer =
+                L.geoJSON(
+                    idahoGeoJSON,
+                    {
+
+                        style: {
+
+                            color: "#ffffff",
+
+                            weight: 3,
+
+                            opacity: 1,
+
+                            fillOpacity: 0
+
+                        }
+
                     }
-                }
-            );
+                );
+
 
             updateBoundaryVisibility();
+
 
         } catch (error) {
 
@@ -254,41 +420,454 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
         }
+
     }
+
 
     function updateBoundaryVisibility() {
 
-        if (!countyLayer || !idahoLayer) {
+        if (
+            !countyLayer ||
+            !idahoLayer
+        ) {
+
             return;
+
         }
 
-        if (settings.counties && !map.hasLayer(countyLayer)) {
+
+        if (
+            settings.counties &&
+            !map.hasLayer(countyLayer)
+        ) {
+
             countyLayer.addTo(map);
+
         }
 
-        if (!settings.counties && map.hasLayer(countyLayer)) {
+
+        if (
+            !settings.counties &&
+            map.hasLayer(countyLayer)
+        ) {
+
             map.removeLayer(countyLayer);
+
         }
 
-        if (settings.idaho && !map.hasLayer(idahoLayer)) {
+
+        if (
+            settings.idaho &&
+            !map.hasLayer(idahoLayer)
+        ) {
+
             idahoLayer.addTo(map);
+
         }
 
-        if (!settings.idaho && map.hasLayer(idahoLayer)) {
+
+        if (
+            !settings.idaho &&
+            map.hasLayer(idahoLayer)
+        ) {
+
             map.removeLayer(idahoLayer);
+
         }
+
     }
 
-    /* =====================================================
-       PARCEL LOADING
-       
-       IMPORTANT:
-       The old version requested one large bounding box and
-       only allowed 2,000 records. Dense northern counties
-       could therefore fail to display correctly.
 
-       This version divides the visible map into smaller
-       tiles and requests each tile separately.
+    /* =====================================================
+       PARCEL FIELD LIST
+    ===================================================== */
+
+    const PARCEL_FIELDS =
+        [
+            "OBJECTID",
+            "PARCEL_ID",
+            "STEWARD",
+            "County",
+            "UPDATED",
+            "OWNER1",
+            "OWNER2",
+            "ASR_ACRES",
+            "SITE_ADD",
+            "SITE_CITY",
+            "SITE_ZIP",
+            "VAL_TOTAL",
+            "FP_ID"
+        ].join(",");
+
+
+    /* =====================================================
+       NORMALIZATION
+       Used by duplicate filtering
+    ===================================================== */
+
+    function normalizeText(value) {
+
+        return cleanValue(value)
+
+            .toLowerCase()
+
+            .replace(
+                /[^a-z0-9]/g,
+                ""
+            );
+
+    }
+
+
+    function normalizeAddress(value) {
+
+        return cleanValue(value)
+
+            .toLowerCase()
+
+            .replace(
+                /\b(street|st|road|rd|avenue|ave|drive|dr|lane|ln|highway|hwy|boulevard|blvd|court|ct|circle|cir|way)\b/g,
+                ""
+            )
+
+            .replace(
+                /[^a-z0-9]/g,
+                ""
+            );
+
+    }
+
+
+    /* =====================================================
+       DUPLICATE KEY
+       Strong multi-level matching
+    ===================================================== */
+
+    function getDuplicateKey(feature) {
+
+        const p =
+            feature?.properties || {};
+
+
+        const parcelID =
+            normalizeText(
+                p.PARCEL_ID
+            );
+
+
+        const fpID =
+            normalizeText(
+                p.FP_ID
+            );
+
+
+        const address =
+            normalizeAddress(
+                p.SITE_ADD
+            );
+
+
+        const city =
+            normalizeText(
+                p.SITE_CITY
+            );
+
+
+        const zip =
+            normalizeText(
+                p.SITE_ZIP
+            );
+
+
+        const owner =
+            normalizeText(
+                p.OWNER1
+            );
+
+
+        const county =
+            normalizeText(
+                p.County
+            );
+
+
+        /*
+         * Strongest match:
+         * parcel identifier.
+         */
+
+        if (parcelID) {
+
+            return `parcel:${parcelID}`;
+
+        }
+
+
+        if (fpID) {
+
+            return `fp:${fpID}`;
+
+        }
+
+
+        /*
+         * Strong property-address match.
+         */
+
+        if (
+            address &&
+            city &&
+            county
+        ) {
+
+            return `address:${address}:${city}:${county}`;
+
+        }
+
+
+        /*
+         * Last-resort identity.
+         */
+
+        return [
+            "property",
+            owner,
+            address,
+            city,
+            zip,
+            county
+        ].join(":");
+
+    }
+
+
+    /* =====================================================
+       GEOMETRY DUPLICATE CHECK
+    ===================================================== */
+
+    function getGeometrySignature(feature) {
+
+        try {
+
+            const geometry =
+                feature?.geometry;
+
+
+            if (!geometry) {
+
+                return "";
+
+            }
+
+
+            const text =
+                JSON.stringify(
+                    geometry
+                );
+
+
+            /*
+             * Do not use the entire geometry as the
+             * primary duplicate key because different
+             * services can return slightly different
+             * coordinate precision.
+             */
+
+            return text
+
+                .replace(
+                    /\d+\.\d{5,}/g,
+                    match =>
+                        Number(
+                            match
+                        ).toFixed(4)
+                );
+
+        } catch {
+
+            return "";
+
+        }
+
+    }
+
+
+    /* =====================================================
+       DUPLICATE FILTER
+    ===================================================== */
+
+    function filterDuplicateParcels(
+        features
+    ) {
+
+        const seenIDs =
+            new Set();
+
+        const seenGeometry =
+            new Set();
+
+        const seenProperties =
+            new Set();
+
+        const results = [];
+
+
+        for (
+            const feature of features
+        ) {
+
+            const id =
+                getDuplicateKey(
+                    feature
+                );
+
+
+            const geometry =
+                getGeometrySignature(
+                    feature
+                );
+
+
+            /*
+             * ID duplicate.
+             */
+
+            if (
+                id &&
+                seenIDs.has(id)
+            ) {
+
+                continue;
+
+            }
+
+
+            /*
+             * Geometry duplicate.
+             */
+
+            if (
+                geometry &&
+                seenGeometry.has(
+                    geometry
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            /*
+             * Property duplicate.
+             */
+
+            const p =
+                feature?.properties || {};
+
+
+            const propertyKey =
+                [
+                    normalizeText(
+                        p.OWNER1
+                    ),
+                    normalizeAddress(
+                        p.SITE_ADD
+                    ),
+                    normalizeText(
+                        p.SITE_CITY
+                    ),
+                    normalizeText(
+                        p.SITE_ZIP
+                    ),
+                    normalizeText(
+                        p.County
+                    )
+                ].join("|");
+
+
+            if (
+                propertyKey !== "||||" &&
+                seenProperties.has(
+                    propertyKey
+                )
+            ) {
+
+                continue;
+
+            }
+
+
+            if (id) {
+
+                seenIDs.add(id);
+
+            }
+
+
+            if (geometry) {
+
+                seenGeometry.add(
+                    geometry
+                );
+
+            }
+
+
+            if (
+                propertyKey !== "||||"
+            ) {
+
+                seenProperties.add(
+                    propertyKey
+                );
+
+            }
+
+
+            results.push(
+                feature
+            );
+
+        }
+
+
+        return results;
+
+    }
+
+
+    /* =====================================================
+       ADD SOURCE INFORMATION
+    ===================================================== */
+
+    function addSourceInfo(
+        feature,
+        source
+    ) {
+
+        if (
+            !feature.properties
+        ) {
+
+            feature.properties = {};
+
+        }
+
+
+        feature.properties._parcelSource =
+            source.name;
+
+        feature.properties._sourcePriority =
+            source.priority;
+
+        return feature;
+
+    }
+
+
+    /* =====================================================
+       LOAD PARCELS FROM MULTIPLE SOURCES
     ===================================================== */
 
     async function loadParcels() {
@@ -296,84 +875,71 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!settings.parcels) {
 
             if (parcelLayer) {
-                map.removeLayer(parcelLayer);
+
+                map.removeLayer(
+                    parcelLayer
+                );
+
             }
 
             return;
+
         }
+
+
+        /*
+         * Parcel boundaries only appear when
+         * sufficiently zoomed in.
+         */
 
         if (map.getZoom() < 10) {
 
             if (parcelLayer) {
-                map.removeLayer(parcelLayer);
+
+                map.removeLayer(
+                    parcelLayer
+                );
+
             }
+
 
             setStatus(
                 "Zoom in to view parcel boundaries"
             );
 
+
             return;
+
         }
 
+
         if (parcelRequestController) {
+
             parcelRequestController.abort();
+
         }
+
 
         parcelRequestController =
             new AbortController();
 
-        const controller =
-            parcelRequestController;
 
-        const bounds = map.getBounds();
+        const bounds =
+            map.getBounds();
 
-        /*
-         * Instead of asking ArcGIS for the entire visible
-         * area at once, divide it into smaller pieces.
-         *
-         * This is especially important in dense counties
-         * such as Bonner and Boundary.
-         */
 
-        const south = bounds.getSouth();
-        const north = bounds.getNorth();
-        const west = bounds.getWest();
-        const east = bounds.getEast();
+        const geometry = [
 
-        const latSize = (north - south) / 2;
-        const lngSize = (east - west) / 2;
+            bounds.getWest(),
 
-        const requests = [];
+            bounds.getSouth(),
 
-        for (let row = 0; row < 2; row++) {
+            bounds.getEast(),
 
-            for (let col = 0; col < 2; col++) {
+            bounds.getNorth()
 
-                const tileSouth =
-                    south + row * latSize;
+        ].join(",");
 
-                const tileNorth =
-                    row === 1
-                        ? north
-                        : south + (row + 1) * latSize;
-
-                const tileWest =
-                    west + col * lngSize;
-
-                const tileEast =
-                    col === 1
-                        ? east
-                        : west + (col + 1) * lngSize;
-
-                requests.push({
-                    south: tileSouth,
-                    north: tileNorth,
-                    west: tileWest,
-                    east: tileEast
-                });
-
-            }
-        }
 
         try {
 
@@ -381,126 +947,177 @@ document.addEventListener("DOMContentLoaded", () => {
                 "Loading parcel boundaries..."
             );
 
-            const allFeatures = [];
-
-            for (const tile of requests) {
-
-                if (controller.signal.aborted) {
-                    return;
-                }
-
-                const geometry = [
-                    tile.west,
-                    tile.south,
-                    tile.east,
-                    tile.north
-                ].join(",");
-
-                const params =
-                    new URLSearchParams({
-
-                        where: "1=1",
-
-                        geometry: geometry,
-
-                        geometryType:
-                            "esriGeometryEnvelope",
-
-                        inSR: "4326",
-
-                        spatialRel:
-                            "esriSpatialRelIntersects",
-
-                        outFields:
-                            PARCEL_FIELDS,
-
-                        returnGeometry: "true",
-
-                        outSR: "4326",
-
-                        resultRecordCount: "2000",
-
-                        f: "geojson"
-
-                    });
-
-                const response =
-                    await fetch(
-                        `${PARCEL_URL}/query?${params.toString()}`,
-                        {
-                            signal:
-                                controller.signal
-                        }
-                    );
-
-                if (!response.ok) {
-                    continue;
-                }
-
-                const data =
-                    await response.json();
-
-                if (
-                    data.features &&
-                    data.features.length
-                ) {
-
-                    allFeatures.push(
-                        ...data.features
-                    );
-
-                }
-            }
-
-            if (controller.signal.aborted) {
-                return;
-            }
 
             /*
-             * Remove duplicate parcels that can occur along
-             * the edges where the smaller request areas meet.
+             * Ask every configured source for the
+             * visible area.
              */
 
-            const uniqueFeatures = [];
-            const seenIDs = new Set();
+            const sourceRequests =
+                PARCEL_SOURCES.map(
+                    async source => {
 
-            for (const feature of allFeatures) {
+                        const params =
+                            new URLSearchParams({
 
-                const id =
-                    getParcelID(feature);
+                                where: "1=1",
 
-                if (id && seenIDs.has(id)) {
-                    continue;
-                }
+                                geometry:
+                                    geometry,
 
-                if (id) {
-                    seenIDs.add(id);
-                }
+                                geometryType:
+                                    "esriGeometryEnvelope",
 
-                uniqueFeatures.push(feature);
-            }
+                                inSR: "4326",
+
+                                spatialRel:
+                                    "esriSpatialRelIntersects",
+
+                                outFields:
+                                    PARCEL_FIELDS,
+
+                                returnGeometry:
+                                    "true",
+
+                                outSR:
+                                    "4326",
+
+                                resultRecordCount:
+                                    "2000",
+
+                                f:
+                                    "geojson"
+
+                            });
+
+
+                        try {
+
+                            const response =
+                                await fetch(
+                                    `${source.url}/query?${params.toString()}`,
+                                    {
+                                        signal:
+                                            parcelRequestController.signal
+                                    }
+                                );
+
+
+                            if (
+                                !response.ok
+                            ) {
+
+                                throw new Error(
+                                    `${source.name} request failed`
+                                );
+
+                            }
+
+
+                            const data =
+                                await response.json();
+
+
+                            if (
+                                !data.features
+                            ) {
+
+                                return [];
+
+                            }
+
+
+                            return data.features.map(
+                                feature =>
+                                    addSourceInfo(
+                                        feature,
+                                        source
+                                    )
+                            );
+
+
+                        } catch (error) {
+
+                            if (
+                                error.name ===
+                                "AbortError"
+                            ) {
+
+                                throw error;
+
+                            }
+
+
+                            console.warn(
+                                `Parcel source unavailable: ${source.name}`,
+                                error
+                            );
+
+
+                            return [];
+
+                        }
+
+                    }
+                );
+
+
+            const sourceResults =
+                await Promise.all(
+                    sourceRequests
+                );
+
+
+            const allFeatures =
+                sourceResults.flat();
+
+
+            /*
+             * Strong duplicate removal.
+             */
+
+            const uniqueFeatures =
+                filterDuplicateParcels(
+                    allFeatures
+                );
+
 
             if (parcelLayer) {
-                map.removeLayer(parcelLayer);
+
+                map.removeLayer(
+                    parcelLayer
+                );
+
             }
+
 
             parcelLayer =
                 L.geoJSON(
                     {
                         type: "FeatureCollection",
-                        features: uniqueFeatures
+                        features:
+                            uniqueFeatures
                     },
                     {
 
                         style: {
+
                             color: "#ffffff",
+
                             weight: 0.7,
+
                             opacity: 0.75,
+
                             fillOpacity: 0
+
                         },
 
+
                         onEachFeature:
-                            (feature, layer) => {
+                            (
+                                feature,
+                                layer
+                            ) => {
 
                                 layer.on(
                                     "click",
@@ -509,6 +1126,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                         L.DomEvent.stopPropagation(
                                             event
                                         );
+
 
                                         showParcel(
                                             feature,
@@ -523,13 +1141,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 );
 
-            parcelLayer.addTo(map);
+
+            parcelLayer.addTo(
+                map
+            );
+
 
             /*
              * Re-highlight selected parcel.
              */
 
-            if (selectedParcelID) {
+            if (
+                selectedParcelID
+            ) {
 
                 parcelLayer.eachLayer(
                     layer => {
@@ -539,6 +1163,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 layer.feature
                             );
 
+
                         if (
                             id ===
                             selectedParcelID
@@ -546,6 +1171,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             selectedParcelLayer =
                                 layer;
+
 
                             highlightParcel(
                                 layer
@@ -558,19 +1184,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             }
 
-            if (uniqueFeatures.length) {
 
-                setStatus(
-                    `${uniqueFeatures.length.toLocaleString()} parcel boundaries loaded`
-                );
+            setStatus(
+                `${uniqueFeatures.length.toLocaleString()} parcel boundaries loaded`
+            );
 
-            } else {
-
-                setStatus(
-                    "No parcel boundaries found in this area"
-                );
-
-            }
 
         } catch (error) {
 
@@ -578,89 +1196,86 @@ document.addEventListener("DOMContentLoaded", () => {
                 error.name ===
                 "AbortError"
             ) {
+
                 return;
+
             }
+
 
             console.error(
                 "Parcel loading error:",
                 error
             );
 
+
             setStatus(
                 "Parcel data unavailable"
             );
+
         }
+
     }
+
 
     /* =====================================================
        MAP MOVE / ZOOM
     ===================================================== */
 
-    map.on("moveend", () => {
+    map.on(
+        "moveend",
+        () => {
 
-        clearTimeout(moveTimer);
-
-        moveTimer =
-            setTimeout(
-                loadParcels,
-                300
+            clearTimeout(
+                moveTimer
             );
 
-    });
+
+            moveTimer =
+                setTimeout(
+                    loadParcels,
+                    300
+                );
+
+        }
+    );
+
 
     /* =====================================================
-       CLICK A PROPERTY
+       CLICK PROPERTY
     ===================================================== */
 
-    map.on("click", async event => {
+    map.on(
+        "click",
+        async event => {
 
-        if (map.getZoom() < 10) {
+            if (
+                map.getZoom() < 10
+            ) {
 
-            showMapLocation(
+                showMapLocation(
+                    event.latlng
+                );
+
+                return;
+
+            }
+
+
+            await findParcelAtPoint(
                 event.latlng
             );
 
-            return;
         }
+    );
 
-        await findParcelAtPoint(
-            event.latlng
-        );
 
-    });
-
-    async function findParcelAtPoint(latlng) {
+    async function findParcelAtPoint(
+        latlng
+    ) {
 
         const geometry =
             `${latlng.lng},${latlng.lat}`;
 
-        const params =
-            new URLSearchParams({
-
-                where: "1=1",
-
-                geometry: geometry,
-
-                geometryType:
-                    "esriGeometryPoint",
-
-                inSR: "4326",
-
-                spatialRel:
-                    "esriSpatialRelIntersects",
-
-                outFields:
-                    PARCEL_FIELDS,
-
-                returnGeometry: "true",
-
-                outSR: "4326",
-
-                resultRecordCount: "1",
-
-                f: "geojson"
-
-            });
 
         try {
 
@@ -668,27 +1283,107 @@ document.addEventListener("DOMContentLoaded", () => {
                 "Finding property..."
             );
 
-            const response =
-                await fetch(
-                    `${PARCEL_URL}/query?${params.toString()}`
+
+            const requests =
+                PARCEL_SOURCES.map(
+                    async source => {
+
+                        const params =
+                            new URLSearchParams({
+
+                                where: "1=1",
+
+                                geometry:
+                                    geometry,
+
+                                geometryType:
+                                    "esriGeometryPoint",
+
+                                inSR: "4326",
+
+                                spatialRel:
+                                    "esriSpatialRelIntersects",
+
+                                outFields:
+                                    PARCEL_FIELDS,
+
+                                returnGeometry:
+                                    "true",
+
+                                outSR:
+                                    "4326",
+
+                                resultRecordCount:
+                                    "1",
+
+                                f:
+                                    "geojson"
+
+                            });
+
+
+                        try {
+
+                            const response =
+                                await fetch(
+                                    `${source.url}/query?${params.toString()}`
+                                );
+
+
+                            if (
+                                !response.ok
+                            ) {
+
+                                return [];
+
+                            }
+
+
+                            const data =
+                                await response.json();
+
+
+                            return (
+                                data.features ||
+                                []
+                            ).map(
+                                feature =>
+                                    addSourceInfo(
+                                        feature,
+                                        source
+                                    )
+                            );
+
+                        } catch {
+
+                            return [];
+
+                        }
+
+                    }
                 );
 
-            if (!response.ok) {
-                throw new Error(
-                    "Property query failed"
-                );
-            }
 
-            const data =
-                await response.json();
+            const results =
+                (
+                    await Promise.all(
+                        requests
+                    )
+                ).flat();
+
+
+            const unique =
+                filterDuplicateParcels(
+                    results
+                );
+
 
             if (
-                data.features &&
-                data.features.length
+                unique.length
             ) {
 
                 showParcel(
-                    data.features[0]
+                    unique[0]
                 );
 
             } else {
@@ -699,25 +1394,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
             }
 
+
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                error
+            );
+
 
             showMapLocation(
                 latlng
             );
 
         }
+
     }
+
 
     /* =====================================================
        MAP LOCATION
     ===================================================== */
 
-    function showMapLocation(latlng) {
+    function showMapLocation(
+        latlng
+    ) {
 
         propertyTitle.textContent =
             "Map Location";
+
 
         propertyContent.innerHTML = `
 
@@ -733,6 +1437,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             </div>
 
+
             <div class="property-field">
 
                 <div class="property-label">
@@ -744,6 +1449,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
             </div>
+
 
             <div class="property-field">
 
@@ -759,45 +1465,75 @@ document.addEventListener("DOMContentLoaded", () => {
 
         `;
 
-        propertyPanel.classList.add("open");
+
+        propertyPanel.classList.add(
+            "open"
+        );
+
     }
+
 
     /* =====================================================
        PARCEL HELPERS
     ===================================================== */
 
-    function getParcelID(feature) {
+    function getParcelID(
+        feature
+    ) {
 
         const p =
             feature?.properties || {};
 
-        return (
-            cleanValue(p.PARCEL_ID) ||
-            cleanValue(p.FP_ID) ||
-            cleanValue(p.OBJECTID)
+
+        return cleanValue(
+            p.PARCEL_ID
+        ) ||
+        cleanValue(
+            p.FP_ID
+        ) ||
+        cleanValue(
+            p.OBJECTID
         );
+
     }
 
-    function highlightParcel(layer) {
+
+    function highlightParcel(
+        layer
+    ) {
 
         if (!layer) {
+
             return;
+
         }
+
 
         layer.setStyle({
 
             color: "#00e5ff",
+
             weight: 3,
+
             opacity: 1,
+
             fillColor: "#00e5ff",
+
             fillOpacity: 0.18
 
         });
 
-        if (layer.bringToFront) {
+
+        if (
+            layer.bringToFront
+        ) {
+
             layer.bringToFront();
+
         }
+
     }
+
 
     function clearSelectedParcel() {
 
@@ -809,17 +1545,26 @@ document.addEventListener("DOMContentLoaded", () => {
             selectedParcelLayer.setStyle({
 
                 color: "#ffffff",
+
                 weight: 0.7,
+
                 opacity: 0.75,
+
                 fillOpacity: 0
 
             });
 
         }
 
-        selectedParcelLayer = null;
-        selectedParcelID = null;
+
+        selectedParcelLayer =
+            null;
+
+        selectedParcelID =
+            null;
+
     }
+
 
     /* =====================================================
        SHOW PARCEL
@@ -833,17 +1578,24 @@ document.addEventListener("DOMContentLoaded", () => {
         const p =
             feature.properties || {};
 
+
         clearSelectedParcel();
 
+
         selectedParcelID =
-            getParcelID(feature);
+            getParcelID(
+                feature
+            );
+
 
         if (sourceLayer) {
 
             selectedParcelLayer =
                 sourceLayer;
 
-        } else if (feature.geometry) {
+        } else if (
+            feature.geometry
+        ) {
 
             selectedParcelLayer =
                 L.geoJSON(
@@ -853,9 +1605,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         style: {
 
                             color: "#00e5ff",
+
                             weight: 3,
+
                             opacity: 1,
+
                             fillColor: "#00e5ff",
+
                             fillOpacity: 0.18
 
                         }
@@ -865,7 +1621,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
-        if (selectedParcelLayer) {
+
+        if (
+            selectedParcelLayer
+        ) {
 
             highlightParcel(
                 selectedParcelLayer
@@ -873,9 +1632,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
+
         const owner =
-            cleanValue(p.OWNER1) ||
+            cleanValue(
+                p.OWNER1
+            ) ||
             "Owner information unavailable";
+
 
         const address =
             [
@@ -886,26 +1649,33 @@ document.addEventListener("DOMContentLoaded", () => {
             .filter(Boolean)
             .join(", ");
 
+
         const county =
-            cleanValue(p.County) ||
+            cleanValue(
+                p.County
+            ) ||
             "Unavailable";
+
 
         const acres =
             p.ASR_ACRES !== null &&
             p.ASR_ACRES !== undefined &&
             p.ASR_ACRES !== ""
-                ? Number(p.ASR_ACRES)
-                    .toLocaleString(
-                        undefined,
-                        {
-                            maximumFractionDigits: 2
-                        }
-                    )
+                ? Number(
+                    p.ASR_ACRES
+                  ).toLocaleString(
+                    undefined,
+                    {
+                        maximumFractionDigits: 2
+                    }
+                  )
                 : "Unavailable";
+
 
         const parcelID =
             selectedParcelID ||
             "Unavailable";
+
 
         const assessed =
             p.VAL_TOTAL !== null &&
@@ -917,8 +1687,17 @@ document.addEventListener("DOMContentLoaded", () => {
                   ).toLocaleString()
                 : "Unavailable";
 
+
+        const source =
+            cleanValue(
+                p._parcelSource
+            ) ||
+            "Public GIS source";
+
+
         propertyTitle.textContent =
             owner;
+
 
         propertyContent.innerHTML = `
 
@@ -933,6 +1712,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
             </div>
+
 
             <div class="property-field">
 
@@ -949,6 +1729,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             </div>
 
+
             <div class="property-field">
 
                 <div class="property-label">
@@ -960,6 +1741,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
             </div>
+
 
             <div class="property-field">
 
@@ -973,6 +1755,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             </div>
 
+
             <div class="property-field">
 
                 <div class="property-label">
@@ -984,6 +1767,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
             </div>
+
 
             <div class="property-field">
 
@@ -997,6 +1781,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
             </div>
 
+
+            <div class="property-field">
+
+                <div class="property-label">
+                    Data Source
+                </div>
+
+                <div class="property-value">
+                    ${escapeHTML(source)}
+                </div>
+
+            </div>
+
+
             <div class="property-field">
 
                 <div class="property-label">
@@ -1005,12 +1803,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 <div class="property-value">
                     ${escapeHTML(
-                        cleanValue(p.STEWARD) ||
+                        cleanValue(
+                            p.STEWARD
+                        ) ||
                         "Unavailable"
                     )}
                 </div>
 
             </div>
+
 
             <button
                 class="save-property"
@@ -1021,21 +1822,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
         `;
 
-        propertyPanel.classList.add("open");
+
+        propertyPanel.classList.add(
+            "open"
+        );
+
 
         document
-            .getElementById("savePropertyButton")
+            .getElementById(
+                "savePropertyButton"
+            )
             .addEventListener(
                 "click",
                 () => {
-                    saveProperty(feature);
+
+                    saveProperty(
+                        feature
+                    );
+
                 }
             );
+
 
         setStatus(
             "Property selected"
         );
+
     }
+
 
     /* =====================================================
        SEARCH
@@ -1046,21 +1860,29 @@ document.addEventListener("DOMContentLoaded", () => {
         performSearch
     );
 
+
     searchInput.addEventListener(
         "keydown",
         event => {
 
-            if (event.key === "Enter") {
+            if (
+                event.key ===
+                "Enter"
+            ) {
+
                 performSearch();
+
             }
 
         }
     );
 
+
     async function performSearch() {
 
         const query =
             searchInput.value.trim();
+
 
         if (!query) {
 
@@ -1069,25 +1891,32 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             return;
+
         }
+
 
         resultsContent.innerHTML = `
 
             <div class="search-result">
-                Searching Idaho property records...
+
+                Searching multiple Idaho property sources...
+
             </div>
 
         `;
 
+
         searchResults.classList.add(
             "open"
         );
+
 
         const safeQuery =
             query.replaceAll(
                 "'",
                 "''"
             );
+
 
         const where =
             `PARCEL_ID LIKE '%${safeQuery}%' OR ` +
@@ -1096,43 +1925,96 @@ document.addEventListener("DOMContentLoaded", () => {
             `SITE_ADD LIKE '%${safeQuery}%' OR ` +
             `SITE_CITY LIKE '%${safeQuery}%'`;
 
-        const params =
-            new URLSearchParams({
-
-                where: where,
-
-                outFields:
-                    PARCEL_FIELDS,
-
-                returnGeometry: "true",
-
-                outSR: "4326",
-
-                resultRecordCount: "50",
-
-                f: "geojson"
-
-            });
 
         try {
 
-            const response =
-                await fetch(
-                    `${PARCEL_URL}/query?${params.toString()}`
+            const requests =
+                PARCEL_SOURCES.map(
+                    async source => {
+
+                        const params =
+                            new URLSearchParams({
+
+                                where:
+
+                                    where,
+
+                                outFields:
+                                    PARCEL_FIELDS,
+
+                                returnGeometry:
+                                    "true",
+
+                                outSR:
+                                    "4326",
+
+                                resultRecordCount:
+                                    "50",
+
+                                f:
+                                    "geojson"
+
+                            });
+
+
+                        try {
+
+                            const response =
+                                await fetch(
+                                    `${source.url}/query?${params.toString()}`
+                                );
+
+
+                            if (
+                                !response.ok
+                            ) {
+
+                                return [];
+
+                            }
+
+
+                            const data =
+                                await response.json();
+
+
+                            return (
+                                data.features ||
+                                []
+                            ).map(
+                                feature =>
+                                    addSourceInfo(
+                                        feature,
+                                        source
+                                    )
+                            );
+
+                        } catch {
+
+                            return [];
+
+                        }
+
+                    }
                 );
 
-            if (!response.ok) {
-                throw new Error(
-                    "Search failed"
-                );
-            }
 
-            const data =
-                await response.json();
+            const sourceResults =
+                (
+                    await Promise.all(
+                        requests
+                    )
+                ).flat();
+
+
+            const features =
+                filterDuplicateParcels(
+                    sourceResults
+                );
+
 
             if (
-                !data.features ||
-                !data.features.length
+                !features.length
             ) {
 
                 resultsContent.innerHTML = `
@@ -1153,12 +2035,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 `;
 
                 return;
+
             }
+
 
             const normalized =
                 query.toLowerCase();
 
-            data.features.sort(
+
+            features.sort(
                 (a, b) => {
 
                     const pa =
@@ -1167,25 +2052,30 @@ document.addEventListener("DOMContentLoaded", () => {
                     const pb =
                         b.properties || {};
 
+
                     const ownerA =
                         cleanValue(
                             pa.OWNER1
                         ).toLowerCase();
+
 
                     const ownerB =
                         cleanValue(
                             pb.OWNER1
                         ).toLowerCase();
 
+
                     const addressA =
                         cleanValue(
                             pa.SITE_ADD
                         ).toLowerCase();
 
+
                     const addressB =
                         cleanValue(
                             pb.SITE_ADD
                         ).toLowerCase();
+
 
                     const scoreA =
                         (ownerA === normalized
@@ -1198,6 +2088,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             ? 20
                             : 0);
 
+
                     const scoreB =
                         (ownerB === normalized
                             ? 100
@@ -1209,25 +2100,32 @@ document.addEventListener("DOMContentLoaded", () => {
                             ? 20
                             : 0);
 
+
                     return scoreB - scoreA;
 
                 }
             );
 
+
             resultsContent.innerHTML =
-                data.features
+                features
                     .map(
-                        (feature, index) => {
+                        (
+                            feature,
+                            index
+                        ) => {
 
                             const p =
                                 feature.properties ||
                                 {};
+
 
                             const owner =
                                 cleanValue(
                                     p.OWNER1
                                 ) ||
                                 "Owner unavailable";
+
 
                             const address =
                                 [
@@ -1244,10 +2142,18 @@ document.addEventListener("DOMContentLoaded", () => {
                                 .filter(Boolean)
                                 .join(", ");
 
+
                             const county =
                                 cleanValue(
                                     p.County
                                 );
+
+
+                            const source =
+                                cleanValue(
+                                    p._parcelSource
+                                );
+
 
                             return `
 
@@ -1295,6 +2201,12 @@ document.addEventListener("DOMContentLoaded", () => {
                                             )
                                         }
 
+                                        ${
+                                            source
+                                                ? `<br>Source: ${escapeHTML(source)}`
+                                                : ""
+                                        }
+
                                     </div>
 
                                 </div>
@@ -1304,6 +2216,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                     )
                     .join("");
+
 
             document
                 .querySelectorAll(
@@ -1322,8 +2235,11 @@ document.addEventListener("DOMContentLoaded", () => {
                                             .resultIndex
                                     );
 
+
                                 selectSearchResult(
-                                    data.features[index]
+                                    features[
+                                        index
+                                    ]
                                 );
 
                             }
@@ -1332,9 +2248,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 );
 
+
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Search error:",
+                error
+            );
+
 
             resultsContent.innerHTML = `
 
@@ -1345,46 +2266,69 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
 
                     <div class="search-result-details">
-                        The public GIS service did not
+                        The public GIS services did not
                         return a result. Try again.
                     </div>
 
                 </div>
 
             `;
+
         }
+
     }
+
 
     /* =====================================================
        SELECT SEARCH RESULT
     ===================================================== */
 
-    function selectSearchResult(feature) {
+    function selectSearchResult(
+        feature
+    ) {
 
         searchResults.classList.remove(
             "open"
         );
 
+
         clearSelectedParcel();
 
-        if (feature.geometry) {
+
+        if (
+            feature.geometry
+        ) {
 
             const exactLayer =
-                L.geoJSON(feature);
+                L.geoJSON(
+                    feature
+                );
+
 
             const bounds =
                 exactLayer.getBounds();
 
-            if (bounds.isValid()) {
+
+            if (
+                bounds.isValid()
+            ) {
 
                 map.fitBounds(
                     bounds,
                     {
-                        padding: [60, 60],
+
+                        padding: [
+                            60,
+                            60
+                        ],
+
                         maxZoom: 17
+
                     }
                 );
+
             }
+
 
             selectedParcelLayer =
                 L.geoJSON(
@@ -1394,9 +2338,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         style: {
 
                             color: "#00e5ff",
+
                             weight: 3,
+
                             opacity: 1,
+
                             fillColor: "#00e5ff",
+
                             fillOpacity: 0.18
 
                         }
@@ -1404,15 +2352,22 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 ).addTo(map);
 
+
             selectedParcelID =
-                getParcelID(feature);
+                getParcelID(
+                    feature
+                );
+
         }
+
 
         showParcel(
             feature,
             selectedParcelLayer
         );
+
     }
+
 
     /* =====================================================
        SAVED PROPERTIES
@@ -1433,27 +2388,40 @@ document.addEventListener("DOMContentLoaded", () => {
             return [];
 
         }
+
     }
 
-    function saveProperty(feature) {
+
+    function saveProperty(
+        feature
+    ) {
 
         const p =
             feature.properties || {};
 
+
         const parcelID =
-            getParcelID(feature);
+            getParcelID(
+                feature
+            );
+
 
         if (!parcelID) {
+
             return;
+
         }
+
 
         const saved =
             getSavedProperties();
 
+
         if (
             saved.some(
                 item =>
-                    item.parcelID === parcelID
+                    item.parcelID ===
+                    parcelID
             )
         ) {
 
@@ -1462,7 +2430,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 `
                     <div class="page-card">
 
-                        <strong>Already Saved</strong>
+                        <strong>
+                            Already Saved
+                        </strong>
 
                         This property is already saved.
 
@@ -1472,7 +2442,9 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             return;
+
         }
+
 
         const center =
             feature.geometry
@@ -1481,17 +2453,22 @@ document.addEventListener("DOMContentLoaded", () => {
                   )
                 : null;
 
+
         saved.push({
 
-            parcelID: parcelID,
+            parcelID:
+
+                parcelID,
 
             owner:
+
                 cleanValue(
                     p.OWNER1
                 ) ||
                 "Owner unavailable",
 
             address:
+
                 [
                     cleanValue(
                         p.SITE_ADD
@@ -1507,55 +2484,75 @@ document.addEventListener("DOMContentLoaded", () => {
                 .join(", "),
 
             latitude:
+
                 center
                     ? center.lat
                     : null,
 
             longitude:
+
                 center
                     ? center.lng
                     : null
 
         });
 
+
         localStorage.setItem(
             "parcelScopeSaved",
-            JSON.stringify(saved)
+            JSON.stringify(
+                saved
+            )
         );
+
 
         propertyPanel.classList.remove(
             "open"
         );
+
     }
 
-    function getFeatureCenter(geometry) {
+
+    function getFeatureCenter(
+        geometry
+    ) {
 
         try {
 
             const layer =
                 L.geoJSON({
+
                     type: "Feature",
+
                     properties: {},
+
                     geometry: geometry
+
                 });
+
 
             return layer
                 .getBounds()
                 .getCenter();
+
 
         } catch {
 
             return null;
 
         }
+
     }
+
 
     /* =====================================================
        MENU ITEMS
     ===================================================== */
 
     document
-        .querySelectorAll(".menu-item")
+        .querySelectorAll(
+            ".menu-item"
+        )
         .forEach(
             button => {
 
@@ -1566,8 +2563,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         const section =
                             button.dataset.section;
 
+
                         if (section) {
-                            openSection(section);
+
+                            openSection(
+                                section
+                            );
+
                         }
 
                     }
@@ -1576,38 +2578,79 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         );
 
-    function openSection(section) {
 
-        if (section === "counties") {
+    function openSection(
+        section
+    ) {
+
+        if (
+            section ===
+            "counties"
+        ) {
+
             showCounties();
+
         }
 
-        if (section === "saved") {
+
+        if (
+            section ===
+            "saved"
+        ) {
+
             showSavedProperties();
+
         }
 
-        if (section === "sources") {
+
+        if (
+            section ===
+            "sources"
+        ) {
+
             showDataSources();
+
         }
 
-        if (section === "history") {
+
+        if (
+            section ===
+            "history"
+        ) {
+
             showUpdateHistory();
+
         }
 
-        if (section === "settings") {
+
+        if (
+            section ===
+            "settings"
+        ) {
+
             showSettings();
+
         }
 
-        if (section === "about") {
+
+        if (
+            section ===
+            "about"
+        ) {
+
             showAbout();
+
         }
+
     }
+
 
     /* =====================================================
        COUNTIES
     ===================================================== */
 
     const counties = [
+
         "Ada",
         "Adams",
         "Bannock",
@@ -1652,7 +2695,9 @@ document.addEventListener("DOMContentLoaded", () => {
         "Twin Falls",
         "Valley",
         "Washington"
+
     ];
+
 
     function showCounties() {
 
@@ -1669,6 +2714,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
+
                 <div class="county-search">
 
                     <input
@@ -1679,6 +2725,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     >
 
                 </div>
+
 
                 <div
                     id="countyList"
@@ -1712,10 +2759,12 @@ document.addEventListener("DOMContentLoaded", () => {
             "IDAHO COUNTIES"
         );
 
+
         const countySearchInput =
             document.getElementById(
                 "countySearchInput"
             );
+
 
         countySearchInput.addEventListener(
             "input",
@@ -1725,6 +2774,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     countySearchInput.value
                         .trim()
                         .toLowerCase();
+
 
                 document
                     .querySelectorAll(
@@ -1738,9 +2788,12 @@ document.addEventListener("DOMContentLoaded", () => {
                                     .county
                                     .toLowerCase();
 
+
                             button.style.display =
                                 !query ||
-                                name.includes(query)
+                                name.includes(
+                                    query
+                                )
                                     ? ""
                                     : "none";
 
@@ -1749,6 +2802,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             }
         );
+
 
         document
             .querySelectorAll(
@@ -1762,7 +2816,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         () => {
 
                             selectCounty(
-                                button.dataset.county
+                                button.dataset
+                                    .county
                             );
 
                         }
@@ -1770,15 +2825,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 }
             );
+
     }
 
-    async function selectCounty(county) {
+
+    async function selectCounty(
+        county
+    ) {
 
         closeMenuPanel();
 
-        if (countyLayer) {
+
+        if (
+            countyLayer
+        ) {
 
             let found = false;
+
 
             countyLayer.eachLayer(
                 layer => {
@@ -1787,6 +2850,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         layer.feature
                             ?.properties
                             ?.CountyName;
+
 
                     if (
                         name &&
@@ -1797,14 +2861,21 @@ document.addEventListener("DOMContentLoaded", () => {
                         map.fitBounds(
                             layer.getBounds(),
                             {
-                                padding: [30, 30]
+                                padding: [
+                                    30,
+                                    30
+                                ]
                             }
                         );
 
+
                         found = true;
+
                     }
+
                 }
             );
+
 
             if (found) {
 
@@ -1813,14 +2884,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
                 return;
+
             }
+
         }
+
 
         const safeCounty =
             county.replaceAll(
                 "'",
                 "''"
             );
+
 
         const params =
             new URLSearchParams({
@@ -1845,15 +2920,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             });
 
+
         try {
 
             const response =
                 await fetch(
-                    `${PARCEL_URL}/query?${params.toString()}`
+                    `${PARCEL_SOURCES[0].url}/query?${params.toString()}`
                 );
+
 
             const data =
                 await response.json();
+
 
             if (
                 data.features &&
@@ -1865,13 +2943,19 @@ document.addEventListener("DOMContentLoaded", () => {
                         data.features[0]
                     );
 
+
                 map.fitBounds(
                     layer.getBounds(),
                     {
-                        padding: [30, 30]
+                        padding: [
+                            30,
+                            30
+                        ]
                     }
                 );
+
             }
+
 
         } catch (error) {
 
@@ -1882,10 +2966,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
+
         appPage.classList.remove(
             "open"
         );
+
     }
+
 
     /* =====================================================
        SAVED PROPERTIES PAGE
@@ -1895,6 +2982,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const saved =
             getSavedProperties();
+
 
         if (!saved.length) {
 
@@ -1916,12 +3004,17 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             return;
+
         }
+
 
         const html =
             saved
                 .map(
-                    (item, index) => `
+                    (
+                        item,
+                        index
+                    ) => `
 
                         <div
                             class="saved-property"
@@ -1947,6 +3040,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             </div>
 
+
                             <button
                                 class="remove-saved"
                                 data-remove-index="${index}"
@@ -1960,11 +3054,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 )
                 .join("");
 
+
         openPage(
             "Saved Properties",
             html,
             "SAVED PROPERTIES"
         );
+
 
         document
             .querySelectorAll(
@@ -1982,14 +3078,18 @@ document.addEventListener("DOMContentLoaded", () => {
                                     ".remove-saved"
                                 )
                             ) {
+
                                 return;
+
                             }
+
 
                             const index =
                                 Number(
                                     element.dataset
                                         .savedIndex
                                 );
+
 
                             openSavedProperty(
                                 saved[index]
@@ -2000,6 +3100,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 }
             );
+
 
         document
             .querySelectorAll(
@@ -2014,16 +3115,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             event.stopPropagation();
 
+
                             const index =
                                 Number(
                                     button.dataset
                                         .removeIndex
                                 );
 
+
                             saved.splice(
                                 index,
                                 1
                             );
+
 
                             localStorage.setItem(
                                 "parcelScopeSaved",
@@ -2032,6 +3136,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 )
                             );
 
+
                             showSavedProperties();
 
                         }
@@ -2039,21 +3144,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 }
             );
+
     }
 
-    async function openSavedProperty(saved) {
 
-        appPage.classList.remove("open");
+    async function openSavedProperty(
+        saved
+    ) {
+
+        appPage.classList.remove(
+            "open"
+        );
+
         closeMenuPanel();
+
 
         searchInput.value =
             saved.parcelID;
 
+
         await performSearch();
+
     }
 
+
     /* =====================================================
-       DATA SOURCES
+       DATA SOURCES PAGE
     ===================================================== */
 
     function showDataSources() {
@@ -2065,17 +3181,50 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="page-section">
 
                     <h2>
-                        Property & Parcel Data
+                        Multiple Parcel Sources
                     </h2>
 
                     <p>
-                        ParcelScope uses the Public Idaho
-                        Parcels statewide GIS service for
-                        parcel boundaries and available
-                        public property attributes.
+                        ParcelScope can combine parcel records
+                        from multiple public GIS services.
+                        Duplicate records are automatically
+                        filtered before being displayed.
                     </p>
 
                 </div>
+
+
+                <div class="page-section">
+
+                    <h2>
+                        Duplicate Filtering
+                    </h2>
+
+                    <p>
+                        ParcelScope compares parcel IDs,
+                        secondary parcel identifiers,
+                        addresses, owners, counties,
+                        cities, ZIP codes, and geometry
+                        signatures to reduce duplicate
+                        properties.
+                    </p>
+
+                </div>
+
+
+                <div class="page-section">
+
+                    <h2>
+                        Idaho Statewide Parcels
+                    </h2>
+
+                    <p>
+                        Public Idaho statewide parcel GIS
+                        service.
+                    </p>
+
+                </div>
+
 
                 <div class="page-section">
 
@@ -2090,6 +3239,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
+
                 <div class="page-section">
 
                     <h2>
@@ -2103,18 +3253,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
-                <div class="page-section">
-
-                    <h2>
-                        Standard Map
-                    </h2>
-
-                    <p>
-                        The standard road map uses
-                        OpenStreetMap data.
-                    </p>
-
-                </div>
 
                 <div class="page-section">
 
@@ -2135,7 +3273,9 @@ document.addEventListener("DOMContentLoaded", () => {
             `,
             "DATA SOURCES"
         );
+
     }
+
 
     /* =====================================================
        UPDATE HISTORY
@@ -2146,7 +3286,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return localStorage.getItem(
             "parcelScopeLastRefresh"
         );
+
     }
+
 
     function setLastRefresh() {
 
@@ -2154,13 +3296,16 @@ document.addEventListener("DOMContentLoaded", () => {
             "parcelScopeLastRefresh",
             new Date().toLocaleString()
         );
+
     }
+
 
     function showUpdateHistory() {
 
         const last =
             getLastRefresh() ||
             "This is the first refresh.";
+
 
         openPage(
             "Update History",
@@ -2177,6 +3322,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     </div>
 
+
                     <button
                         id="refreshNowButton"
                         class="refresh-button"
@@ -2189,6 +3335,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `,
             "UPDATE HISTORY"
         );
+
 
         document
             .getElementById(
@@ -2208,7 +3355,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 }
             );
+
     }
+
 
     /* =====================================================
        SETTINGS
@@ -2225,6 +3374,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <h2>
                         Map Style
                     </h2>
+
 
                     <div class="setting-row">
 
@@ -2251,6 +3401,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         ></button>
 
                     </div>
+
 
                     <div class="setting-row">
 
@@ -2280,11 +3431,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
+
                 <div class="setting-group">
 
                     <h2>
                         Map Layers
                     </h2>
+
 
                     ${createToggle(
                         "parcels",
@@ -2293,12 +3446,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         settings.parcels
                     )}
 
+
                     ${createToggle(
                         "counties",
                         "County Boundaries",
                         "Idaho county lines",
                         settings.counties
                     )}
+
 
                     ${createToggle(
                         "idaho",
@@ -2312,6 +3467,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `,
             "SETTINGS"
         );
+
 
         document
             .querySelectorAll(
@@ -2337,6 +3493,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             );
 
+
         document
             .querySelectorAll(
                 "[data-layer-toggle]"
@@ -2352,10 +3509,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                 button.dataset
                                     .layerToggle;
 
+
                             settings[layer] =
                                 !settings[layer];
 
+
                             saveSettings();
+
 
                             if (
                                 layer ===
@@ -2380,6 +3540,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             }
 
+
                             if (
                                 layer === "counties" ||
                                 layer === "idaho"
@@ -2389,6 +3550,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             }
 
+
                             showSettings();
 
                         }
@@ -2396,7 +3558,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 }
             );
+
     }
+
 
     function createToggle(
         key,
@@ -2421,6 +3585,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
+
                 <button
                     class="toggle ${
                         enabled ? "on" : ""
@@ -2431,14 +3596,22 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
 
         `;
+
     }
 
-    function setMapStyle(style) {
+
+    function setMapStyle(
+        style
+    ) {
 
         settings.mapStyle =
             style;
 
-        if (style === "satellite") {
+
+        if (
+            style ===
+            "satellite"
+        ) {
 
             if (
                 map.hasLayer(
@@ -2452,7 +3625,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             }
 
-            satelliteLayer.addTo(map);
+
+            satelliteLayer.addTo(
+                map
+            );
 
         } else {
 
@@ -2468,11 +3644,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             }
 
-            standardLayer.addTo(map);
+
+            standardLayer.addTo(
+                map
+            );
+
         }
 
+
         saveSettings();
+
     }
+
 
     /* =====================================================
        ABOUT
@@ -2498,6 +3681,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </p>
 
                 </div>
+
 
                 <div class="page-section">
 
@@ -2540,6 +3724,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
+
                 <div class="page-section">
 
                     <h2>
@@ -2555,6 +3740,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
 
+
                 <div class="page-section">
 
                     <h2>
@@ -2562,7 +3748,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </h2>
 
                     <p>
-                        ParcelScope Idaho — Version 1.0
+                        ParcelScope Idaho — Version 1.1
                     </p>
 
                 </div>
@@ -2570,13 +3756,17 @@ document.addEventListener("DOMContentLoaded", () => {
             `,
             "ABOUT PARCELSCOPE"
         );
+
     }
+
 
     /* =====================================================
        HELPERS
     ===================================================== */
 
-    function cleanValue(value) {
+    function cleanValue(
+        value
+    ) {
 
         if (
             value === null ||
@@ -2587,25 +3777,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
-        return String(value).trim();
+
+        return String(
+            value
+        ).trim();
+
     }
 
-    function escapeHTML(value) {
 
-        return String(value ?? "")
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;")
-            .replaceAll('"', "&quot;")
-            .replaceAll("'", "&#039;");
+    function escapeHTML(
+        value
+    ) {
+
+        return String(
+            value ?? ""
+        )
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
+
     }
 
-    function setStatus(text) {
+
+    function setStatus(
+        text
+    ) {
 
         if (mapStatusText) {
-            mapStatusText.textContent = text;
+
+            mapStatusText.textContent =
+                text;
+
         }
+
     }
+
 
     /* =====================================================
        INITIALIZE
@@ -2615,15 +3838,20 @@ document.addEventListener("DOMContentLoaded", () => {
         settings.mapStyle
     );
 
+
     setLastRefresh();
+
 
     setStatus(
         "Loading Idaho GIS data..."
     );
 
+
     loadBoundaryLayers();
 
+
     loadParcels();
+
 
     window.addEventListener(
         "resize",
@@ -2640,6 +3868,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
     );
+
 
     console.log(
         "ParcelScope Idaho initialized."
