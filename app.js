@@ -1,4 +1,3 @@
-// Saved Properties Array (State Management with Duplicate Filter)
 let savedProperties = [];
 
 // Map Tile Style Definitions
@@ -38,15 +37,65 @@ const tileStyles = {
   }
 };
 
-// Initialize MapLibre
+// Initialize MapLibre with Globe Projection and Full Rotation/Zoom Out
 const map = new maplibregl.Map({
   container: 'map',
   style: tileStyles.esri,
   center: [-114.742, 44.0682],
-  zoom: 6
+  zoom: 3,
+  minZoom: 0,
+  maxZoom: 22,
+  dragRotate: true,
+  pitchWithRotate: true,
+  touchPitch: true
 });
 
-// Helper: Close all menus, modals, and detail panels
+// Setup 3D Globe Projection & Load Parcel Outlines
+function loadParcelLayers() {
+  map.setProjection({ type: 'globe' });
+
+  // Add Idaho Parcel Source if not added
+  if (!map.getSource('idaho-parcels')) {
+    map.addSource('idaho-parcels', {
+      type: 'geojson',
+      data: 'https://gis.idwr.idaho.gov/arcgis/rest/services/Reference/Parcels/MapServer/0/query?where=1%3D1&outFields=*&f=geojson',
+      generateId: true
+    });
+
+    // White Parcel Outlines
+    map.addLayer({
+      id: 'parcel-lines',
+      type: 'line',
+      source: 'idaho-parcels',
+      paint: {
+        'line-color': '#FFFFFF',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.5, 16, 2],
+        'line-opacity': 0.8
+      }
+    });
+
+    // Neon Light-Blue Click Highlight
+    map.addLayer({
+      id: 'parcel-fill-highlight',
+      type: 'fill',
+      source: 'idaho-parcels',
+      paint: {
+        'fill-color': 'rgba(0, 240, 255, 0.35)',
+        'fill-outline-color': '#00F0FF'
+      },
+      filter: ['==', '$id', '']
+    });
+  }
+}
+
+map.on('style.load', () => {
+  loadParcelLayers();
+});
+
+function switchMapStyle(styleKey) {
+  map.setStyle(tileStyles[styleKey]);
+}
+
 function closeAllPanels() {
   document.getElementById('sideMenu').classList.remove('open');
   document.getElementById('backdrop').classList.remove('active');
@@ -54,30 +103,30 @@ function closeAllPanels() {
   document.getElementById('parcelCard').classList.remove('active');
 }
 
-// MAP CLICK BEHAVIOR: Close everything when map is clicked
+// Map Click Interactions
 map.on('click', (e) => {
-  closeAllPanels();
+  const features = map.queryRenderedFeatures(e.point, { layers: ['parcel-lines'] });
 
-  // Example Parcel Pick Demonstration
-  const mockParcel = {
-    id: 'PARCEL-' + Math.floor(100000 + Math.random() * 900000),
-    name: null, // Test Name-preference logic: fallback to address if name unavailable
-    address: '802 W Bannock St, Boise, ID 83702',
-    taxes: 'Assessed: $410,000 | Taxes: $3,210'
-  };
+  if (features.length > 0) {
+    const feature = features[0];
+    map.setFilter('parcel-fill-highlight', ['==', '$id', feature.id]);
 
-  // Owner Name Preference Logic: Name first, address only as fallback
-  const displayName = (mockParcel.name && mockParcel.name.trim() !== '') 
-    ? mockParcel.name 
-    : mockParcel.address;
+    const props = feature.properties;
+    const parcelId = props.PARCELID || props.PIN || 'ID-' + Math.floor(100000 + Math.random() * 900000);
+    const ownerName = props.OWNER || props.OWNER_NAME || null;
+    const address = props.ADDRESS || props.SITUS_ADDR || 'Address Unavailable';
 
-  document.getElementById('cardParcelId').textContent = mockParcel.id;
-  document.getElementById('cardOwnerName').textContent = displayName;
-  document.getElementById('cardAddress').textContent = mockParcel.address;
-  document.getElementById('cardTaxes').textContent = mockParcel.taxes;
+    const displayName = (ownerName && ownerName.trim() !== '') ? ownerName : address;
 
-  // Display floating parcel info card
-  document.getElementById('parcelCard').classList.add('active');
+    document.getElementById('cardParcelId').textContent = parcelId;
+    document.getElementById('cardOwnerName').textContent = displayName;
+    document.getElementById('cardAddress').textContent = address;
+    document.getElementById('cardTaxes').textContent = 'Valuation available in County Portal';
+
+    document.getElementById('parcelCard').classList.add('active');
+  } else {
+    closeAllPanels();
+  }
 });
 
 // Menu Drawer Logic
@@ -96,7 +145,7 @@ document.getElementById('closeParcelCard').addEventListener('click', () => {
   document.getElementById('parcelCard').classList.remove('active');
 });
 
-// Idaho 44 Counties List Array
+// Counties List
 const idahoCounties = [
   "Ada", "Adams", "Bannock", "Bear Lake", "Benewah", "Bingham", "Blaine", "Boise", 
   "Bonner", "Bonneville", "Boundary", "Butte", "Camas", "Canyon", "Caribou", "Cassia", 
@@ -124,7 +173,7 @@ document.getElementById('countySearchInput').addEventListener('input', (e) => {
   renderCounties(e.target.value);
 });
 
-// Handle View / Modal Switching
+// Modal Navigation
 const modals = {
   btnCounties: document.getElementById('modalCounties'),
   btnSaved: document.getElementById('modalSaved'),
@@ -146,16 +195,15 @@ document.querySelectorAll('.modal-close-btn').forEach(btn => {
   btn.addEventListener('click', () => closeAllPanels());
 });
 
-// Save Property Action with Duplicate Filter Logic
+// Saved Properties
 document.getElementById('savePropertyBtn').addEventListener('click', () => {
   const currentParcelId = document.getElementById('cardParcelId').textContent;
   const currentAddress = document.getElementById('cardAddress').textContent;
   const currentOwner = document.getElementById('cardOwnerName').textContent;
 
-  // Duplicate filter checking by parcelId
   const isDuplicate = savedProperties.some(item => item.id === currentParcelId);
 
-  if (!isDuplicate) {
+  if (!isDuplicate && currentParcelId !== 'Select a parcel') {
     savedProperties.push({
       id: currentParcelId,
       address: currentAddress,
@@ -163,12 +211,11 @@ document.getElementById('savePropertyBtn').addEventListener('click', () => {
     });
     renderSavedProperties();
     alert('Property saved successfully.');
-  } else {
+  } else if (isDuplicate) {
     alert('This property is already saved in your list.');
   }
 });
 
-// Render Saved Properties
 function renderSavedProperties() {
   const savedListContainer = document.getElementById('savedList');
   const emptyMsg = document.getElementById('emptySavedMsg');
@@ -197,12 +244,19 @@ window.removeSavedProperty = function(index) {
   renderSavedProperties();
 };
 
-// Settings Imagery Selection Switches
-document.getElementById('radioStreet').addEventListener('change', () => map.setStyle(tileStyles.street));
-document.getElementById('radioEsri').addEventListener('change', () => map.setStyle(tileStyles.esri));
-document.getElementById('radioNaip').addEventListener('change', () => map.setStyle(tileStyles.naip));
+// Basemap Switcher Radio Listeners (Corrected Mapping)
+document.getElementById('radioStreet').addEventListener('change', () => switchMapStyle('street'));
+document.getElementById('radioEsri').addEventListener('change', () => switchMapStyle('esri'));
+document.getElementById('radioNaip').addEventListener('change', () => switchMapStyle('naip'));
 
-// Reload Action for Refresh History Panel
+// Toggle Parcel Visibility
+document.getElementById('toggleParcels').addEventListener('change', (e) => {
+  const visibility = e.target.checked ? 'visible' : 'none';
+  if (map.getLayer('parcel-lines')) {
+    map.setLayoutProperty('parcel-lines', 'visibility', visibility);
+  }
+});
+
 document.getElementById('executeRefreshBtn').addEventListener('click', () => {
   window.location.reload();
 });
