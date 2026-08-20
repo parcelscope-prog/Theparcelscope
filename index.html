@@ -20,309 +20,297 @@
 
 <body>
 
-    <main id="map"></main>
+<main id="map"></main>
 
-    <!-- TOP BAR -->
-    <header class="topbar">
+<header class="topbar">
+
+    <button
+        id="menuButton"
+        class="icon-button"
+        aria-label="Open menu"
+    >
+        <svg viewBox="0 0 24 24">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+    </button>
+
+    <div class="brand">
+
+        <div class="brand-mark">
+            <svg viewBox="0 0 24 24">
+                <path d="M4 6.5L12 3l8 3.5v11L12 21l-8-3.5z"/>
+                <path d="M12 3v18"/>
+                <path d="M4 6.5L12 10l8-3.5"/>
+            </svg>
+        </div>
+
+        <div class="brand-text">
+            <div class="brand-name">ParcelScope</div>
+            <div class="brand-location">IDAHO</div>
+        </div>
+
+    </div>
+
+    <div class="search-container">
+
+        <svg
+            class="search-icon"
+            viewBox="0 0 24 24"
+        >
+            <circle cx="11" cy="11" r="6.5"/>
+            <path d="M16 16l5 5"/>
+        </svg>
+
+        <input
+            id="searchInput"
+            type="search"
+            placeholder="Search owner, address, or parcel"
+            autocomplete="off"
+        >
 
         <button
-            id="menuButton"
-            class="icon-button"
-            aria-label="Open menu"
+            id="searchButton"
+            class="search-button"
+        >
+            Search
+        </button>
+
+    </div>
+
+</header>
+
+
+<aside id="sideMenu" class="side-menu">
+
+    <div class="menu-header">
+
+        <div>
+            <div class="menu-title">ParcelScope</div>
+            <div class="menu-subtitle">
+                Idaho Property Research
+            </div>
+        </div>
+
+        <button
+            id="closeMenu"
+            class="close-button"
+            aria-label="Close menu"
         >
             <svg viewBox="0 0 24 24">
-                <path d="M4 6h16M4 12h16M4 18h16"/>
+                <path d="M6 6l12 12"/>
+                <path d="M18 6L6 18"/>
             </svg>
         </button>
 
-        <div class="brand">
-
-            <div class="brand-mark">
-                <svg viewBox="0 0 24 24">
-                    <path d="M4 6.5L12 3l8 3.5v11L12 21l-8-3.5z"/>
-                    <path d="M12 3v18"/>
-                    <path d="M4 6.5L12 10l8-3.5"/>
-                </svg>
-            </div>
-
-            <div class="brand-text">
-                <div class="brand-name">ParcelScope</div>
-                <div class="brand-location">IDAHO</div>
-            </div>
-
-        </div>
-
-        <!-- SEARCH -->
-        <div class="search-container">
-
-            <svg
-                class="search-icon"
-                viewBox="0 0 24 24"
-            >
-                <circle cx="11" cy="11" r="6.5"/>
-                <path d="M16 16l5 5"/>
-            </svg>
-
-            <input
-                id="searchInput"
-                type="search"
-                placeholder="Search owner, address, or parcel"
-                autocomplete="off"
-            >
-
-            <button
-                id="searchButton"
-                class="search-button"
-            >
-                Search
-            </button>
-
-        </div>
-
-    </header>
-
-
-    <!-- SIDE MENU -->
-    <aside id="sideMenu" class="side-menu">
-
-        <div class="menu-header">
-
-            <div>
-                <div class="menu-title">ParcelScope</div>
-                <div class="menu-subtitle">
-                    Idaho Property Research
-                </div>
-            </div>
-
-            <button
-                id="closeMenu"
-                class="close-button"
-                aria-label="Close menu"
-            >
-                <svg viewBox="0 0 24 24">
-                    <path d="M6 6l12 12"/>
-                    <path d="M18 6L6 18"/>
-                </svg>
-            </button>
-
-        </div>
-
-
-        <!-- NAVIGATION -->
-        <div class="menu-section">
-
-            <div class="menu-section-title">
-                PROPERTY
-            </div>
-
-            <button
-                class="menu-item"
-                data-section="counties"
-            >
-                <span class="menu-icon">🏛️</span>
-                <span>Counties</span>
-            </button>
-
-            <button
-                class="menu-item"
-                data-section="saved"
-            >
-                <span class="menu-icon">⭐</span>
-                <span>Saved Properties</span>
-            </button>
-
-        </div>
-
-
-        <!-- DATA -->
-        <div class="menu-section">
-
-            <div class="menu-section-title">
-                DATA
-            </div>
-
-            <button
-                class="menu-item"
-                data-section="sources"
-            >
-                <span class="menu-icon">📊</span>
-                <span>Data Sources</span>
-            </button>
-
-            <button
-                class="menu-item"
-                data-section="history"
-            >
-                <span class="menu-icon">🕒</span>
-                <span>Update History</span>
-            </button>
-
-        </div>
-
-
-        <!-- SYSTEM -->
-        <div class="menu-section">
-
-            <div class="menu-section-title">
-                SYSTEM
-            </div>
-
-            <button
-                class="menu-item"
-                data-section="settings"
-            >
-                <span class="menu-icon">⚙️</span>
-                <span>Settings</span>
-            </button>
-
-            <button
-                class="menu-item"
-                data-section="about"
-            >
-                <span class="menu-icon">ℹ️</span>
-                <span>About</span>
-            </button>
-
-        </div>
-
-
-        <div class="menu-footer">
-
-            <div class="status-dot"></div>
-
-            <div>
-                <div class="status-title">
-                    ParcelScope Online
-                </div>
-
-                <div class="status-text">
-                    Public data research system
-                </div>
-            </div>
-
-        </div>
-
-    </aside>
-
-
-    <!-- PROPERTY PANEL -->
-    <section
-        id="propertyPanel"
-        class="property-panel"
-    >
-
-        <div class="property-header">
-
-            <div>
-                <div class="property-kicker">
-                    PROPERTY RECORD
-                </div>
-
-                <h2 id="propertyTitle">
-                    Property Information
-                </h2>
-            </div>
-
-            <button
-                id="closeProperty"
-                class="close-button"
-            >
-                <svg viewBox="0 0 24 24">
-                    <path d="M6 6l12 12"/>
-                    <path d="M18 6L6 18"/>
-                </svg>
-            </button>
-
-        </div>
-
-        <div id="propertyContent"></div>
-
-    </section>
-
-
-    <!-- SEARCH RESULTS -->
-    <section
-        id="searchResults"
-        class="search-results"
-    >
-
-        <div class="results-header">
-
-            <div>
-                <div class="property-kicker">
-                    PROPERTY SEARCH
-                </div>
-
-                <h2>Results</h2>
-            </div>
-
-            <button
-                id="closeResults"
-                class="close-button"
-            >
-                <svg viewBox="0 0 24 24">
-                    <path d="M6 6l12 12"/>
-                    <path d="M18 6L6 18"/>
-                </svg>
-            </button>
-
-        </div>
-
-        <div id="resultsContent"></div>
-
-    </section>
-
-
-    <!-- FULL SCREEN APP PAGES -->
-    <section
-        id="appPage"
-        class="app-page"
-    >
-
-        <div class="app-page-header">
-
-            <div>
-                <div id="appPageKicker" class="property-kicker">
-                    PARCELSCOPE
-                </div>
-
-                <h1 id="appPageTitle">
-                    Page
-                </h1>
-            </div>
-
-            <button
-                id="closeAppPage"
-                class="page-close"
-                aria-label="Close page"
-            >
-                ✕
-            </button>
-
-        </div>
-
-        <div id="appPageContent"></div>
-
-    </section>
-
-
-    <!-- MAP STATUS -->
-    <div
-        id="mapStatus"
-        class="map-status"
-    >
-        <span class="status-dot"></span>
-        <span id="mapStatusText">
-            Loading map
-        </span>
     </div>
 
 
-    <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    ></script>
+    <div class="menu-section">
 
-    <script src="app.js"></script>
+        <div class="menu-section-title">
+            PROPERTY
+        </div>
+
+        <button
+            class="menu-item"
+            data-section="counties"
+        >
+            <span>Counties</span>
+        </button>
+
+        <button
+            class="menu-item"
+            data-section="saved"
+        >
+            <span>Saved Properties</span>
+        </button>
+
+    </div>
+
+
+    <div class="menu-section">
+
+        <div class="menu-section-title">
+            DATA
+        </div>
+
+        <button
+            class="menu-item"
+            data-section="sources"
+        >
+            <span>Data Sources</span>
+        </button>
+
+        <button
+            class="menu-item"
+            data-section="history"
+        >
+            <span>Update History</span>
+        </button>
+
+    </div>
+
+
+    <div class="menu-section">
+
+        <div class="menu-section-title">
+            SYSTEM
+        </div>
+
+        <button
+            class="menu-item"
+            data-section="settings"
+        >
+            <span>Settings</span>
+        </button>
+
+        <button
+            class="menu-item"
+            data-section="about"
+        >
+            <span>About</span>
+        </button>
+
+    </div>
+
+
+    <div class="menu-footer">
+
+        <div class="status-dot"></div>
+
+        <div>
+            <div class="status-title">
+                ParcelScope Online
+            </div>
+
+            <div class="status-text">
+                Public data research system
+            </div>
+        </div>
+
+    </div>
+
+</aside>
+
+
+<section
+    id="propertyPanel"
+    class="property-panel"
+>
+
+    <div class="property-header">
+
+        <div>
+            <div class="property-kicker">
+                PROPERTY RECORD
+            </div>
+
+            <h2 id="propertyTitle">
+                Property Information
+            </h2>
+        </div>
+
+        <button
+            id="closeProperty"
+            class="close-button"
+        >
+            <svg viewBox="0 0 24 24">
+                <path d="M6 6l12 12"/>
+                <path d="M18 6L6 18"/>
+            </svg>
+        </button>
+
+    </div>
+
+    <div id="propertyContent"></div>
+
+</section>
+
+
+<section
+    id="searchResults"
+    class="search-results"
+>
+
+    <div class="results-header">
+
+        <div>
+            <div class="property-kicker">
+                PROPERTY SEARCH
+            </div>
+
+            <h2>Results</h2>
+        </div>
+
+        <button
+            id="closeResults"
+            class="close-button"
+        >
+            <svg viewBox="0 0 24 24">
+                <path d="M6 6l12 12"/>
+                <path d="M18 6L6 18"/>
+            </svg>
+        </button>
+
+    </div>
+
+    <div id="resultsContent"></div>
+
+</section>
+
+
+<section
+    id="appPage"
+    class="app-page"
+>
+
+    <div class="app-page-header">
+
+        <div>
+            <div
+                id="appPageKicker"
+                class="property-kicker"
+            >
+                PARCELSCOPE
+            </div>
+
+            <h1 id="appPageTitle">
+                Page
+            </h1>
+        </div>
+
+        <button
+            id="closeAppPage"
+            class="page-close"
+            aria-label="Close page"
+        >
+            ×
+        </button>
+
+    </div>
+
+    <div id="appPageContent"></div>
+
+</section>
+
+
+<div
+    id="mapStatus"
+    class="map-status"
+>
+    <span class="status-dot"></span>
+
+    <span id="mapStatusText">
+        Loading map
+    </span>
+</div>
+
+
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
+
+<script src="app.js"></script>
 
 </body>
 </html>
