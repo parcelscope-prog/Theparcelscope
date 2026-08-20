@@ -1,7 +1,6 @@
 /* =========================================================
    PARCELSCOPE IDAHO
    Main Application
-   MULTI-SOURCE PARCEL SYSTEM
 ========================================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -38,41 +37,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       PARCEL DATA SOURCES
+       SEARCH PLACEHOLDER
     ===================================================== */
 
-    /*
-     * SOURCE 1
-     * Idaho IDWR statewide parcel compilation.
-     *
-     * Includes Bonner and Boundary Counties.
-     */
+    if (searchInput) {
 
-    const IDWR_PARCEL_URL =
-        "https://gis.idwr.idaho.gov/hosting/rest/services/Reference/Parcels/FeatureServer/0";
+        searchInput.placeholder =
+            "Search something. I’m good, but I can’t read minds.";
 
-
-    /*
-     * SOURCE 2
-     * Bonner County GIS parcel layer.
-     */
-
-    const BONNER_PARCEL_URL =
-        "https://services5.arcgis.com/lIHH39JBU3FScVe5/ArcGIS/rest/services/220100_Bayview_WS_District_v6_WFL1/FeatureServer/23";
-
-
-    /*
-     * SOURCE 3
-     * Boundary County parcel layer.
-     */
-
-    const BOUNDARY_PARCEL_URL =
-        "https://services5.arcgis.com/4CllgMSJJaeToEFP/ArcGIS/rest/services/Zoning_Map_Online/FeatureServer/2";
+    }
 
 
     /* =====================================================
-       BOUNDARY SOURCES
+       DATA SOURCES
     ===================================================== */
+
+    const PARCEL_URL =
+        "https://services1.arcgis.com/CNPdEkvnGl65jCX8/ArcGIS/rest/services/Public_Idaho_Parcels_/FeatureServer/7";
 
     const COUNTY_URL =
         "https://gisp.itd.idaho.gov/server/rest/services/GDWarehouse/PoliticalBoundaries/FeatureServer/2";
@@ -468,750 +449,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       PARCEL SOURCE HELPERS
-    ===================================================== */
-
-    function getViewportGeometry() {
-
-        const bounds =
-            map.getBounds();
-
-        return [
-            bounds.getWest(),
-            bounds.getSouth(),
-            bounds.getEast(),
-            bounds.getNorth()
-        ].join(",");
-
-    }
-
-
-    /*
-     * Returns the approximate center of the current map.
-     */
-
-    function getMapCenter() {
-
-        return map.getCenter();
-
-    }
-
-
-    /*
-     * Northern Idaho detection.
-     *
-     * Bonner and Boundary are far north, so we use
-     * the county-specific sources when the viewport
-     * reaches that area.
-     */
-
-    function isNorthernIdaho() {
-
-        const center =
-            getMapCenter();
-
-        return (
-            center.lat >= 47.0
-        );
-
-    }
-
-
-    /*
-     * Determines which county-specific sources should
-     * be queried.
-     *
-     * We don't use these everywhere because doing so
-     * would unnecessarily increase requests.
-     */
-
-    function getRegionalSources() {
-
-        const center =
-            getMapCenter();
-
-
-        const sources = [];
-
-
-        /*
-         * Bonner County is roughly north of 47.3 and
-         * west of 116.5.
-         */
-
-        if (
-            center.lat >= 47.0 &&
-            center.lat <= 49.0 &&
-            center.lng <= -115.5 &&
-            center.lng >= -117.5
-        ) {
-
-            sources.push({
-                name: "Bonner County",
-                url: BONNER_PARCEL_URL,
-                fields:
-                    "OBJECTID,PIN,Owner,Owner2,Acreage",
-                sourceType: "bonner"
-            });
-
-        }
-
-
-        /*
-         * Boundary County.
-         */
-
-        if (
-            center.lat >= 48.0 &&
-            center.lat <= 49.1 &&
-            center.lng <= -115.0 &&
-            center.lng >= -117.0
-        ) {
-
-            sources.push({
-                name: "Boundary County",
-                url: BOUNDARY_PARCEL_URL,
-                fields:
-                    "OBJECTID,PARCEL_ID,CALC_ACRES,PS_MAIL_NM,PS_PROP_AD,PS_MAIL_CT,PS_MAIL_ZP,PS_TOT_VAL,PS_NET_VAL",
-                sourceType: "boundary"
-            });
-
-        }
-
-
-        return sources;
-
-    }
-
-
-    /* =====================================================
-       NORMALIZE PARCEL
-    ===================================================== */
-
-    function normalizeParcel(
-        feature,
-        sourceName
-    ) {
-
-        const p =
-            feature?.properties || {};
-
-
-        let parcelID =
-            cleanValue(
-                p.PARCEL_ID
-            ) ||
-            cleanValue(
-                p.PIN
-            ) ||
-            cleanValue(
-                p.FP_ID
-            ) ||
-            cleanValue(
-                p.OBJECTID
-            );
-
-
-        let owner =
-            cleanValue(
-                p.OWNER1
-            ) ||
-            cleanValue(
-                p.OWNER
-            ) ||
-            cleanValue(
-                p.Owner
-            ) ||
-            cleanValue(
-                p.PS_MAIL_NM
-            );
-
-
-        let owner2 =
-            cleanValue(
-                p.OWNER2
-            ) ||
-            cleanValue(
-                p.Owner2
-            );
-
-
-        let acreage =
-            p.ASR_ACRES ??
-            p.Acreage ??
-            p.CALC_ACRES;
-
-
-        let address =
-            cleanValue(
-                p.SITE_ADD
-            ) ||
-            cleanValue(
-                p.PS_PROP_AD
-            );
-
-
-        let city =
-            cleanValue(
-                p.SITE_CITY
-            ) ||
-            cleanValue(
-                p.PS_MAIL_CT
-            );
-
-
-        let zip =
-            cleanValue(
-                p.SITE_ZIP
-            ) ||
-            cleanValue(
-                p.PS_MAIL_ZP
-            );
-
-
-        let value =
-            p.VAL_TOTAL ??
-            p.PS_TOT_VAL ??
-            p.PS_NET_VAL;
-
-
-        let county =
-            cleanValue(
-                p.County
-            ) ||
-            cleanValue(
-                p.COUNTY
-            );
-
-
-        if (
-            !county &&
-            sourceName === "Bonner County"
-        ) {
-
-            county = "Bonner";
-
-        }
-
-
-        if (
-            !county &&
-            sourceName === "Boundary County"
-        ) {
-
-            county = "Boundary";
-
-        }
-
-
-        return {
-
-            ...feature,
-
-            properties: {
-
-                ...p,
-
-                PARCEL_ID:
-                    parcelID,
-
-                OWNER1:
-                    owner,
-
-                OWNER2:
-                    owner2,
-
-                ASR_ACRES:
-                    acreage,
-
-                SITE_ADD:
-                    address,
-
-                SITE_CITY:
-                    city,
-
-                SITE_ZIP:
-                    zip,
-
-                VAL_TOTAL:
-                    value,
-
-                County:
-                    county,
-
-                _source:
-                    sourceName
-
-            }
-
-        };
-
-    }
-
-
-    /* =====================================================
-       GEOMETRY FINGERPRINT
-    ===================================================== */
-
-    function geometryFingerprint(
-        feature
-    ) {
-
-        try {
-
-            const layer =
-                L.geoJSON(
-                    feature
-                );
-
-
-            const bounds =
-                layer.getBounds();
-
-
-            if (
-                !bounds.isValid()
-            ) {
-
-                return "";
-
-            }
-
-
-            const center =
-                bounds.getCenter();
-
-
-            const north =
-                bounds.getNorth();
-
-
-            const south =
-                bounds.getSouth();
-
-
-            const east =
-                bounds.getEast();
-
-
-            const west =
-                bounds.getWest();
-
-
-            /*
-             * Rounding prevents tiny geometry differences
-             * between sources from creating duplicates.
-             */
-
-            return [
-                center.lat.toFixed(5),
-                center.lng.toFixed(5),
-                north.toFixed(5),
-                south.toFixed(5),
-                east.toFixed(5),
-                west.toFixed(5)
-            ].join("|");
-
-        } catch {
-
-            return "";
-
-        }
-
-    }
-
-
-    /* =====================================================
-       DUPLICATE FILTER
-    ===================================================== */
-
-    function deduplicateParcels(
-        features
-    ) {
-
-        const byParcelID =
-            new Map();
-
-        const withoutIDs = [];
-
-
-        /*
-         * First pass:
-         * use parcel IDs whenever available.
-         */
-
-        features.forEach(
-            feature => {
-
-                const p =
-                    feature.properties ||
-                    {};
-
-
-                const id =
-                    cleanValue(
-                        p.PARCEL_ID
-                    );
-
-
-                if (!id) {
-
-                    withoutIDs.push(
-                        feature
-                    );
-
-                    return;
-
-                }
-
-
-                const key =
-                    [
-                        cleanValue(
-                            p.County
-                        ).toLowerCase(),
-                        id.toLowerCase()
-                    ].join("|");
-
-
-                if (
-                    !byParcelID.has(key)
-                ) {
-
-                    byParcelID.set(
-                        key,
-                        feature
-                    );
-
-                } else {
-
-                    const existing =
-                        byParcelID.get(
-                            key
-                        );
-
-
-                    byParcelID.set(
-                        key,
-                        chooseBetterParcel(
-                            existing,
-                            feature
-                        )
-                    );
-
-                }
-
-            }
-        );
-
-
-        /*
-         * Second pass:
-         * catch duplicates where two sources use
-         * different parcel ID formats.
-         */
-
-        const finalFeatures =
-            Array.from(
-                byParcelID.values()
-            );
-
-
-        const geometryKeys =
-            new Set();
-
-
-        finalFeatures.forEach(
-            feature => {
-
-                const key =
-                    geometryFingerprint(
-                        feature
-                    );
-
-
-                if (key) {
-
-                    geometryKeys.add(
-                        key
-                    );
-
-                }
-
-            }
-        );
-
-
-        withoutIDs.forEach(
-            feature => {
-
-                const key =
-                    geometryFingerprint(
-                        feature
-                    );
-
-
-                if (
-                    !key ||
-                    !geometryKeys.has(
-                        key
-                    )
-                ) {
-
-                    finalFeatures.push(
-                        feature
-                    );
-
-                    if (key) {
-
-                        geometryKeys.add(
-                            key
-                        );
-
-                    }
-
-                }
-
-            }
-        );
-
-
-        return finalFeatures;
-
-    }
-
-
-    /* =====================================================
-       CHOOSE BEST RECORD
-    ===================================================== */
-
-    function chooseBetterParcel(
-        a,
-        b
-    ) {
-
-        const scoreA =
-            parcelCompletenessScore(
-                a
-            );
-
-
-        const scoreB =
-            parcelCompletenessScore(
-                b
-            );
-
-
-        return scoreB > scoreA
-            ? b
-            : a;
-
-    }
-
-
-    function parcelCompletenessScore(
-        feature
-    ) {
-
-        const p =
-            feature?.properties ||
-            {};
-
-
-        let score = 0;
-
-
-        const fields = [
-
-            "PARCEL_ID",
-            "OWNER1",
-            "OWNER2",
-            "SITE_ADD",
-            "SITE_CITY",
-            "SITE_ZIP",
-            "County",
-            "ASR_ACRES",
-            "VAL_TOTAL"
-
-        ];
-
-
-        fields.forEach(
-            field => {
-
-                if (
-                    cleanValue(
-                        p[field]
-                    )
-                ) {
-
-                    score += 1;
-
-                }
-
-            }
-        );
-
-
-        /*
-         * Prefer county-specific data when available.
-         */
-
-        if (
-            p._source ===
-            "Bonner County"
-        ) {
-
-            score += 5;
-
-        }
-
-
-        if (
-            p._source ===
-            "Boundary County"
-        ) {
-
-            score += 5;
-
-        }
-
-
-        /*
-         * Prefer actual geometry.
-         */
-
-        if (
-            feature.geometry
-        ) {
-
-            score += 5;
-
-        }
-
-
-        return score;
-
-    }
-
-
-    /* =====================================================
-       QUERY ONE PARCEL SOURCE
-    ===================================================== */
-
-    async function queryParcelSource(
-        source,
-        geometry,
-        signal
-    ) {
-
-        const params =
-            new URLSearchParams({
-
-                where: "1=1",
-
-                geometry:
-                    geometry,
-
-                geometryType:
-                    "esriGeometryEnvelope",
-
-                inSR:
-                    "4326",
-
-                spatialRel:
-                    "esriSpatialRelIntersects",
-
-                outFields:
-                    source.fields,
-
-                returnGeometry:
-                    "true",
-
-                outSR:
-                    "4326",
-
-                resultRecordCount:
-                    "2000",
-
-                f:
-                    "geojson"
-
-            });
-
-
-        const response =
-            await fetch(
-                `${source.url}/query?${params.toString()}`,
-                {
-                    signal
-                }
-            );
-
-
-        if (
-            !response.ok
-        ) {
-
-            throw new Error(
-                `${source.name} returned HTTP ${response.status}`
-            );
-
-        }
-
-
-        const data =
-            await response.json();
-
-
-        if (
-            data.error
-        ) {
-
-            throw new Error(
-                data.error.message ||
-                `${source.name} returned an ArcGIS error`
-            );
-
-        }
-
-
-        const features =
-            Array.isArray(
-                data.features
-            )
-                ? data.features
-                : [];
-
-
-        return features.map(
-            feature =>
-                normalizeParcel(
-                    feature,
-                    source.name
-                )
-        );
-
-    }
-
-
-    /* =====================================================
-       LOAD PARCELS
+       PARCEL LOADING
     ===================================================== */
 
     async function loadParcels() {
 
-        if (
-            !settings.parcels
-        ) {
+        if (!settings.parcels) {
 
-            if (
-                parcelLayer
-            ) {
+            if (parcelLayer) {
 
-                map.removeLayer(
-                    parcelLayer
-                );
+                map.removeLayer(parcelLayer);
 
             }
 
@@ -1221,37 +468,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         /*
-         * Do not draw parcels across the entire state.
+         * Parcels load at zoom 9 and closer.
+         * This allows large rural properties to be
+         * visible without loading the entire state.
          */
 
-        if (
-            map.getZoom() < 10
-        ) {
+        if (map.getZoom() < 9) {
 
-            if (
-                parcelLayer
-            ) {
+            if (parcelLayer) {
 
-                map.removeLayer(
-                    parcelLayer
-                );
+                map.removeLayer(parcelLayer);
 
             }
-
 
             setStatus(
                 "Zoom in to view parcel boundaries"
             );
 
-
             return;
 
         }
 
 
-        if (
-            parcelRequestController
-        ) {
+        if (parcelRequestController) {
 
             parcelRequestController.abort();
 
@@ -1262,162 +501,80 @@ document.addEventListener("DOMContentLoaded", () => {
             new AbortController();
 
 
-        const signal =
-            parcelRequestController.signal;
+        const bounds =
+            map.getBounds();
 
 
-        const geometry =
-            getViewportGeometry();
+        const geometry = [
+
+            bounds.getWest(),
+            bounds.getSouth(),
+            bounds.getEast(),
+            bounds.getNorth()
+
+        ].join(",");
 
 
-        /*
-         * Main statewide source.
-         */
+        const params =
+            new URLSearchParams({
 
-        const sources = [
+                where: "1=1",
 
-            {
-                name:
-                    "Idaho IDWR",
+                geometry: geometry,
 
-                url:
-                    IDWR_PARCEL_URL,
+                geometryType:
+                    "esriGeometryEnvelope",
 
-                fields:
-                    "OBJECTID,PIN,COUNTY,OWNER"
+                inSR: "4326",
 
-            }
+                spatialRel:
+                    "esriSpatialRelIntersects",
 
-        ];
+                outFields:
+                    "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID",
 
+                returnGeometry: "true",
 
-        /*
-         * Add county-specific sources where
-         * they are useful.
-         */
+                outSR: "4326",
 
-        const regionalSources =
-            getRegionalSources();
+                resultRecordCount: "1000",
 
+                f: "geojson"
 
-        regionalSources.forEach(
-            source => {
-
-                sources.push(
-                    source
-                );
-
-            }
-        );
+            });
 
 
         try {
 
             setStatus(
-                regionalSources.length
-                    ? "Loading parcel boundaries from multiple GIS sources..."
-                    : "Loading parcel boundaries..."
+                "Loading parcel boundaries..."
             );
 
 
-            /*
-             * Query all sources simultaneously.
-             */
-
-            const results =
-                await Promise.allSettled(
-
-                    sources.map(
-                        source =>
-                            queryParcelSource(
-                                source,
-                                geometry,
-                                signal
-                            )
-                    )
-
+            const response =
+                await fetch(
+                    `${PARCEL_URL}/query?${params.toString()}`,
+                    {
+                        signal:
+                            parcelRequestController.signal
+                    }
                 );
 
 
-            if (
-                signal.aborted
-            ) {
-
-                return;
-
-            }
-
-
-            let allFeatures = [];
-
-
-            let successfulSources =
-                0;
-
-
-            results.forEach(
-                result => {
-
-                    if (
-                        result.status ===
-                        "fulfilled"
-                    ) {
-
-                        successfulSources +=
-                            1;
-
-
-                        allFeatures =
-                            allFeatures.concat(
-                                result.value
-                            );
-
-                    } else {
-
-                        console.warn(
-                            "Parcel source failed:",
-                            result.reason
-                        );
-
-                    }
-
-                }
-            );
-
-
-            /*
-             * The site should still work if one source
-             * is unavailable.
-             */
-
-            if (
-                !successfulSources
-            ) {
+            if (!response.ok) {
 
                 throw new Error(
-                    "All parcel sources failed"
+                    "Parcel request failed"
                 );
 
             }
 
 
-            /*
-             * Strong duplicate filtering.
-             */
-
-            const uniqueFeatures =
-                deduplicateParcels(
-                    allFeatures
-                );
+            const data =
+                await response.json();
 
 
-            /*
-             * Remove the previous parcel layer.
-             */
-
-            if (
-                parcelLayer
-            ) {
+            if (parcelLayer) {
 
                 map.removeLayer(
                     parcelLayer
@@ -1428,37 +585,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
             parcelLayer =
                 L.geoJSON(
-                    {
-                        type:
-                            "FeatureCollection",
-
-                        features:
-                            uniqueFeatures
-                    },
+                    data,
                     {
 
                         style: {
 
-                            color:
-                                "#ffffff",
-
-                            weight:
-                                0.7,
-
-                            opacity:
-                                0.75,
-
-                            fillOpacity:
-                                0
+                            color: "#ffffff",
+                            weight: 0.7,
+                            opacity: 0.75,
+                            fillOpacity: 0
 
                         },
 
-
                         onEachFeature:
-                            (
-                                feature,
-                                layer
-                            ) => {
+                            (feature, layer) => {
 
                                 layer.on(
                                     "click",
@@ -1467,7 +607,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                         L.DomEvent.stopPropagation(
                                             event
                                         );
-
 
                                         showParcel(
                                             feature,
@@ -1483,18 +622,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-            parcelLayer.addTo(
-                map
-            );
+            parcelLayer.addTo(map);
 
 
             /*
-             * Restore selected parcel.
+             * Re-highlight selected parcel.
              */
 
-            if (
-                selectedParcelID
-            ) {
+            if (selectedParcelID) {
 
                 parcelLayer.eachLayer(
                     layer => {
@@ -1504,7 +639,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 layer.feature
                             );
 
-
                         if (
                             id ===
                             selectedParcelID
@@ -1512,7 +646,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             selectedParcelLayer =
                                 layer;
-
 
                             highlightParcel(
                                 layer
@@ -1527,7 +660,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             setStatus(
-                `${uniqueFeatures.length.toLocaleString()} parcel boundaries loaded`
+                "Parcel boundaries loaded"
             );
 
 
@@ -1570,11 +703,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 moveTimer
             );
 
-
             moveTimer =
                 setTimeout(
                     loadParcels,
-                    350
+                    300
                 );
 
         }
@@ -1590,7 +722,7 @@ document.addEventListener("DOMContentLoaded", () => {
         async event => {
 
             if (
-                map.getZoom() < 10
+                map.getZoom() < 9
             ) {
 
                 showMapLocation(
@@ -1610,10 +742,6 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
 
-    /* =====================================================
-       FIND PARCEL AT POINT
-    ===================================================== */
-
     async function findParcelAtPoint(
         latlng
     ) {
@@ -1622,30 +750,33 @@ document.addEventListener("DOMContentLoaded", () => {
             `${latlng.lng},${latlng.lat}`;
 
 
-        const sources = [
+        const params =
+            new URLSearchParams({
 
-            {
-                name:
-                    "Idaho IDWR",
+                where: "1=1",
 
-                url:
-                    IDWR_PARCEL_URL,
+                geometry: geometry,
 
-                fields:
-                    "OBJECTID,PIN,COUNTY,OWNER"
+                geometryType:
+                    "esriGeometryPoint",
 
-            }
+                inSR: "4326",
 
-        ];
+                spatialRel:
+                    "esriSpatialRelIntersects",
 
+                outFields:
+                    "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID",
 
-        getRegionalSources()
-            .forEach(
-                source =>
-                    sources.push(
-                        source
-                    )
-            );
+                returnGeometry: "true",
+
+                outSR: "4326",
+
+                resultRecordCount: "1",
+
+                f: "geojson"
+
+            });
 
 
         try {
@@ -1655,146 +786,33 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-            const results =
-                await Promise.allSettled(
-
-                    sources.map(
-                        source => {
-
-                            const params =
-                                new URLSearchParams({
-
-                                    where:
-                                        "1=1",
-
-                                    geometry:
-                                        geometry,
-
-                                    geometryType:
-                                        "esriGeometryPoint",
-
-                                    inSR:
-                                        "4326",
-
-                                    spatialRel:
-                                        "esriSpatialRelIntersects",
-
-                                    outFields:
-                                        source.fields,
-
-                                    returnGeometry:
-                                        "true",
-
-                                    outSR:
-                                        "4326",
-
-                                    resultRecordCount:
-                                        "10",
-
-                                    f:
-                                        "geojson"
-
-                                });
-
-
-                            return fetch(
-                                `${source.url}/query?${params.toString()}`
-                            )
-                            .then(
-                                response => {
-
-                                    if (
-                                        !response.ok
-                                    ) {
-
-                                        throw new Error(
-                                            `${source.name} failed`
-                                        );
-
-                                    }
-
-
-                                    return response.json();
-
-                                }
-                            )
-                            .then(
-                                data => {
-
-                                    return (
-                                        data.features ||
-                                        []
-                                    ).map(
-                                        feature =>
-                                            normalizeParcel(
-                                                feature,
-                                                source.name
-                                            )
-                                    );
-
-                                }
-                            );
-
-                        }
-                    )
-
+            const response =
+                await fetch(
+                    `${PARCEL_URL}/query?${params.toString()}`
                 );
 
 
-            let features = [];
+            if (!response.ok) {
 
-
-            results.forEach(
-                result => {
-
-                    if (
-                        result.status ===
-                        "fulfilled"
-                    ) {
-
-                        features =
-                            features.concat(
-                                result.value
-                            );
-
-                    }
-
-                }
-            );
-
-
-            features =
-                deduplicateParcels(
-                    features
+                throw new Error(
+                    "Property query failed"
                 );
+
+            }
+
+
+            const data =
+                await response.json();
 
 
             if (
-                features.length
+                data.features &&
+                data.features.length
             ) {
 
-                /*
-                 * Prefer the most complete record.
-                 */
-
-                features.sort(
-                    (
-                        a,
-                        b
-                    ) =>
-                        parcelCompletenessScore(
-                            b
-                        ) -
-                        parcelCompletenessScore(
-                            a
-                        )
-                );
-
-
                 showParcel(
-                    features[0]
+                    data.features[0]
                 );
-
 
             } else {
 
@@ -1808,10 +826,8 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
 
             console.error(
-                "Point parcel search error:",
                 error
             );
-
 
             showMapLocation(
                 latlng
@@ -1893,15 +909,11 @@ document.addEventListener("DOMContentLoaded", () => {
     ) {
 
         const p =
-            feature?.properties ||
-            {};
+            feature?.properties || {};
 
 
         return cleanValue(
             p.PARCEL_ID
-        ) ||
-        cleanValue(
-            p.PIN
         ) ||
         cleanValue(
             p.FP_ID
@@ -1926,20 +938,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         layer.setStyle({
 
-            color:
-                "#00e5ff",
-
-            weight:
-                3,
-
-            opacity:
-                1,
-
-            fillColor:
-                "#00e5ff",
-
-            fillOpacity:
-                0.18
+            color: "#00e5ff",
+            weight: 3,
+            opacity: 1,
+            fillColor: "#00e5ff",
+            fillOpacity: 0.18
 
         });
 
@@ -1964,17 +967,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             selectedParcelLayer.setStyle({
 
-                color:
-                    "#ffffff",
-
-                weight:
-                    0.7,
-
-                opacity:
-                    0.75,
-
-                fillOpacity:
-                    0
+                color: "#ffffff",
+                weight: 0.7,
+                opacity: 0.75,
+                fillOpacity: 0
 
             });
 
@@ -1984,11 +980,207 @@ document.addEventListener("DOMContentLoaded", () => {
         selectedParcelLayer =
             null;
 
-
         selectedParcelID =
             null;
 
     }
+
+
+    /* =====================================================
+       RARE GLITCH JOKES
+    ===================================================== */
+
+    function showRareJoke(
+        text
+    ) {
+
+        const joke =
+            document.createElement(
+                "div"
+            );
+
+
+        joke.textContent =
+            text;
+
+
+        joke.style.position =
+            "fixed";
+
+        joke.style.top =
+            "50%";
+
+        joke.style.left =
+            "50%";
+
+        joke.style.transform =
+            "translate(-50%, -50%)";
+
+        joke.style.width =
+            "100%";
+
+        joke.style.textAlign =
+            "center";
+
+        joke.style.fontSize =
+            "clamp(40px, 9vw, 120px)";
+
+        joke.style.fontWeight =
+            "900";
+
+        joke.style.fontFamily =
+            "'Courier New', monospace";
+
+        joke.style.letterSpacing =
+            "4px";
+
+        joke.style.color =
+            "#ff0000";
+
+        joke.style.textShadow = `
+            4px 0 #00ffff,
+            -4px 0 #ff00ff,
+            0 0 10px #ff0000,
+            0 0 25px #ff0000
+        `;
+
+        joke.style.zIndex =
+            "999999";
+
+        joke.style.pointerEvents =
+            "none";
+
+        joke.style.animation =
+            "parcelGlitch 0.12s infinite";
+
+
+        document.body.appendChild(
+            joke
+        );
+
+
+        setTimeout(
+            () => {
+
+                joke.remove();
+
+            },
+            3000
+        );
+
+    }
+
+
+    function rareParcelJoke() {
+
+        const roll =
+            Math.random();
+
+
+        if (
+            roll < 0.001
+        ) {
+
+            showRareJoke(
+                "CONGRATS, YOU FOUND DIRT!"
+            );
+
+            return;
+
+        }
+
+
+        if (
+            roll < 0.002
+        ) {
+
+            showRareJoke(
+                "SOME PLACE IN IDAHO"
+            );
+
+            return;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       GLITCH ANIMATION
+    ===================================================== */
+
+    const glitchStyle =
+        document.createElement(
+            "style"
+        );
+
+
+    glitchStyle.textContent = `
+
+        @keyframes parcelGlitch {
+
+            0% {
+
+                transform:
+                    translate(-50%, -50%)
+                    translate(0, 0);
+
+                opacity: 1;
+
+            }
+
+            20% {
+
+                transform:
+                    translate(-50%, -50%)
+                    translate(-8px, 3px);
+
+            }
+
+            40% {
+
+                transform:
+                    translate(-50%, -50%)
+                    translate(7px, -4px);
+
+                opacity: 0.85;
+
+            }
+
+            60% {
+
+                transform:
+                    translate(-50%, -50%)
+                    translate(-3px, 6px);
+
+            }
+
+            80% {
+
+                transform:
+                    translate(-50%, -50%)
+                    translate(5px, -2px);
+
+                opacity: 1;
+
+            }
+
+            100% {
+
+                transform:
+                    translate(-50%, -50%)
+                    translate(0, 0);
+
+            }
+
+        }
+
+    `;
+
+
+    document.head.appendChild(
+        glitchStyle
+    );
 
 
     /* =====================================================
@@ -2001,8 +1193,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ) {
 
         const p =
-            feature.properties ||
-            {};
+            feature.properties || {};
 
 
         clearSelectedParcel();
@@ -2014,9 +1205,7 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        if (
-            sourceLayer
-        ) {
+        if (sourceLayer) {
 
             selectedParcelLayer =
                 sourceLayer;
@@ -2032,27 +1221,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         style: {
 
-                            color:
-                                "#00e5ff",
-
-                            weight:
-                                3,
-
-                            opacity:
-                                1,
-
-                            fillColor:
-                                "#00e5ff",
-
-                            fillOpacity:
-                                0.18
+                            color: "#00e5ff",
+                            weight: 3,
+                            opacity: 1,
+                            fillColor: "#00e5ff",
+                            fillOpacity: 0.18
 
                         }
 
                     }
-                ).addTo(
-                    map
-                );
+                ).addTo(map);
 
         }
 
@@ -2077,15 +1255,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const address =
             [
-                cleanValue(
-                    p.SITE_ADD
-                ),
-                cleanValue(
-                    p.SITE_CITY
-                ),
-                cleanValue(
-                    p.SITE_ZIP
-                )
+                cleanValue(p.SITE_ADD),
+                cleanValue(p.SITE_CITY),
+                cleanValue(p.SITE_ZIP)
             ]
             .filter(Boolean)
             .join(", ");
@@ -2107,8 +1279,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   ).toLocaleString(
                     undefined,
                     {
-                        maximumFractionDigits:
-                            2
+                        maximumFractionDigits: 2
                     }
                   )
                 : "Unavailable";
@@ -2172,9 +1343,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
                 <div class="property-value">
-                    ${escapeHTML(
-                        parcelID
-                    )}
+                    ${escapeHTML(parcelID)}
                 </div>
 
             </div>
@@ -2187,9 +1356,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
                 <div class="property-value">
-                    ${escapeHTML(
-                        county
-                    )}
+                    ${escapeHTML(county)}
                 </div>
 
             </div>
@@ -2202,9 +1369,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
                 <div class="property-value">
-                    ${escapeHTML(
-                        acres
-                    )}
+                    ${escapeHTML(acres)}
                 </div>
 
             </div>
@@ -2217,9 +1382,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
 
                 <div class="property-value">
-                    ${escapeHTML(
-                        assessed
-                    )}
+                    ${escapeHTML(assessed)}
                 </div>
 
             </div>
@@ -2228,15 +1391,15 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="property-field">
 
                 <div class="property-label">
-                    Data Source
+                    Data Steward
                 </div>
 
                 <div class="property-value">
                     ${escapeHTML(
                         cleanValue(
-                            p._source
+                            p.STEWARD
                         ) ||
-                        "Public GIS"
+                        "Unavailable"
                     )}
                 </div>
 
@@ -2277,6 +1440,13 @@ document.addEventListener("DOMContentLoaded", () => {
         setStatus(
             "Property selected"
         );
+
+
+        /*
+         * Very rare jokes.
+         */
+
+        rareParcelJoke();
 
     }
 
@@ -2348,162 +1518,61 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        const sources = [
+        const where =
+            `PARCEL_ID LIKE '%${safeQuery}%' OR ` +
+            `OWNER1 LIKE '%${safeQuery}%' OR ` +
+            `OWNER2 LIKE '%${safeQuery}%' OR ` +
+            `SITE_ADD LIKE '%${safeQuery}%' OR ` +
+            `SITE_CITY LIKE '%${safeQuery}%'`;
 
-            {
-                name:
-                    "Idaho IDWR",
 
-                url:
-                    IDWR_PARCEL_URL,
+        const params =
+            new URLSearchParams({
 
-                fields:
-                    "OBJECTID,PIN,COUNTY,OWNER",
+                where: where,
 
-                where:
-                    `PIN LIKE '%${safeQuery}%' OR OWNER LIKE '%${safeQuery}%' OR COUNTY LIKE '%${safeQuery}%'`
+                outFields:
+                    "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID",
 
-            },
+                returnGeometry:
+                    "true",
 
-            {
-                name:
-                    "Bonner County",
+                outSR:
+                    "4326",
 
-                url:
-                    BONNER_PARCEL_URL,
+                resultRecordCount:
+                    "50",
 
-                fields:
-                    "OBJECTID,PIN,Owner,Owner2,Acreage",
+                f:
+                    "geojson"
 
-                where:
-                    `PIN LIKE '%${safeQuery}%' OR Owner LIKE '%${safeQuery}%' OR Owner2 LIKE '%${safeQuery}%'`
-
-            },
-
-            {
-                name:
-                    "Boundary County",
-
-                url:
-                    BOUNDARY_PARCEL_URL,
-
-                fields:
-                    "OBJECTID,PARCEL_ID,CALC_ACRES,PS_MAIL_NM,PS_PROP_AD,PS_MAIL_CT,PS_MAIL_ZP,PS_TOT_VAL,PS_NET_VAL",
-
-                where:
-                    `PARCEL_ID LIKE '%${safeQuery}%' OR PS_MAIL_NM LIKE '%${safeQuery}%' OR PS_PROP_AD LIKE '%${safeQuery}%'`
-
-            }
-
-        ];
+            });
 
 
         try {
 
-            const results =
-                await Promise.allSettled(
-
-                    sources.map(
-                        source => {
-
-                            const params =
-                                new URLSearchParams({
-
-                                    where:
-                                        source.where,
-
-                                    outFields:
-                                        source.fields,
-
-                                    returnGeometry:
-                                        "true",
-
-                                    outSR:
-                                        "4326",
-
-                                    resultRecordCount:
-                                        "50",
-
-                                    f:
-                                        "geojson"
-
-                                });
-
-
-                            return fetch(
-                                `${source.url}/query?${params.toString()}`
-                            )
-                            .then(
-                                response => {
-
-                                    if (
-                                        !response.ok
-                                    ) {
-
-                                        throw new Error(
-                                            `${source.name} failed`
-                                        );
-
-                                    }
-
-
-                                    return response.json();
-
-                                }
-                            )
-                            .then(
-                                data => {
-
-                                    return (
-                                        data.features ||
-                                        []
-                                    ).map(
-                                        feature =>
-                                            normalizeParcel(
-                                                feature,
-                                                source.name
-                                            )
-                                    );
-
-                                }
-                            );
-
-                        }
-                    )
-
+            const response =
+                await fetch(
+                    `${PARCEL_URL}/query?${params.toString()}`
                 );
 
 
-            let features = [];
+            if (!response.ok) {
 
-
-            results.forEach(
-                result => {
-
-                    if (
-                        result.status ===
-                        "fulfilled"
-                    ) {
-
-                        features =
-                            features.concat(
-                                result.value
-                            );
-
-                    }
-
-                }
-            );
-
-
-            features =
-                deduplicateParcels(
-                    features
+                throw new Error(
+                    "Search failed"
                 );
+
+            }
+
+
+            const data =
+                await response.json();
 
 
             if (
-                !features.length
+                !data.features ||
+                !data.features.length
             ) {
 
                 resultsContent.innerHTML = `
@@ -2515,9 +1584,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
 
                         <div class="search-result-details">
-                            Try an owner name,
-                            parcel ID,
-                            or address.
+                            Try an owner name, address,
+                            parcel ID, or city.
                         </div>
 
                     </div>
@@ -2533,19 +1601,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 query.toLowerCase();
 
 
-            features.sort(
-                (
-                    a,
-                    b
-                ) => {
+            data.features.sort(
+                (a, b) => {
 
                     const pa =
-                        a.properties ||
-                        {};
+                        a.properties || {};
 
                     const pb =
-                        b.properties ||
-                        {};
+                        b.properties || {};
 
 
                     const ownerA =
@@ -2557,18 +1620,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     const ownerB =
                         cleanValue(
                             pb.OWNER1
-                        ).toLowerCase();
-
-
-                    const idA =
-                        cleanValue(
-                            pa.PARCEL_ID
-                        ).toLowerCase();
-
-
-                    const idB =
-                        cleanValue(
-                            pb.PARCEL_ID
                         ).toLowerCase();
 
 
@@ -2585,92 +1636,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                     const scoreA =
-                        (
-                            idA ===
-                            normalized
-                                ? 100
-                                : 0
-                        ) +
-
-                        (
-                            ownerA ===
-                            normalized
-                                ? 80
-                                : 0
-                        ) +
-
-                        (
-                            ownerA.startsWith(
-                                normalized
-                            )
-                                ? 30
-                                : 0
-                        ) +
-
-                        (
-                            addressA.includes(
-                                normalized
-                            )
-                                ? 20
-                                : 0
-                        ) +
-
-                        parcelCompletenessScore(
-                            a
-                        );
+                        (ownerA === normalized
+                            ? 100
+                            : 0) +
+                        (ownerA.startsWith(normalized)
+                            ? 30
+                            : 0) +
+                        (addressA.includes(normalized)
+                            ? 20
+                            : 0);
 
 
                     const scoreB =
-                        (
-                            idB ===
-                            normalized
-                                ? 100
-                                : 0
-                        ) +
-
-                        (
-                            ownerB ===
-                            normalized
-                                ? 80
-                                : 0
-                        ) +
-
-                        (
-                            ownerB.startsWith(
-                                normalized
-                            )
-                                ? 30
-                                : 0
-                        ) +
-
-                        (
-                            addressB.includes(
-                                normalized
-                            )
-                                ? 20
-                                : 0
-                        ) +
-
-                        parcelCompletenessScore(
-                            b
-                        );
+                        (ownerB === normalized
+                            ? 100
+                            : 0) +
+                        (ownerB.startsWith(normalized)
+                            ? 30
+                            : 0) +
+                        (addressB.includes(normalized)
+                            ? 20
+                            : 0);
 
 
-                    return (
-                        scoreB -
-                        scoreA
-                    );
+                    return scoreB - scoreA;
 
                 }
             );
 
 
             resultsContent.innerHTML =
-                features
-                    .slice(
-                        0,
-                        50
-                    )
+                data.features
                     .map(
                         (
                             feature,
@@ -2721,9 +1717,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <div
                                         class="search-result-title"
                                     >
-                                        ${escapeHTML(
-                                            owner
-                                        )}
+                                        ${escapeHTML(owner)}
                                     </div>
 
                                     <div
@@ -2759,16 +1753,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                             )
                                         }
 
-                                        <br>
-
-                                        Source:
-                                        ${
-                                            escapeHTML(
-                                                p._source ||
-                                                "Public GIS"
-                                            )
-                                        }
-
                                     </div>
 
                                 </div>
@@ -2799,7 +1783,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                                 selectSearchResult(
-                                    features[
+                                    data.features[
                                         index
                                     ]
                                 );
@@ -2814,7 +1798,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
 
             console.error(
-                "Search error:",
                 error
             );
 
@@ -2828,7 +1811,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
 
                     <div class="search-result-details">
-                        The public GIS services did not
+                        The public GIS service did not
                         return a result. Try again.
                     </div>
 
@@ -2879,14 +1862,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     bounds,
                     {
 
-                        padding:
-                            [
-                                60,
-                                60
-                            ],
+                        padding: [
+                            60,
+                            60
+                        ],
 
-                        maxZoom:
-                            17
+                        maxZoom: 17
 
                     }
                 );
@@ -2901,27 +1882,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         style: {
 
-                            color:
-                                "#00e5ff",
-
-                            weight:
-                                3,
-
-                            opacity:
-                                1,
-
-                            fillColor:
-                                "#00e5ff",
-
-                            fillOpacity:
-                                0.18
+                            color: "#00e5ff",
+                            weight: 3,
+                            opacity: 1,
+                            fillColor: "#00e5ff",
+                            fillOpacity: 0.18
 
                         }
 
                     }
-                ).addTo(
-                    map
-                );
+                ).addTo(map);
 
 
             selectedParcelID =
@@ -2968,8 +1938,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ) {
 
         const p =
-            feature.properties ||
-            {};
+            feature.properties || {};
 
 
         const parcelID =
@@ -3001,8 +1970,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 "Saved Properties",
                 `
                     <div class="page-card">
-                        <strong>Already Saved</strong>
+
+                        <strong>
+                            Already Saved
+                        </strong>
+
                         This property is already saved.
+
                     </div>
                 `,
                 "SAVED PROPERTIES"
@@ -3024,18 +1998,15 @@ document.addEventListener("DOMContentLoaded", () => {
         saved.push({
 
             parcelID:
-
                 parcelID,
 
             owner:
-
                 cleanValue(
                     p.OWNER1
                 ) ||
                 "Owner unavailable",
 
             address:
-
                 [
                     cleanValue(
                         p.SITE_ADD
@@ -3051,13 +2022,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 .join(", "),
 
             latitude:
-
                 center
                     ? center.lat
                     : null,
 
             longitude:
-
                 center
                     ? center.lng
                     : null
@@ -3088,20 +2057,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const layer =
                 L.geoJSON({
-                    type:
-                        "Feature",
-
-                    properties:
-                        {},
-
-                    geometry:
-                        geometry
+                    type: "Feature",
+                    properties: {},
+                    geometry: geometry
                 });
 
 
-            return layer
-                .getBounds()
-                .getCenter();
+            const center =
+                layer.getBounds()
+                    .getCenter();
+
+
+            return center;
 
         } catch {
 
@@ -3131,9 +2098,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             button.dataset.section;
 
 
-                        if (
-                            section
-                        ) {
+                        if (section) {
 
                             openSection(
                                 section
@@ -3430,11 +2395,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         map.fitBounds(
                             layer.getBounds(),
                             {
-                                padding:
-                                    [
-                                        30,
-                                        30
-                                    ]
+                                padding: [
+                                    30,
+                                    30
+                                ]
                             }
                         );
 
@@ -3447,9 +2411,7 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-            if (
-                found
-            ) {
+            if (found) {
 
                 appPage.classList.remove(
                     "open"
@@ -3497,7 +2459,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const response =
                 await fetch(
-                    `${IDWR_PARCEL_URL}/query?${params.toString()}`
+                    `${PARCEL_URL}/query?${params.toString()}`
                 );
 
 
@@ -3519,20 +2481,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 map.fitBounds(
                     layer.getBounds(),
                     {
-                        padding:
-                            [
-                                30,
-                                30
-                            ]
+                        padding: [
+                            30,
+                            30
+                        ]
                     }
                 );
 
             }
 
 
-        } catch (
-            error
-        ) {
+        } catch (error) {
 
             console.error(
                 "County selection error:",
@@ -3559,9 +2518,7 @@ document.addEventListener("DOMContentLoaded", () => {
             getSavedProperties();
 
 
-        if (
-            !saved.length
-        ) {
+        if (!saved.length) {
 
             openPage(
                 "Saved Properties",
@@ -3733,7 +2690,6 @@ document.addEventListener("DOMContentLoaded", () => {
             "open"
         );
 
-
         closeMenuPanel();
 
 
@@ -3747,7 +2703,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       DATA SOURCES PAGE
+       DATA SOURCES
     ===================================================== */
 
     function showDataSources() {
@@ -3759,43 +2715,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="page-section">
 
                     <h2>
-                        Idaho IDWR
+                        Property & Parcel Data
                     </h2>
 
                     <p>
-                        Statewide parcel compilation containing
-                        parcel polygons obtained from Idaho county
-                        assessor offices.
-                    </p>
-
-                </div>
-
-
-                <div class="page-section">
-
-                    <h2>
-                        Bonner County GIS
-                    </h2>
-
-                    <p>
-                        County-specific parcel data used as a
-                        northern Idaho fallback and verification
-                        source.
-                    </p>
-
-                </div>
-
-
-                <div class="page-section">
-
-                    <h2>
-                        Boundary County GIS
-                    </h2>
-
-                    <p>
-                        County-specific parcel data used as a
-                        northern Idaho fallback and verification
-                        source.
+                        ParcelScope uses the Public Idaho
+                        Parcels statewide GIS service for
+                        parcel boundaries and available
+                        public property attributes.
                     </p>
 
                 </div>
@@ -3824,6 +2751,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     <p>
                         Satellite imagery is provided by
                         Esri World Imagery.
+                    </p>
+
+                </div>
+
+
+                <div class="page-section">
+
+                    <h2>
+                        Standard Map
+                    </h2>
+
+                    <p>
+                        The standard road map uses
+                        OpenStreetMap data.
                     </p>
 
                 </div>
@@ -3892,9 +2833,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         Last site refresh:
                         <strong>
-                            ${escapeHTML(
-                                last
-                            )}
+                            ${escapeHTML(last)}
                         </strong>
 
                     </div>
@@ -4119,10 +3058,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                             if (
-                                layer ===
-                                    "counties" ||
-                                layer ===
-                                    "idaho"
+                                layer === "counties" ||
+                                layer === "idaho"
                             ) {
 
                                 updateBoundaryVisibility();
@@ -4167,9 +3104,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 <button
                     class="toggle ${
-                        enabled
-                            ? "on"
-                            : ""
+                        enabled ? "on" : ""
                     }"
                     data-layer-toggle="${key}"
                 ></button>
@@ -4401,9 +3336,7 @@ document.addEventListener("DOMContentLoaded", () => {
         text
     ) {
 
-        if (
-            mapStatusText
-        ) {
+        if (mapStatusText) {
 
             mapStatusText.textContent =
                 text;
@@ -4454,7 +3387,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     console.log(
-        "ParcelScope Idaho initialized with multi-source parcel system."
+        "ParcelScope Idaho initialized."
     );
 
 });
