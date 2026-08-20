@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>ParcelScope Idaho</title>
 
@@ -24,11 +21,7 @@
 
 <header class="topbar">
 
-    <button
-        id="menuButton"
-        class="icon-button"
-        aria-label="Open menu"
-    >
+    <button id="menuButton" class="icon-button" aria-label="Open menu">
         <svg viewBox="0 0 24 24">
             <path d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
@@ -53,10 +46,7 @@
 
     <div class="search-container">
 
-        <svg
-            class="search-icon"
-            viewBox="0 0 24 24"
-        >
+        <svg class="search-icon" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="6.5"/>
             <path d="M16 16l5 5"/>
         </svg>
@@ -64,14 +54,11 @@
         <input
             id="searchInput"
             type="search"
-            placeholder="Try typing something in&#10;I'm good but I can't read minds"
+            placeholder="Search address, owner, or parcel ID..."
             autocomplete="off"
         >
 
-        <button
-            id="searchButton"
-            class="search-button"
-        >
+        <button id="searchButton" class="search-button">
             Search
         </button>
 
@@ -86,16 +73,13 @@
 
         <div>
             <div class="menu-title">ParcelScope</div>
+
             <div class="menu-subtitle">
                 Idaho Property Research
             </div>
         </div>
 
-        <button
-            id="closeMenu"
-            class="close-button"
-            aria-label="Close menu"
-        >
+        <button id="closeMenu" class="close-button">
             <svg viewBox="0 0 24 24">
                 <path d="M6 6l12 12"/>
                 <path d="M18 6L6 18"/>
@@ -111,17 +95,11 @@
             PROPERTY
         </div>
 
-        <button
-            class="menu-item"
-            data-section="counties"
-        >
+        <button class="menu-item" data-section="counties">
             <span>Counties</span>
         </button>
 
-        <button
-            class="menu-item"
-            data-section="saved"
-        >
+        <button class="menu-item" data-section="saved">
             <span>Saved Properties</span>
         </button>
 
@@ -134,17 +112,11 @@
             DATA
         </div>
 
-        <button
-            class="menu-item"
-            data-section="sources"
-        >
+        <button class="menu-item" data-section="sources">
             <span>Data Sources</span>
         </button>
 
-        <button
-            class="menu-item"
-            data-section="history"
-        >
+        <button class="menu-item" data-section="history">
             <span>Update History</span>
         </button>
 
@@ -157,17 +129,11 @@
             SYSTEM
         </div>
 
-        <button
-            class="menu-item"
-            data-section="settings"
-        >
+        <button class="menu-item" data-section="settings">
             <span>Settings</span>
         </button>
 
-        <button
-            class="menu-item"
-            data-section="about"
-        >
+        <button class="menu-item" data-section="about">
             <span>About</span>
         </button>
 
@@ -193,10 +159,7 @@
 </aside>
 
 
-<section
-    id="propertyPanel"
-    class="property-panel"
->
+<section id="propertyPanel" class="property-panel">
 
     <div class="property-header">
 
@@ -210,10 +173,7 @@
             </h2>
         </div>
 
-        <button
-            id="closeProperty"
-            class="close-button"
-        >
+        <button id="closeProperty" class="close-button">
             <svg viewBox="0 0 24 24">
                 <path d="M6 6l12 12"/>
                 <path d="M18 6L6 18"/>
@@ -227,10 +187,7 @@
 </section>
 
 
-<section
-    id="searchResults"
-    class="search-results"
->
+<section id="searchResults" class="search-results">
 
     <div class="results-header">
 
@@ -242,10 +199,7 @@
             <h2>Results</h2>
         </div>
 
-        <button
-            id="closeResults"
-            class="close-button"
-        >
+        <button id="closeResults" class="close-button">
             <svg viewBox="0 0 24 24">
                 <path d="M6 6l12 12"/>
                 <path d="M18 6L6 18"/>
@@ -259,18 +213,12 @@
 </section>
 
 
-<section
-    id="appPage"
-    class="app-page"
->
+<section id="appPage" class="app-page">
 
     <div class="app-page-header">
 
         <div>
-            <div
-                id="appPageKicker"
-                class="property-kicker"
-            >
+            <div id="appPageKicker" class="property-kicker">
                 PARCELSCOPE
             </div>
 
@@ -279,11 +227,7 @@
             </h1>
         </div>
 
-        <button
-            id="closeAppPage"
-            class="page-close"
-            aria-label="Close page"
-        >
+        <button id="closeAppPage" class="page-close">
             ×
         </button>
 
@@ -294,21 +238,18 @@
 </section>
 
 
-<div
-    id="mapStatus"
-    class="map-status"
->
+<div id="mapStatus" class="map-status">
+
     <span class="status-dot"></span>
 
     <span id="mapStatusText">
         Starting ParcelScope
     </span>
+
 </div>
 
 
-<script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script src="app.js"></script>
 
