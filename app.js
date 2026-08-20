@@ -1,7 +1,7 @@
 /* =========================================================
    PARCELSCOPE IDAHO
    Main Application
-   UPDATED VERSION
+   UPDATED PARCEL LOADING VERSION
 ========================================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -771,7 +771,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* =====================================================
        PARCEL LOADING
-       PAGINATED TILE REQUESTS
+       FIXED / LIGHTER VERSION
     ===================================================== */
 
     async function loadParcels() {
@@ -784,13 +784,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     parcelLayer
                 );
 
+                parcelLayer = null;
+
             }
+
+            setStatus(
+                "Parcel boundaries disabled"
+            );
 
             return;
 
         }
 
 
+        /*
+         * Don't load parcel geometry when zoomed
+         * too far out.
+         */
         if (map.getZoom() < 9) {
 
             if (parcelLayer) {
@@ -798,6 +808,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 map.removeLayer(
                     parcelLayer
                 );
+
+                parcelLayer = null;
 
             }
 
@@ -810,6 +822,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
+        /*
+         * Cancel the previous request.
+         */
         if (parcelRequestController) {
 
             parcelRequestController.abort();
@@ -821,7 +836,7 @@ document.addEventListener("DOMContentLoaded", () => {
             new AbortController();
 
 
-        const requestSignal =
+        const signal =
             parcelRequestController.signal;
 
 
@@ -856,26 +871,29 @@ document.addEventListener("DOMContentLoaded", () => {
                 north - south;
 
 
+            /*
+             * Smaller requests when zoomed out.
+             */
             let columns = 2;
             let rows = 2;
 
 
-            if (map.getZoom() <= 10) {
-
-                columns = 4;
-                rows = 4;
-
-            } else if (
-                map.getZoom() <= 12
-            ) {
+            if (map.getZoom() < 10) {
 
                 columns = 3;
                 rows = 3;
 
-            } else {
+            } else if (
+                map.getZoom() < 12
+            ) {
 
                 columns = 2;
                 rows = 2;
+
+            } else {
+
+                columns = 1;
+                rows = 1;
 
             }
 
@@ -883,129 +901,92 @@ document.addEventListener("DOMContentLoaded", () => {
             const allFeatures = [];
 
 
-            /*
-             * Load one tile at a time.
-             *
-             * If ArcGIS returns exactly 2,000
-             * records, request the next page too.
-             *
-             * This prevents dense areas from having
-             * missing parcel sections.
-             */
+            /* =================================================
+               SINGLE TILE REQUEST
+            ================================================= */
 
-            async function loadParcelTile(
+            async function requestTile(
                 tileWest,
                 tileSouth,
                 tileEast,
                 tileNorth
             ) {
 
-                const geometry = [
+                if (
+                    signal.aborted
+                ) {
 
-                    tileWest,
-                    tileSouth,
-                    tileEast,
-                    tileNorth
+                    throw new DOMException(
+                        "Request aborted",
+                        "AbortError"
+                    );
 
-                ].join(",");
-
-
-                const pageSize = 2000;
-
-                let offset = 0;
+                }
 
 
-                while (true) {
+                const geometry =
+                    [
+                        tileWest,
+                        tileSouth,
+                        tileEast,
+                        tileNorth
+                    ].join(",");
 
-                    if (
-                        requestSignal.aborted
-                    ) {
 
-                        throw new DOMException(
-                            "Request aborted",
-                            "AbortError"
+                const params =
+                    new URLSearchParams({
+
+                        where: "1=1",
+
+                        geometry:
+                            geometry,
+
+                        geometryType:
+                            "esriGeometryEnvelope",
+
+                        inSR:
+                            "4326",
+
+                        spatialRel:
+                            "esriSpatialRelIntersects",
+
+                        outFields:
+                            "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID",
+
+                        returnGeometry:
+                            "true",
+
+                        outSR:
+                            "4326",
+
+                        resultRecordCount:
+                            "1000",
+
+                        returnExceededLimitFeatures:
+                            "true",
+
+                        f:
+                            "geojson"
+
+                    });
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            `${PARCEL_URL}/query?${params.toString()}`,
+                            {
+                                signal:
+                                    signal
+                            }
                         );
-
-                    }
-
-
-                    const params =
-                        new URLSearchParams({
-
-                            where: "1=1",
-
-                            geometry:
-                                geometry,
-
-                            geometryType:
-                                "esriGeometryEnvelope",
-
-                            inSR:
-                                "4326",
-
-                            spatialRel:
-                                "esriSpatialRelIntersects",
-
-                            outFields:
-                                "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID",
-
-                            returnGeometry:
-                                "true",
-
-                            outSR:
-                                "4326",
-
-                            resultRecordCount:
-                                String(pageSize),
-
-                            resultOffset:
-                                String(offset),
-
-                            f:
-                                "geojson"
-
-                        });
-
-
-                    let response;
-
-
-                    try {
-
-                        response =
-                            await fetch(
-                                `${PARCEL_URL}/query?${params.toString()}`,
-                                {
-                                    signal:
-                                        requestSignal
-                                }
-                            );
-
-                    } catch (error) {
-
-                        if (
-                            error.name ===
-                            "AbortError"
-                        ) {
-
-                            throw error;
-
-                        }
-
-                        console.warn(
-                            "Parcel tile request failed:",
-                            error
-                        );
-
-                        return;
-
-                    }
 
 
                     if (!response.ok) {
 
                         console.warn(
-                            "Parcel tile HTTP error:",
+                            "Parcel request failed:",
                             response.status
                         );
 
@@ -1019,7 +1000,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                     if (
-                        !data ||
+                        data.error
+                    ) {
+
+                        console.warn(
+                            "ArcGIS parcel error:",
+                            data.error
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (
+                        !data.features ||
                         !Array.isArray(
                             data.features
                         )
@@ -1035,51 +1030,33 @@ document.addEventListener("DOMContentLoaded", () => {
                     );
 
 
-                    const returned =
-                        data.features.length;
-
-
-                    /*
-                     * Less than 2,000 means we've
-                     * reached the end of this tile.
-                     */
+                } catch (error) {
 
                     if (
-                        returned < pageSize
+                        error.name ===
+                        "AbortError"
                     ) {
 
-                        break;
+                        throw error;
 
                     }
 
 
-                    offset += pageSize;
-
-
-                    /*
-                     * Safety limit so a broken
-                     * server response cannot cause
-                     * an infinite loop.
-                     */
-
-                    if (
-                        offset >= 20000
-                    ) {
-
-                        console.warn(
-                            "Parcel tile reached pagination safety limit."
-                        );
-
-                        break;
-
-                    }
+                    console.warn(
+                        "Parcel tile failed:",
+                        error
+                    );
 
                 }
 
             }
 
 
-            const tileJobs = [];
+            /* =================================================
+               BUILD TILE JOBS
+            ================================================= */
+
+            const tileFunctions = [];
 
 
             for (
@@ -1096,32 +1073,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     const tileWest =
                         west +
-                        (width / columns) *
+                        (
+                            width /
+                            columns
+                        ) *
                         column;
+
 
                     const tileEast =
                         west +
-                        (width / columns) *
-                        (column + 1);
+                        (
+                            width /
+                            columns
+                        ) *
+                        (
+                            column + 1
+                        );
+
 
                     const tileSouth =
                         south +
-                        (height / rows) *
+                        (
+                            height /
+                            rows
+                        ) *
                         row;
+
 
                     const tileNorth =
                         south +
-                        (height / rows) *
-                        (row + 1);
+                        (
+                            height /
+                            rows
+                        ) *
+                        (
+                            row + 1
+                        );
 
 
-                    tileJobs.push(
-                        loadParcelTile(
-                            tileWest,
-                            tileSouth,
-                            tileEast,
-                            tileNorth
-                        )
+                    /*
+                     * Store functions instead of starting
+                     * every request immediately.
+                     */
+                    tileFunctions.push(
+                        () =>
+                            requestTile(
+                                tileWest,
+                                tileSouth,
+                                tileEast,
+                                tileNorth
+                            )
                     );
 
                 }
@@ -1129,49 +1130,82 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
 
-            await Promise.all(
-                tileJobs
-            );
+            /*
+             * Only run three tile requests at once.
+             */
+            const batchSize = 3;
+
+
+            for (
+                let i = 0;
+                i < tileFunctions.length;
+                i += batchSize
+            ) {
+
+                if (
+                    signal.aborted
+                ) {
+
+                    throw new DOMException(
+                        "Request aborted",
+                        "AbortError"
+                    );
+
+                }
+
+
+                const batch =
+                    tileFunctions.slice(
+                        i,
+                        i + batchSize
+                    );
+
+
+                await Promise.all(
+                    batch.map(
+                        job => job()
+                    )
+                );
+
+            }
 
 
             /*
-             * Remove duplicates from neighboring
-             * tiles and pagination.
+             * Remove duplicates.
              */
-
             const uniqueParcels =
                 new Map();
 
 
-            allFeatures.forEach(
-                feature => {
+            for (
+                const feature of allFeatures
+            ) {
 
-                    const id =
-                        getParcelID(
-                            feature
-                        );
-
-
-                    if (!id) {
-
-                        return;
-
-                    }
+                const id =
+                    getParcelID(
+                        feature
+                    );
 
 
-                    if (
-                        !uniqueParcels.has(id)
-                    ) {
+                if (!id) {
 
-                        uniqueParcels.set(
-                            id,
-                            feature
-                        );
-
-                    }
+                    continue;
 
                 }
-            );
+
+
+                if (
+                    !uniqueParcels.has(id)
+                ) {
+
+                    uniqueParcels.set(
+                        id,
+                        feature
+                    );
+
+                }
+
+            }
 
 
             const features =
@@ -1180,115 +1214,139 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-            const data = {
-
-                type: "FeatureCollection",
-
-                features: features
-
-            };
-
-
+            /*
+             * Remove the old layer.
+             */
             if (parcelLayer) {
 
                 map.removeLayer(
                     parcelLayer
                 );
 
+                parcelLayer = null;
+
             }
 
 
-            parcelLayer =
-                L.geoJSON(
-                    data,
-                    {
+            /*
+             * Draw new parcel boundaries.
+             */
+            if (
+                features.length > 0
+            ) {
 
-                        style: {
+                parcelLayer =
+                    L.geoJSON(
+                        {
+                            type:
+                                "FeatureCollection",
 
-                            color: "#ffffff",
-                            weight: 0.7,
-                            opacity: 0.75,
-                            fillOpacity: 0
+                            features:
+                                features
 
                         },
+                        {
 
-                        onEachFeature:
-                            (feature, layer) => {
+                            style: {
 
-                                layer.on(
-                                    "click",
-                                    event => {
+                                color:
+                                    "#ffffff",
 
-                                        L.DomEvent.stopPropagation(
-                                            event
-                                        );
+                                weight:
+                                    0.7,
 
-                                        showParcel(
-                                            feature,
-                                            layer
-                                        );
+                                opacity:
+                                    0.75,
 
-                                    }
+                                fillOpacity:
+                                    0
+
+                            },
+
+                            onEachFeature:
+                                (
+                                    feature,
+                                    layer
+                                ) => {
+
+                                    layer.on(
+                                        "click",
+                                        event => {
+
+                                            L.DomEvent.stopPropagation(
+                                                event
+                                            );
+
+                                            showParcel(
+                                                feature,
+                                                layer
+                                            );
+
+                                        }
+                                    );
+
+                                }
+
+                        }
+                    );
+
+
+                parcelLayer.addTo(
+                    map
+                );
+
+
+                /*
+                 * Re-highlight selected parcel.
+                 */
+                if (
+                    selectedParcelID
+                ) {
+
+                    parcelLayer.eachLayer(
+                        layer => {
+
+                            const id =
+                                getParcelID(
+                                    layer.feature
+                                );
+
+
+                            if (
+                                id ===
+                                selectedParcelID
+                            ) {
+
+                                selectedParcelLayer =
+                                    layer;
+
+                                highlightParcel(
+                                    layer
                                 );
 
                             }
 
-                    }
-                );
-
-
-            parcelLayer.addTo(
-                map
-            );
-
-
-            /*
-             * Re-highlight selected parcel.
-             */
-
-            if (selectedParcelID) {
-
-                parcelLayer.eachLayer(
-                    layer => {
-
-                        const id =
-                            getParcelID(
-                                layer.feature
-                            );
-
-
-                        if (
-                            id ===
-                            selectedParcelID
-                        ) {
-
-                            selectedParcelLayer =
-                                layer;
-
-                            highlightParcel(
-                                layer
-                            );
-
                         }
+                    );
 
-                    }
-                );
+                }
 
-            }
-
-
-            if (
-                features.length === 0
-            ) {
-
-                setStatus(
-                    "No parcel boundaries found in this area"
-                );
-
-            } else {
 
                 setStatus(
                     `${features.length.toLocaleString()} parcel boundaries loaded`
+                );
+
+
+            } else {
+
+                /*
+                 * Important:
+                 * Don't claim that the area has no parcels.
+                 * The GIS server may simply have returned
+                 * nothing for that particular request.
+                 */
+                setStatus(
+                    "No parcel data returned — zoom in or move the map slightly"
                 );
 
             }
@@ -1313,7 +1371,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             setStatus(
-                "Parcel data unavailable"
+                "Parcel data temporarily unavailable"
             );
 
         }
@@ -1332,6 +1390,7 @@ document.addEventListener("DOMContentLoaded", () => {
             clearTimeout(
                 moveTimer
             );
+
 
             moveTimer =
                 setTimeout(
@@ -1385,12 +1444,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 where: "1=1",
 
-                geometry: geometry,
+                geometry:
+                    geometry,
 
                 geometryType:
                     "esriGeometryPoint",
 
-                inSR: "4326",
+                inSR:
+                    "4326",
 
                 spatialRel:
                     "esriSpatialRelIntersects",
@@ -1462,6 +1523,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error(
                 error
             );
+
 
             showMapLocation(
                 latlng
@@ -1570,11 +1632,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         layer.setStyle({
 
-            color: "#00e5ff",
-            weight: 3,
-            opacity: 1,
-            fillColor: "#00e5ff",
-            fillOpacity: 0.18
+            color:
+                "#00e5ff",
+
+            weight:
+                3,
+
+            opacity:
+                1,
+
+            fillColor:
+                "#00e5ff",
+
+            fillOpacity:
+                0.18
 
         });
 
@@ -1599,10 +1670,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
             selectedParcelLayer.setStyle({
 
-                color: "#ffffff",
-                weight: 0.7,
-                opacity: 0.75,
-                fillOpacity: 0
+                color:
+                    "#ffffff",
+
+                weight:
+                    0.7,
+
+                opacity:
+                    0.75,
+
+                fillOpacity:
+                    0
 
             });
 
@@ -1659,11 +1737,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         style: {
 
-                            color: "#00e5ff",
-                            weight: 3,
-                            opacity: 1,
-                            fillColor: "#00e5ff",
-                            fillOpacity: 0.18
+                            color:
+                                "#00e5ff",
+
+                            weight:
+                                3,
+
+                            opacity:
+                                1,
+
+                            fillColor:
+                                "#00e5ff",
+
+                            fillOpacity:
+                                0.18
 
                         }
 
@@ -1693,9 +1780,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const address =
             [
-                cleanValue(p.SITE_ADD),
-                cleanValue(p.SITE_CITY),
-                cleanValue(p.SITE_ZIP)
+                cleanValue(
+                    p.SITE_ADD
+                ),
+                cleanValue(
+                    p.SITE_CITY
+                ),
+                cleanValue(
+                    p.SITE_ZIP
+                )
             ]
             .filter(Boolean)
             .join(", ");
@@ -1717,7 +1810,8 @@ document.addEventListener("DOMContentLoaded", () => {
                   ).toLocaleString(
                     undefined,
                     {
-                        maximumFractionDigits: 2
+                        maximumFractionDigits:
+                            2
                     }
                   )
                 : "Unavailable";
@@ -1951,7 +2045,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const params =
             new URLSearchParams({
 
-                where: where,
+                where:
+                    where,
 
                 outFields:
                     "OBJECTID,PARCEL_ID,STEWARD,County,UPDATED,OWNER1,OWNER2,ASR_ACRES,SITE_ADD,SITE_CITY,SITE_ZIP,VAL_TOTAL,FP_ID",
@@ -2393,7 +2488,8 @@ document.addEventListener("DOMContentLoaded", () => {
                             60
                         ],
 
-                        maxZoom: 17
+                        maxZoom:
+                            17
 
                     }
                 );
@@ -2408,11 +2504,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         style: {
 
-                            color: "#00e5ff",
-                            weight: 3,
-                            opacity: 1,
-                            fillColor: "#00e5ff",
-                            fillOpacity: 0.18
+                            color:
+                                "#00e5ff",
+
+                            weight:
+                                3,
+
+                            opacity:
+                                1,
+
+                            fillColor:
+                                "#00e5ff",
+
+                            fillOpacity:
+                                0.18
 
                         }
 
@@ -2524,18 +2629,15 @@ document.addEventListener("DOMContentLoaded", () => {
         saved.push({
 
             parcelID:
-
                 parcelID,
 
             owner:
-
                 cleanValue(
                     p.OWNER1
                 ) ||
                 "Owner unavailable",
 
             address:
-
                 [
                     cleanValue(
                         p.SITE_ADD
@@ -2551,13 +2653,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 .join(", "),
 
             latitude:
-
                 center
                     ? center.lat
                     : null,
 
             longitude:
-
                 center
                     ? center.lng
                     : null
@@ -2589,11 +2689,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const layer =
                 L.geoJSON({
 
-                    type: "Feature",
+                    type:
+                        "Feature",
 
-                    properties: {},
+                    properties:
+                        {},
 
-                    geometry: geometry
+                    geometry:
+                        geometry
 
                 });
 
@@ -2649,37 +2752,55 @@ document.addEventListener("DOMContentLoaded", () => {
         section
     ) {
 
-        if (section === "counties") {
+        if (
+            section ===
+            "counties"
+        ) {
 
             showCounties();
 
         }
 
-        if (section === "saved") {
+        if (
+            section ===
+            "saved"
+        ) {
 
             showSavedProperties();
 
         }
 
-        if (section === "sources") {
+        if (
+            section ===
+            "sources"
+        ) {
 
             showDataSources();
 
         }
 
-        if (section === "history") {
+        if (
+            section ===
+            "history"
+        ) {
 
             showUpdateHistory();
 
         }
 
-        if (section === "settings") {
+        if (
+            section ===
+            "settings"
+        ) {
 
             showSettings();
 
         }
 
-        if (section === "about") {
+        if (
+            section ===
+            "about"
+        ) {
 
             showAbout();
 
@@ -3873,7 +3994,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     console.log(
-        "ParcelScope Idaho initialized — UPDATED VERSION."
+        "ParcelScope Idaho initialized — UPDATED PARCEL LOADING VERSION."
     );
 
 });
