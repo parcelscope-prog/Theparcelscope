@@ -1,137 +1,970 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    >
-    <title>ParcelScope Idaho</title>
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    >
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div id="map"></div>
-    <!-- TOP BAR -->
-    <header class="topbar">
-        <button id="menuButton" class="icon-button" aria-label="Open menu">
-            ☰
-        </button>
-        <div class="brand">
-            <div class="brand-title">PARCELSCOPE</div>
-            <div class="brand-subtitle">IDAHO PROPERTY RESEARCH</div>
-        </div>
-        <div class="search-wrapper">
-            <input
-                id="searchInput"
-                type="search"
-                placeholder="Search something... I'm good but I can't read minds."
-                autocomplete="off"
-            >
-            <button id="searchButton" class="search-button">
-                SEARCH
-            </button>
-        </div>
-    </header>
-    <!-- MAP STATUS -->
-    <div id="mapStatus" class="map-status">
-        <span id="mapStatusText">Loading Idaho GIS data...</span>
-    </div>
-    <!-- SIDE MENU -->
-    <aside id="sideMenu" class="side-menu">
-        <div class="menu-header">
-            <div>
-                <div class="menu-kicker">PARCELSCOPE</div>
-                <div class="menu-title">Menu</div>
-            </div>
-            <button id="closeMenu" class="close-button">
-                ×
-            </button>
-        </div>
-        <div class="menu-items">
-            <button class="menu-item" data-section="counties">
-                <span>▦</span>
-                <span>Counties</span>
-            </button>
-            <button class="menu-item" data-section="saved">
-                <span>★</span>
-                <span>Saved Properties</span>
-            </button>
-            <button class="menu-item" data-section="sources">
-                <span>◈</span>
-                <span>Data Sources</span>
-            </button>
-            <button class="menu-item" data-section="history">
-                <span>↻</span>
-                <span>Update History</span>
-            </button>
-            <button class="menu-item" data-section="settings">
-                <span>⚙</span>
-                <span>Settings</span>
-            </button>
-            <button class="menu-item" data-section="about">
-                <span>ⓘ</span>
-                <span>About ParcelScope</span>
-            </button>
-        </div>
-    </aside>
-    <!-- SEARCH RESULTS -->
-    <section id="searchResults" class="floating-panel search-results">
-        <div class="panel-header">
-            <div>
-                <div class="panel-kicker">SEARCH</div>
-                <div class="panel-title">Results</div>
-            </div>
-            <button id="closeResults" class="close-button">
-                ×
-            </button>
-        </div>
-        <div id="resultsContent" class="results-content"></div>
-    </section>
-    <!-- PROPERTY PANEL -->
-    <section id="propertyPanel" class="floating-panel property-panel">
-        <div class="panel-header">
-            <div>
-                <div class="panel-kicker">PROPERTY</div>
-                <div id="propertyTitle" class="panel-title">
-                    Property
-                </div>
-            </div>
-            <button id="closeProperty" class="close-button">
-                ×
-            </button>
-        </div>
-        <div id="propertyContent" class="property-content"></div>
-    </section>
-    <!-- APP PAGE -->
-    <section id="appPage" class="app-page">
-        <div class="app-page-inner">
-            <div class="app-page-header">
-                <div>
-                    <div id="appPageKicker" class="page-kicker">
-                        PARCELSCOPE
-                    </div>
-                    <h1 id="appPageTitle">
-                        ParcelScope
-                    </h1>
-                </div>
-                <button id="closeAppPage" class="close-button">
-                    ×
-                </button>
-            </div>
-            <div id="appPageContent" class="app-page-content"></div>
-        </div>
-    </section>
-    <!-- GLITCH MESSAGE -->
-    <div id="glitchMessage" class="glitch-message" aria-hidden="true">
-        <div class="glitch-line red">MAP CAN'T STRETCH THAT FAR</div>
-        <div class="glitch-line blue">ZOOM IN</div>
-        <div class="glitch-line multi">PARCELSCOPE</div>
-    </div>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="app.js"></script>
-</body>
-</html>
+:root {
+    --bg: #080d14;
+    --panel: #0c141e;
+    --panel-2: #101b27;
+    --border: rgba(255,255,255,.12);
+    --text: #f3f7fb;
+    --muted: #8c9aaa;
+    --cyan: #00e5ff;
+    --green: #38e07b;
+    --danger: #ff304f;
+    --shadow: 0 18px 50px rgba(0,0,0,.55);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+#map {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: #101820;
+}
+
+.leaflet-control-zoom {
+    margin-top: 85px !important;
+    margin-left: 12px !important;
+}
+
+.leaflet-control-zoom a {
+    background: rgba(8,13,20,.92) !important;
+    color: white !important;
+    border-color: rgba(255,255,255,.12) !important;
+}
+
+.leaflet-control-attribution {
+    background: rgba(8,13,20,.78) !important;
+    color: #b7c2ce !important;
+}
+
+.leaflet-control-attribution a {
+    color: #dce7ef !important;
+}
+
+
+/* =========================================================
+   TOP BAR
+========================================================= */
+
+.topbar {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    min-height: 64px;
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 9px 10px;
+
+    background: rgba(8,13,20,.91);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    box-shadow: var(--shadow);
+}
+
+.icon-button,
+.close-button {
+    border: 0;
+    background: transparent;
+    color: white;
+    cursor: pointer;
+}
+
+.icon-button {
+    width: 44px;
+    height: 44px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 11px;
+    background: rgba(255,255,255,.07);
+
+    font-size: 23px;
+}
+
+.icon-button:hover,
+.close-button:hover {
+    background: rgba(255,255,255,.12);
+}
+
+.brand {
+    min-width: 165px;
+}
+
+.brand-title {
+    font-size: 17px;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.brand-subtitle {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+}
+
+.search-wrapper {
+    flex: 1;
+    min-width: 0;
+
+    display: flex;
+    gap: 7px;
+}
+
+#searchInput {
+    width: 100%;
+    min-width: 0;
+    height: 44px;
+
+    padding: 0 13px;
+
+    color: white;
+    background: rgba(255,255,255,.06);
+
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 10px;
+
+    outline: none;
+}
+
+#searchInput::placeholder {
+    color: #7f8b99;
+    font-size: 11px;
+}
+
+#searchInput:focus {
+    border-color: rgba(0,229,255,.55);
+    box-shadow: 0 0 0 2px rgba(0,229,255,.08);
+}
+
+.search-button {
+    flex: 0 0 auto;
+
+    height: 44px;
+    padding: 0 16px;
+
+    border: 0;
+    border-radius: 10px;
+
+    background: var(--cyan);
+    color: #001014;
+
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .8px;
+
+    cursor: pointer;
+}
+
+.search-button:hover {
+    filter: brightness(1.1);
+}
+
+
+/* =========================================================
+   MAP STATUS
+========================================================= */
+
+.map-status {
+    position: fixed;
+    left: 14px;
+    bottom: 16px;
+
+    z-index: 900;
+
+    padding: 8px 11px;
+
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 9px;
+
+    background: rgba(8,13,20,.87);
+
+    color: #c8d1da;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    backdrop-filter: blur(10px);
+}
+
+
+/* =========================================================
+   SIDE MENU
+========================================================= */
+
+.side-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+
+    width: min(330px, 88vw);
+
+    z-index: 3000;
+
+    padding: 22px 16px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #0b131d 0%,
+            #080d14 100%
+        );
+
+    border-right: 1px solid var(--border);
+
+    box-shadow: 25px 0 60px rgba(0,0,0,.5);
+
+    transform: translateX(-105%);
+    transition: transform .25s ease;
+
+    overflow-y: auto;
+}
+
+.side-menu.open {
+    transform: translateX(0);
+}
+
+.menu-header,
+.panel-header,
+.app-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.menu-kicker,
+.panel-kicker,
+.page-kicker {
+    color: var(--cyan);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.menu-title {
+    margin-top: 3px;
+    font-size: 25px;
+    font-weight: 900;
+}
+
+.close-button {
+    width: 38px;
+    height: 38px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 9px;
+
+    font-size: 28px;
+    line-height: 1;
+}
+
+.menu-items {
+    display: grid;
+    gap: 7px;
+    margin-top: 28px;
+}
+
+.menu-item {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    gap: 13px;
+
+    padding: 14px;
+
+    border: 1px solid transparent;
+    border-radius: 11px;
+
+    background: rgba(255,255,255,.035);
+    color: white;
+
+    text-align: left;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.menu-item span:first-child {
+    width: 24px;
+    color: var(--cyan);
+    text-align: center;
+}
+
+.menu-item:hover {
+    background: rgba(0,229,255,.08);
+    border-color: rgba(0,229,255,.18);
+}
+
+
+/* =========================================================
+   FLOATING PANELS
+========================================================= */
+
+.floating-panel {
+    position: fixed;
+
+    top: 91px;
+    right: 14px;
+
+    z-index: 2000;
+
+    width: min(420px, calc(100vw - 28px));
+    max-height: calc(100vh - 115px);
+
+    overflow: hidden;
+
+    background: rgba(8,13,20,.95);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+
+    box-shadow: var(--shadow);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    transform: translateX(120%);
+    transition: transform .25s ease;
+}
+
+.floating-panel.open {
+    transform: translateX(0);
+}
+
+.panel-header {
+    padding: 16px 16px 13px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.panel-title {
+    max-width: 310px;
+    margin-top: 3px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.results-content,
+.property-content {
+    max-height: calc(100vh - 205px);
+    overflow-y: auto;
+    padding: 10px;
+}
+
+
+/* =========================================================
+   SEARCH RESULTS
+========================================================= */
+
+.search-result {
+    padding: 13px;
+
+    margin-bottom: 7px;
+
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 11px;
+
+    background: rgba(255,255,255,.035);
+
+    cursor: pointer;
+}
+
+.search-result:hover {
+    border-color: rgba(0,229,255,.35);
+    background: rgba(0,229,255,.07);
+}
+
+.search-result-title {
+    font-weight: 850;
+    font-size: 14px;
+}
+
+.search-result-details {
+    margin-top: 5px;
+
+    color: #8e9baa;
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+
+/* =========================================================
+   PROPERTY
+========================================================= */
+
+.property-field {
+    padding: 12px 5px;
+
+    border-bottom: 1px solid rgba(255,255,255,.07);
+}
+
+.property-label {
+    margin-bottom: 4px;
+
+    color: #7f8d9d;
+
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+.property-value {
+    color: #f5f8fb;
+
+    font-size: 13px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.save-property {
+    width: 100%;
+    margin-top: 14px;
+    padding: 13px;
+
+    border: 1px solid rgba(0,229,255,.3);
+    border-radius: 10px;
+
+    background: rgba(0,229,255,.1);
+    color: var(--cyan);
+
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.save-property:hover {
+    background: rgba(0,229,255,.18);
+}
+
+
+/* =========================================================
+   APP PAGE
+========================================================= */
+
+.app-page {
+    position: fixed;
+    inset: 0;
+
+    z-index: 4000;
+
+    padding: 30px 16px;
+
+    background: rgba(4,8,13,.94);
+
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    overflow-y: auto;
+
+    opacity: 0;
+    pointer-events: none;
+
+    transition: opacity .2s ease;
+}
+
+.app-page.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.app-page-inner {
+    width: min(900px, 100%);
+    margin: 0 auto;
+
+    padding: 22px;
+
+    border: 1px solid var(--border);
+    border-radius: 18px;
+
+    background: #0b131d;
+    box-shadow: var(--shadow);
+}
+
+.app-page-header {
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.app-page h1 {
+    margin: 4px 0 0;
+
+    font-size: 30px;
+    font-weight: 950;
+}
+
+.app-page-content {
+    padding-top: 20px;
+}
+
+.page-section {
+    margin-bottom: 22px;
+    padding: 17px;
+
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 13px;
+
+    background: rgba(255,255,255,.025);
+}
+
+.page-section h2 {
+    margin: 0 0 8px;
+    font-size: 16px;
+}
+
+.page-section p,
+.page-section li {
+    color: #aeb9c5;
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+.page-card {
+    padding: 18px;
+
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 12px;
+
+    background: rgba(255,255,255,.03);
+}
+
+.page-card strong {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--cyan);
+}
+
+
+/* =========================================================
+   COUNTY GRID
+========================================================= */
+
+.county-search input {
+    width: 100%;
+    padding: 12px;
+
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 10px;
+
+    background: rgba(255,255,255,.05);
+    color: white;
+
+    outline: none;
+}
+
+.county-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 8px;
+    margin-top: 13px;
+}
+
+.county-button {
+    padding: 12px;
+
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 9px;
+
+    background: rgba(255,255,255,.04);
+    color: white;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.county-button:hover {
+    border-color: rgba(0,229,255,.35);
+    background: rgba(0,229,255,.08);
+}
+
+
+/* =========================================================
+   SETTINGS
+========================================================= */
+
+.setting-group {
+    margin-bottom: 22px;
+}
+
+.setting-group h2 {
+    margin: 0 0 9px;
+    font-size: 15px;
+}
+
+.setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+
+    padding: 14px;
+
+    border-bottom: 1px solid rgba(255,255,255,.07);
+}
+
+.setting-name {
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.setting-description {
+    margin-top: 3px;
+
+    color: #7e8a98;
+    font-size: 10px;
+}
+
+.toggle {
+    position: relative;
+
+    width: 45px;
+    height: 25px;
+
+    flex: 0 0 auto;
+
+    border: 0;
+    border-radius: 20px;
+
+    background: #27313d;
+
+    cursor: pointer;
+}
+
+.toggle::after {
+    content: "";
+
+    position: absolute;
+    top: 4px;
+    left: 4px;
+
+    width: 17px;
+    height: 17px;
+
+    border-radius: 50%;
+    background: #9ca8b5;
+
+    transition: .2s ease;
+}
+
+.toggle.on {
+    background: rgba(0,229,255,.3);
+}
+
+.toggle.on::after {
+    left: 24px;
+    background: var(--cyan);
+}
+
+
+/* =========================================================
+   SAVED PROPERTIES
+========================================================= */
+
+.saved-property {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    margin-bottom: 8px;
+    padding: 14px;
+
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 11px;
+
+    background: rgba(255,255,255,.03);
+
+    cursor: pointer;
+}
+
+.saved-property:hover {
+    border-color: rgba(0,229,255,.25);
+}
+
+.saved-name {
+    font-weight: 850;
+    font-size: 13px;
+}
+
+.saved-address {
+    margin-top: 4px;
+    color: #8996a4;
+    font-size: 10px;
+}
+
+.remove-saved {
+    width: 32px;
+    height: 32px;
+
+    flex: 0 0 auto;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: rgba(255,48,79,.1);
+    color: #ff5b70;
+
+    font-weight: 900;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   REFRESH
+========================================================= */
+
+.refresh-button {
+    margin-top: 15px;
+    padding: 12px 18px;
+
+    border: 0;
+    border-radius: 9px;
+
+    background: var(--cyan);
+    color: #001014;
+
+    font-weight: 900;
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   GLITCH MESSAGE
+========================================================= */
+
+.glitch-message {
+    position: fixed;
+    inset: 0;
+
+    z-index: 9999;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+
+    pointer-events: none;
+
+    overflow: hidden;
+}
+
+.glitch-message.show {
+    display: flex;
+    animation: glitchScreen .8s steps(2, end);
+}
+
+.glitch-line {
+    position: relative;
+
+    margin: 2px 0;
+
+    font-family:
+        "Courier New",
+        monospace;
+
+    font-size: clamp(24px, 7vw, 72px);
+    font-weight: 950;
+    letter-spacing: 3px;
+
+    text-align: center;
+
+    text-shadow:
+        4px 0 #ff003c,
+        -4px 0 #00e5ff;
+
+    animation:
+        glitchText .12s infinite;
+}
+
+.glitch-line.red {
+    color: #ff263f;
+}
+
+.glitch-line.blue {
+    color: #00e5ff;
+}
+
+.glitch-line.multi {
+    color: white;
+}
+
+@keyframes glitchText {
+    0% {
+        transform: translate(0);
+    }
+
+    20% {
+        transform: translate(-5px, 2px);
+    }
+
+    40% {
+        transform: translate(4px, -2px);
+    }
+
+    60% {
+        transform: translate(-2px, -1px);
+    }
+
+    80% {
+        transform: translate(5px, 1px);
+    }
+
+    100% {
+        transform: translate(0);
+    }
+}
+
+@keyframes glitchScreen {
+    0% {
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .topbar {
+        top: 8px;
+        left: 8px;
+        right: 8px;
+
+        min-height: 58px;
+
+        padding: 7px;
+
+        gap: 7px;
+    }
+
+    .brand {
+        display: none;
+    }
+
+    .icon-button {
+        width: 42px;
+        height: 42px;
+    }
+
+    #searchInput {
+        height: 42px;
+        padding: 0 9px;
+    }
+
+    #searchInput::placeholder {
+        font-size: 9px;
+        line-height: 1.1;
+    }
+
+    .search-button {
+        height: 42px;
+        padding: 0 10px;
+        font-size: 9px;
+    }
+
+    .floating-panel {
+        top: 76px;
+        right: 8px;
+
+        width: calc(100vw - 16px);
+        max-height: calc(100vh - 92px);
+    }
+
+    .map-status {
+        left: 8px;
+        bottom: 8px;
+        font-size: 9px;
+    }
+
+    .app-page {
+        padding: 10px;
+    }
+
+    .app-page-inner {
+        padding: 16px;
+    }
+
+    .app-page h1 {
+        font-size: 24px;
+    }
+
+    .county-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 420px) {
+
+    .search-button {
+        display: none;
+    }
+
+    #searchInput::placeholder {
+        font-size: 8px;
+    }
+
+    .county-grid {
+        grid-template-columns: 1fr;
+    }
+}
