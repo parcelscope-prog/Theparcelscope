@@ -11,15 +11,15 @@
   --muted: #8fa2b5;
   --blue: #55d6ff;
   --red: #ff4350;
-  --green: #48df9b;
+  --green: #55e6a5;
 }
 
 html,
 body {
   margin: 0;
+  width: 100%;
   height: 100%;
   overflow: hidden;
-
   background: var(--bg);
   color: var(--text);
 
@@ -30,6 +30,10 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -51,6 +55,10 @@ button:hover {
   border-color: var(--blue);
 }
 
+button:active {
+  transform: translateY(1px);
+}
+
 .hidden {
   display: none !important;
 }
@@ -58,29 +66,27 @@ button:hover {
 
 /* =====================================================
    LOGIN
-===================================================== */
+====================================================== */
 
 .login-screen {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: 99999;
 
   display: grid;
   place-items: center;
 
-  padding: 20px;
-
   background:
     radial-gradient(
       circle at center,
-      #122235 0%,
+      #122335 0,
       #080d14 55%,
-      #05090e 100%
+      #05080c 100%
     );
 }
 
 .login-card {
-  width: min(380px, 92vw);
+  width: min(390px, calc(100vw - 32px));
 
   padding: 30px;
 
@@ -91,41 +97,26 @@ button:hover {
   border-radius: 16px;
 
   box-shadow:
-    0 25px 80px #000b;
+    0 30px 90px #000b;
 
   text-align: center;
-
-  backdrop-filter: blur(18px);
 }
 
 .login-logo {
   font-size: 30px;
-  font-weight: 850;
-
-  letter-spacing: -0.03em;
+  font-weight: 900;
+  letter-spacing: -0.04em;
 }
 
 .login-subtitle {
-  margin-top: 5px;
-  margin-bottom: 28px;
+  margin: 7px 0 25px;
 
   color: var(--muted);
+
   font-size: 14px;
 }
 
-.login-card label {
-  display: block;
-
-  text-align: left;
-
-  margin-bottom: 7px;
-
-  color: var(--muted);
-
-  font-size: 13px;
-}
-
-.login-card input {
+.password-input {
   width: 100%;
 
   padding: 15px;
@@ -136,45 +127,47 @@ button:hover {
 
   outline: none;
 
-  background: #070e16;
+  background: #08111b;
 
   color: white;
 
   text-align: center;
 
-  font-size: 23px;
+  font-size: 22px;
 
-  letter-spacing: .3em;
+  letter-spacing: 7px;
 }
 
-.login-card input:focus {
+.password-input:focus {
   border-color: var(--blue);
 }
 
-.primary-btn {
+.login-button {
   width: 100%;
 
   margin-top: 12px;
 
-  background: #14283a;
+  padding: 14px;
 
-  border-color: #31546b;
+  background: #102536;
+
+  border-color: #31526b;
 
   font-weight: 700;
 }
 
 .login-error {
-  margin-top: 12px;
+  margin-top: 13px;
 
-  color: #ff7d86;
+  color: #ff6b75;
 
-  font-size: 13px;
+  font-size: 14px;
 }
 
 
 /* =====================================================
    MAP
-===================================================== */
+====================================================== */
 
 #map {
   position: fixed;
@@ -184,7 +177,7 @@ button:hover {
 
 /* =====================================================
    TOPBAR
-===================================================== */
+====================================================== */
 
 .topbar {
   position: fixed;
@@ -196,7 +189,6 @@ button:hover {
 
   display: flex;
   align-items: center;
-
   gap: 10px;
 
   padding: 10px 12px;
@@ -218,7 +210,6 @@ button:hover {
 .brand {
   font-size: 20px;
   font-weight: 800;
-
   white-space: nowrap;
 }
 
@@ -229,9 +220,7 @@ button:hover {
   padding: 8px;
 
   display: grid;
-
   place-content: center;
-
   gap: 4px;
 }
 
@@ -246,7 +235,6 @@ button:hover {
 
 .search {
   display: flex;
-
   flex: 1;
 
   max-width: 900px;
@@ -266,7 +254,6 @@ button:hover {
   min-width: 0;
 
   border: 0;
-
   outline: 0;
 
   background: transparent;
@@ -280,7 +267,6 @@ button:hover {
   width: 150px;
 
   border: 0;
-
   border-left: 1px solid var(--line);
 
   background: #101c28;
@@ -292,7 +278,6 @@ button:hover {
 
 .search button {
   border: 0;
-
   border-left: 1px solid var(--line);
 
   border-radius: 0;
@@ -304,8 +289,8 @@ button:hover {
 
 
 /* =====================================================
-   MENU
-===================================================== */
+   MENU / DRAWERS
+====================================================== */
 
 .menu,
 .drawer,
@@ -354,7 +339,6 @@ button:hover {
   display: flex;
 
   align-items: center;
-
   justify-content: space-between;
 
   gap: 10px;
@@ -370,81 +354,57 @@ button:hover {
   font-size: 21px;
 }
 
-.account-banner {
-  display: flex;
+.menuTop button,
+.drawerTop button,
+.propertyTop button {
+  width: auto;
 
-  align-items: center;
+  font-size: 25px;
 
-  gap: 11px;
+  padding: 2px 10px;
+}
 
-  padding: 12px;
+.account-label {
+  margin: 5px 0 15px;
+  padding: 11px;
 
-  margin-bottom: 14px;
+  background: #0e1b28;
 
-  background: #101d2a;
+  border-radius: 8px;
 
   border: 1px solid var(--line);
-
-  border-radius: 10px;
 }
 
-.account-avatar {
-  width: 38px;
-  height: 38px;
-
-  display: grid;
-  place-items: center;
-
-  border-radius: 50%;
-
-  background: #17344a;
-
-  color: var(--blue);
-
-  font-weight: 800;
-}
-
-.account-banner strong,
-.account-banner small {
+.account-label span {
   display: block;
-}
-
-.account-banner small {
-  margin-top: 2px;
 
   color: var(--muted);
 
   font-size: 11px;
 }
 
-.admin-divider {
-  height: 1px;
+.account-label strong {
+  display: block;
 
-  margin: 15px 0;
-
-  background: var(--line);
+  margin-top: 3px;
 }
 
-.admin-button {
-  border-color: #40586d !important;
+.admin-menu-button {
+  border-color: #6c4c20 !important;
 }
 
-.menu-bottom {
-  margin-top: 20px;
+.logout-button {
+  margin-top: 25px !important;
 
-  padding-top: 12px;
+  border-color: #61343a !important;
 
-  border-top: 1px solid var(--line);
-}
-
-.menu-bottom button {
-  color: #ff8c94;
+  color: #ff7b84 !important;
 }
 
 
 /* =====================================================
-   DRAWERS
-===================================================== */
+   DRAWER
+====================================================== */
 
 .drawer {
   right: 0;
@@ -455,6 +415,15 @@ button:hover {
 
   padding: 20px;
 }
+
+.drawerTop h2 {
+  margin: 0;
+}
+
+
+/* =====================================================
+   PROPERTY
+====================================================== */
 
 .property {
   right: 16px;
@@ -468,36 +437,6 @@ button:hover {
 
   border-radius: 12px;
 }
-
-.results {
-  left: 14px;
-  top: 78px;
-
-  width: min(480px, calc(100vw - 28px));
-
-  max-height: 70vh;
-
-  padding: 18px;
-
-  border-radius: 12px;
-}
-
-.drawerTop h2 {
-  margin: 0;
-}
-
-.drawerTop button,
-.propertyTop button,
-.menuTop button {
-  font-size: 25px;
-
-  padding: 2px 10px;
-}
-
-
-/* =====================================================
-   PROPERTY
-===================================================== */
 
 .propertyTop small {
   font-size: 11px;
@@ -538,7 +477,20 @@ button:hover {
 
 /* =====================================================
    RESULTS
-===================================================== */
+====================================================== */
+
+.results {
+  left: 14px;
+  top: 78px;
+
+  width: min(480px, calc(100vw - 28px));
+
+  max-height: 70vh;
+
+  padding: 18px;
+
+  border-radius: 12px;
+}
 
 .result {
   width: 100%;
@@ -560,8 +512,8 @@ button:hover {
 
 
 /* =====================================================
-   CONTENT
-===================================================== */
+   MENU PAGES
+====================================================== */
 
 .menu-page h3 {
   font-size: 12px;
@@ -588,7 +540,7 @@ button:hover {
 
   gap: 12px;
 
-  padding: 10px 0;
+  padding: 12px 0;
 
   border-bottom: 1px solid var(--line);
 }
@@ -596,56 +548,144 @@ button:hover {
 
 /* =====================================================
    NOTIFICATIONS
-===================================================== */
+====================================================== */
 
 .notification {
   position: relative;
 
-  padding: 13px 38px 13px 0;
+  padding: 13px;
 
-  border-bottom: 1px solid var(--line);
+  margin: 8px 0;
+
+  background: #0e1b28;
+
+  border: 1px solid var(--line);
+
+  border-radius: 9px;
 }
 
-.notification strong {
-  display: block;
+.notification-title {
+  font-weight: 700;
+
+  padding-right: 30px;
 }
 
-.notification small {
-  display: block;
-
-  margin-top: 4px;
+.notification-message {
+  margin-top: 6px;
 
   color: var(--muted);
+
+  line-height: 1.45;
+}
+
+.notification-date {
+  margin-top: 8px;
+
+  font-size: 11px;
+
+  color: #65788b;
 }
 
 .notification-delete {
   position: absolute;
 
-  right: 0;
-  top: 10px;
+  top: 6px;
+  right: 6px;
 
   width: 30px;
   height: 30px;
 
   padding: 0;
 
-  color: var(--muted);
+  background: transparent;
 
   border: 0;
 
-  background: transparent;
+  font-size: 20px;
 }
 
 .delete-all {
   width: 100%;
 
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+
+  color: #ff7b84;
+
+  border-color: #61343a;
+}
+
+
+/* =====================================================
+   ADMIN
+====================================================== */
+
+.admin-box {
+  padding: 13px;
+
+  background: #0e1b28;
+
+  border: 1px solid var(--line);
+
+  border-radius: 9px;
+
+  margin-bottom: 14px;
+}
+
+.admin-box h3 {
+  margin-top: 0;
+}
+
+.admin-select,
+.admin-text {
+  width: 100%;
+
+  padding: 11px;
+
+  margin: 6px 0;
+
+  border-radius: 8px;
+
+  border: 1px solid var(--line);
+
+  background: #08111b;
+
+  color: var(--text);
+
+  outline: none;
+}
+
+.admin-text {
+  min-height: 100px;
+
+  resize: vertical;
+}
+
+.admin-send {
+  width: 100%;
+
+  background: #123044;
+
+  border-color: #315d78;
+}
+
+.login-record {
+  padding: 10px 0;
+
+  border-bottom: 1px solid var(--line);
+}
+
+.login-record strong {
+  display: block;
+}
+
+.login-record small {
+  color: var(--muted);
 }
 
 
 /* =====================================================
    RED DOT
-===================================================== */
+====================================================== */
 
 .red-dot {
   display: inline-block;
@@ -660,12 +700,14 @@ button:hover {
   float: right;
 
   margin-top: 6px;
+
+  box-shadow: 0 0 8px #ff435080;
 }
 
 
 /* =====================================================
    MEASURE
-===================================================== */
+====================================================== */
 
 .measure {
   position: fixed;
@@ -700,8 +742,8 @@ button:hover {
 
 
 /* =====================================================
-   COORDINATES / TOAST
-===================================================== */
+   COORDS / TOAST
+====================================================== */
 
 .coords,
 .toast {
@@ -725,10 +767,16 @@ button:hover {
   box-shadow: 0 10px 30px #0008;
 }
 
+.toast {
+  max-width: calc(100vw - 30px);
+
+  text-align: center;
+}
+
 
 /* =====================================================
    MODAL
-===================================================== */
+====================================================== */
 
 .modal {
   position: fixed;
@@ -771,7 +819,7 @@ button:hover {
 
 /* =====================================================
    LEAFLET
-===================================================== */
+====================================================== */
 
 .leaflet-control-zoom {
   display: none !important;
@@ -790,7 +838,7 @@ button:hover {
 
 /* =====================================================
    MOBILE
-===================================================== */
+====================================================== */
 
 @media (max-width: 720px) {
 
@@ -829,8 +877,11 @@ button:hover {
     width: calc(100vw - 16px);
   }
 
-  .login-card {
-    padding: 24px;
-  }
+  .measure {
+    max-width: calc(100vw - 20px);
 
+    flex-wrap: wrap;
+
+    justify-content: center;
+  }
 }
