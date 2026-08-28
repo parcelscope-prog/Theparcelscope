@@ -2,10 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta name="theme-color" content="#080d14">
-
   <title>ParcelScope</title>
 
   <link rel="stylesheet"
@@ -16,48 +14,33 @@
 
 <body>
 
-<!-- LOGIN -->
-
-<section id="loginScreen" class="login-screen">
-
+<div id="loginScreen" class="login-screen">
   <div class="login-card">
-
-    <div class="login-logo">ParcelScope</div>
-
-    <div class="login-subtitle">
-      Enter your 4-digit access code
-    </div>
+    <div class="login-brand">ParcelScope</div>
+    <div class="login-sub">Enter your 4-digit access code</div>
 
     <input
-      id="loginPassword"
+      id="loginCode"
       type="password"
       inputmode="numeric"
       maxlength="4"
-      pattern="[0-9]*"
       autocomplete="off"
-      placeholder="••••">
+      placeholder="••••"
+    >
 
-    <button id="loginBtn">
-      Login
+    <button id="loginBtn" class="primary">
+      Log In
     </button>
 
-    <div id="loginError" class="login-error"></div>
-
+    <div id="loginError" class="error"></div>
   </div>
+</div>
 
-</section>
-
-
-<!-- APP -->
-
-<div id="app" class="hidden">
 
 <header class="topbar">
 
   <button id="menuBtn" class="hamburger">
-    <span></span>
-    <span></span>
-    <span></span>
+    ☰
   </button>
 
   <div class="brand">
@@ -70,7 +53,8 @@
       id="searchInput"
       type="search"
       placeholder="Search address, owner, parcel ID..."
-      autocomplete="off">
+      autocomplete="off"
+    >
 
     <select id="stateSelect">
       <option value="ALL">All States</option>
@@ -96,18 +80,19 @@
 <div id="map"></div>
 
 
-<!-- MENU -->
-
 <aside id="menu" class="menu hidden">
 
   <div class="menuTop">
-
     <strong>ParcelScope</strong>
 
     <button id="closeMenu">
       ×
     </button>
+  </div>
 
+  <div class="account-chip">
+    <span id="menuUserName">User</span>
+    <small id="menuUserCode"></small>
   </div>
 
   <button data-page="saved">
@@ -120,7 +105,7 @@
 
   <button data-page="notifications">
     Notifications
-    <span id="redDot" class="red-dot hidden"></span>
+    <span id="menuRedDot" class="red-dot hidden"></span>
   </button>
 
   <button data-page="layers">
@@ -139,34 +124,31 @@
     About ParcelScope
   </button>
 
-  <button id="adminMenuButton" class="admin-menu hidden">
+  <button id="adminMenu" class="admin-only hidden">
     Admin
-    <span id="adminRedDot" class="red-dot hidden"></span>
+  </button>
+
+  <button id="logoutBtn" class="danger-btn">
+    Log Out
   </button>
 
 </aside>
 
 
-<!-- DRAWER -->
-
 <section id="drawer" class="drawer hidden">
 
   <div class="drawerTop">
-
     <h2 id="drawerTitle"></h2>
 
     <button id="drawerClose">
       ×
     </button>
-
   </div>
 
   <div id="drawerBody"></div>
 
 </section>
 
-
-<!-- PROPERTY -->
 
 <section id="property" class="property hidden">
 
@@ -207,8 +189,6 @@
 </section>
 
 
-<!-- SEARCH RESULTS -->
-
 <section id="results" class="results hidden">
 
   <div class="drawerTop">
@@ -227,8 +207,6 @@
 
 </section>
 
-
-<!-- MAP CHOOSER -->
 
 <section id="mapsModal" class="modal hidden">
 
@@ -263,8 +241,6 @@
 </section>
 
 
-<!-- DISTANCE -->
-
 <div id="measure" class="measure hidden">
 
   <strong>
@@ -294,8 +270,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script src="script.js"></script>
-
-</div>
 
 </body>
 </html>
