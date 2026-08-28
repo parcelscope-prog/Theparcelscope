@@ -1,98 +1,109 @@
-/*
-==========================================================
-PARCELSCOPE
-Complete client-side version
+/* =========================================================
+   PARCELSCOPE
+   Complete static Cloudflare version
 
-13 accounts:
-1 Admin
-12 Users
+   13 accounts:
+   1 admin
+   12 users
 
-IMPORTANT:
-This is intentionally client-side because the site is
-being hosted as a static Cloudflare site.
-==========================================================
-*/
+   ADMIN:
+   4821
+
+   USERS:
+   7354
+   1968
+   5247
+   8036
+   2419
+   6713
+   9582
+   3146
+   8605
+   4278
+   5931
+   7049
+========================================================= */
 
 
-/* ======================================================
+/* =========================================================
    ACCOUNT DATABASE
-====================================================== */
+========================================================= */
 
 const ACCOUNTS = {
 
-  "4827": {
+  "4821": {
     id: "admin",
     name: "User",
     admin: true
   },
 
-  "1936": {
+  "7354": {
     id: "user1",
     name: "User",
     admin: false
   },
 
-  "7041": {
+  "1968": {
     id: "user2",
     name: "User",
     admin: false
   },
 
-  "5268": {
+  "5247": {
     id: "user3",
     name: "User",
     admin: false
   },
 
-  "8315": {
+  "8036": {
     id: "user4",
     name: "User",
     admin: false
   },
 
-  "2490": {
+  "2419": {
     id: "user5",
     name: "User",
     admin: false
   },
 
-  "6752": {
+  "6713": {
     id: "user6",
     name: "User",
     admin: false
   },
 
-  "4183": {
+  "9582": {
     id: "user7",
     name: "User",
     admin: false
   },
 
-  "9506": {
+  "3146": {
     id: "user8",
     name: "User",
     admin: false
   },
 
-  "3624": {
+  "8605": {
     id: "user9",
     name: "User",
     admin: false
   },
 
-  "8179": {
+  "4278": {
     id: "user10",
     name: "User",
     admin: false
   },
 
-  "5407": {
+  "5931": {
     id: "user11",
     name: "User",
     admin: false
   },
 
-  "2861": {
+  "7049": {
     id: "user12",
     name: "User",
     admin: false
@@ -101,9 +112,9 @@ const ACCOUNTS = {
 };
 
 
-/* ======================================================
-   CONSTANTS
-====================================================== */
+/* =========================================================
+   GLOBAL STATE
+========================================================= */
 
 const PARCEL_ZOOM = 10;
 
@@ -112,87 +123,115 @@ const NORTHWEST_CENTER = [
   -116.7
 ];
 
-
-/* ======================================================
-   STATE
-====================================================== */
-
 let currentAccount = null;
 
-let selectedParcel = null;
+let selectedProperty = null;
 
-let followingLocation = false;
+let map = null;
 
-let locationWatch = null;
+let satellite = null;
+
+let street = null;
+
+let markerLayer = null;
+
+let measureLayer = null;
 
 let measureMode = false;
 
 let measurePoints = [];
 
-let parcelsEnabled = true;
+let measureLine = null;
 
-let countyLayerEnabled = false;
-
-let stateLayerEnabled = false;
-
-let labelsEnabled = true;
+let locationMarker = null;
 
 
-/* ======================================================
-   HELPERS
-====================================================== */
+/* =========================================================
+   DOM HELPER
+========================================================= */
 
 function $(id) {
   return document.getElementById(id);
 }
 
 
+/* =========================================================
+   HTML ESCAPING
+========================================================= */
+
 function escapeHTML(value) {
 
-  return String(value ?? "Currently unavailable")
+  return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+
 }
 
 
+/* =========================================================
+   TOAST
+========================================================= */
+
+let toastTimer = null;
+
 function toast(message) {
 
-  $("toast").textContent = message;
+  const element = $("toast");
 
-  $("toast").classList.remove("hidden");
+  element.textContent = message;
 
-  setTimeout(() => {
+  element.classList.remove("hidden");
 
-    $("toast").classList.add("hidden");
+  clearTimeout(toastTimer);
+
+  toastTimer = setTimeout(() => {
+
+    element.classList.add("hidden");
 
   }, 2600);
 
 }
 
 
-/* ======================================================
-   ACCOUNT STORAGE
-====================================================== */
+/* =========================================================
+   STORAGE KEYS
+========================================================= */
 
-function accountKey(name) {
+function accountKey() {
 
-  return `parcelScope.${currentAccount.id}.${name}`;
+  return currentAccount
+    ? currentAccount.id
+    : "none";
 
 }
 
 
-function getAccountData(name, fallback) {
+function storageKey(type) {
+
+  return `parcelScope.${type}.${accountKey()}`;
+
+}
+
+
+/* =========================================================
+   JSON STORAGE
+========================================================= */
+
+function readJSON(key, fallback) {
 
   try {
 
-    return JSON.parse(
-      localStorage.getItem(
-        accountKey(name)
-      ) || JSON.stringify(fallback)
-    );
+    const value =
+      localStorage.getItem(key);
+
+    if (!value) {
+      return fallback;
+    }
+
+    return JSON.parse(value);
 
   } catch {
 
@@ -203,108 +242,46 @@ function getAccountData(name, fallback) {
 }
 
 
-function setAccountData(name, value) {
+function writeJSON(key, value) {
 
   localStorage.setItem(
-    accountKey(name),
+    key,
     JSON.stringify(value)
   );
 
 }
 
 
-function getSaved() {
-
-  return getAccountData(
-    "saved",
-    []
-  );
-
-}
-
-
-function setSaved(properties) {
-
-  setAccountData(
-    "saved",
-    properties
-  );
-
-}
-
-
-function getRecent() {
-
-  return getAccountData(
-    "recent",
-    []
-  );
-
-}
-
-
-function getNotifications() {
-
-  return getAccountData(
-    "notifications",
-    []
-  );
-
-}
-
-
-function setNotifications(notifications) {
-
-  setAccountData(
-    "notifications",
-    notifications
-  );
-
-}
-
-
-function getName() {
-
-  return localStorage.getItem(
-    accountKey("name")
-  ) || "User";
-
-}
-
-
-function setName(name) {
-
-  localStorage.setItem(
-    accountKey("name"),
-    name
-  );
-
-}
-
-
-/* ======================================================
+/* =========================================================
    LOGIN
-====================================================== */
+========================================================= */
 
-function attemptLogin() {
+function login() {
 
   const password =
-    $("passwordInput")
-      .value
-      .trim();
+    $("passwordInput").value.trim();
+
+  $("loginError")
+    .classList
+    .add("hidden");
+
+
+  if (!/^\d{4}$/.test(password)) {
+
+    showLoginError();
+
+    return;
+
+  }
 
 
   const account =
     ACCOUNTS[password];
 
 
-  if (!/^\d{4}$/.test(password) || !account) {
+  if (!account) {
 
-    $("loginError")
-      .classList
-      .remove("hidden");
-
-    $("passwordInput").focus();
+    showLoginError();
 
     return;
 
@@ -312,101 +289,61 @@ function attemptLogin() {
 
 
   currentAccount = {
-    ...account,
-    password
+
+    password: password,
+
+    id: account.id,
+
+    name:
+      getAccountName(account.id) ||
+      account.name,
+
+    admin: account.admin
+
   };
 
 
-  if (!localStorage.getItem(
-    accountKey("name")
-  )) {
-
-    localStorage.setItem(
-      `parcelScope.${account.id}.name`,
-      "User"
-    );
-
-  }
-
-
   sessionStorage.setItem(
-    "parcelScope.loggedIn",
-    "1"
-  );
-
-  sessionStorage.setItem(
-    "parcelScope.account",
-    account.id
+    "parcelScope.currentAccount",
+    JSON.stringify(currentAccount)
   );
 
 
-  $("loginError")
-    .classList
-    .add("hidden");
+  recordLogin();
+
+
+  showApplication();
+
 
   $("passwordInput").value = "";
 
-
-  showApp();
-
 }
 
 
-function showApp() {
+function showLoginError() {
 
-  $("loginScreen")
-    .classList
-    .add("hidden");
-
-  $("app")
+  $("loginError")
     .classList
     .remove("hidden");
 
-
-  updateAccountUI();
-
-  updateNotificationDot();
-
-  setTimeout(() => {
-
-    map.invalidateSize();
-
-  }, 100);
+  $("passwordInput").focus();
 
 }
 
 
-function updateAccountUI() {
-
-  const name = getName();
-
-  $("accountName").textContent = name;
-
-  $("accountAvatar").textContent =
-    name.charAt(0).toUpperCase() || "U";
-
-
-  $("accountType").textContent =
-    currentAccount.admin
-      ? "Administrator"
-      : "User Account";
-
-
-  $("adminMenuSection")
-    .classList
-    .toggle(
-      "hidden",
-      !currentAccount.admin
-    );
-
-}
-
+/* =========================================================
+   LOGIN BUTTON
+========================================================= */
 
 $("loginBtn").addEventListener(
   "click",
-  attemptLogin
+  login
 );
 
+
+/* =========================================================
+   ENTER KEY LOGIN
+========================================================= */
 
 $("passwordInput").addEventListener(
   "keydown",
@@ -416,7 +353,7 @@ $("passwordInput").addEventListener(
 
       event.preventDefault();
 
-      attemptLogin();
+      login();
 
     }
 
@@ -424,51 +361,220 @@ $("passwordInput").addEventListener(
 );
 
 
-/* Only numeric characters */
+/* =========================================================
+   ACCOUNT NAME
+========================================================= */
 
-$("passwordInput").addEventListener(
-  "input",
-  event => {
+function getAccountName(id) {
 
-    event.target.value =
-      event.target.value
-        .replace(/\D/g, "")
-        .slice(0, 4);
+  return localStorage.getItem(
+    `parcelScope.name.${id}`
+  );
+
+}
+
+
+function saveAccountName(name) {
+
+  localStorage.setItem(
+    `parcelScope.name.${currentAccount.id}`,
+    name
+  );
+
+  currentAccount.name = name;
+
+  sessionStorage.setItem(
+    "parcelScope.currentAccount",
+    JSON.stringify(currentAccount)
+  );
+
+}
+
+
+/* =========================================================
+   LOGIN HISTORY
+========================================================= */
+
+function getLoginHistory() {
+
+  return readJSON(
+    "parcelScope.loginHistory",
+    []
+  );
+
+}
+
+
+function recordLogin() {
+
+  const history =
+    getLoginHistory();
+
+  const cutoff =
+    Date.now() -
+    (30 * 24 * 60 * 60 * 1000);
+
+
+  const cleaned =
+    history.filter(
+      entry =>
+        new Date(entry.time).getTime() >=
+        cutoff
+    );
+
+
+  cleaned.unshift({
+
+    accountId: currentAccount.id,
+
+    accountName:
+      currentAccount.name,
+
+    admin:
+      currentAccount.admin,
+
+    time:
+      new Date().toISOString()
+
+  });
+
+
+  writeJSON(
+    "parcelScope.loginHistory",
+    cleaned.slice(0, 500)
+  );
+
+}
+
+
+/* =========================================================
+   APPLICATION DISPLAY
+========================================================= */
+
+function showApplication() {
+
+  $("loginScreen")
+    .classList
+    .add("hidden");
+
+  $("app")
+    .classList
+    .remove("hidden");
+
+
+  $("menuAccountName")
+    .textContent =
+      currentAccount.name;
+
+
+  if (currentAccount.admin) {
+
+    $("adminMenuButton")
+      .classList
+      .remove("hidden");
+
+  } else {
+
+    $("adminMenuButton")
+      .classList
+      .add("hidden");
 
   }
-);
 
 
-/* ======================================================
+  initializeMap();
+
+  updateNotificationDot();
+
+}
+
+
+/* =========================================================
+   SESSION RESTORE
+========================================================= */
+
+function restoreSession() {
+
+  const saved =
+    sessionStorage.getItem(
+      "parcelScope.currentAccount"
+    );
+
+
+  if (!saved) {
+
+    $("loginScreen")
+      .classList
+      .remove("hidden");
+
+    return;
+
+  }
+
+
+  try {
+
+    const account =
+      JSON.parse(saved);
+
+    const realAccount =
+      ACCOUNTS[account.password];
+
+
+    if (!realAccount) {
+
+      sessionStorage.clear();
+
+      return;
+
+    }
+
+
+    currentAccount = {
+
+      password:
+        account.password,
+
+      id:
+        realAccount.id,
+
+      name:
+        getAccountName(realAccount.id) ||
+        "User",
+
+      admin:
+        realAccount.admin
+
+    };
+
+
+    showApplication();
+
+  } catch {
+
+    sessionStorage.clear();
+
+  }
+
+}
+
+
+restoreSession();
+
+
+/* =========================================================
    LOGOUT
-====================================================== */
+========================================================= */
 
 function logout() {
 
-  stopFollowing();
-
-  stopMeasure();
-
   currentAccount = null;
 
-  sessionStorage.removeItem(
-    "parcelScope.loggedIn"
-  );
+  selectedProperty = null;
 
   sessionStorage.removeItem(
-    "parcelScope.account"
+    "parcelScope.currentAccount"
   );
-
-
-  document
-    .querySelectorAll(
-      ".drawer, .property, .results, .modal, .menu"
-    )
-    .forEach(element => {
-
-      element.classList.add("hidden");
-
-    });
 
 
   $("app")
@@ -479,6 +585,26 @@ function logout() {
   $("loginScreen")
     .classList
     .remove("hidden");
+
+
+  $("menu")
+    .classList
+    .add("hidden");
+
+
+  $("drawer")
+    .classList
+    .add("hidden");
+
+
+  $("property")
+    .classList
+    .add("hidden");
+
+
+  $("results")
+    .classList
+    .add("hidden");
 
 
   $("passwordInput").value = "";
@@ -494,81 +620,26 @@ $("logoutBtn").addEventListener(
 );
 
 
-/*
-SessionStorage automatically disappears when the
-browser/tab session ends.
+/* =========================================================
+   MAP
+========================================================= */
 
-The following also makes sure refreshing the page does
-not accidentally leave the application without a valid
-session.
-*/
+function initializeMap() {
 
-function restoreSession() {
+  if (map) {
 
-  const loggedIn =
-    sessionStorage.getItem(
-      "parcelScope.loggedIn"
+    setTimeout(
+      () => map.invalidateSize(),
+      100
     );
 
-  const accountId =
-    sessionStorage.getItem(
-      "parcelScope.account"
-    );
-
-
-  if (
-    loggedIn === "1" &&
-    accountId
-  ) {
-
-    const password =
-      Object.keys(ACCOUNTS)
-        .find(
-          key =>
-            ACCOUNTS[key].id === accountId
-        );
-
-
-    if (password) {
-
-      currentAccount = {
-        ...ACCOUNTS[password],
-        password
-      };
-
-      showApp();
-
-      return;
-
-    }
+    return;
 
   }
 
 
-  $("loginScreen")
-    .classList
-    .remove("hidden");
+  map = L.map("map", {
 
-  $("app")
-    .classList
-    .add("hidden");
-
-}
-
-
-window.addEventListener(
-  "load",
-  restoreSession
-);
-
-
-/* ======================================================
-   MAP
-====================================================== */
-
-const map = L.map(
-  "map",
-  {
     zoomControl: false,
 
     doubleClickZoom: false,
@@ -581,108 +652,98 @@ const map = L.map(
 
     keyboard: true
 
-  }
-).setView(
-  NORTHWEST_CENTER,
-  5.55
-);
+  }).setView(
+    NORTHWEST_CENTER,
+    5.55
+  );
 
 
-/* ======================================================
-   BASE MAPS
-====================================================== */
-
-const satellite = L.tileLayer(
-  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-  {
-    maxZoom: 19,
-    attribution: "Tiles © Esri"
-  }
-);
-
-
-const street = L.tileLayer(
-  "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-  {
-    maxZoom: 19,
-    attribution: "© OpenStreetMap contributors"
-  }
-);
-
-
-satellite.addTo(map);
-
-
-/* ======================================================
-   DATA LAYERS
-====================================================== */
-
-const parcelLayer =
-  L.layerGroup().addTo(map);
-
-const selectedLayer =
-  L.layerGroup().addTo(map);
-
-const unavailableCountyLayer =
-  L.layerGroup().addTo(map);
-
-const measureLayer =
-  L.layerGroup().addTo(map);
-
-const coordinateLayer =
-  L.layerGroup().addTo(map);
-
-
-/* ======================================================
-   MENU
-====================================================== */
-
-function setMenu(open) {
-
-  $("menu")
-    .classList
-    .toggle(
-      "hidden",
-      !open
+  satellite =
+    L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: 19,
+        attribution: "Tiles © Esri"
+      }
     );
+
+
+  street =
+    L.tileLayer(
+      "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        maxZoom: 19,
+        attribution:
+          "© OpenStreetMap contributors"
+      }
+    );
+
+
+  satellite.addTo(map);
+
+
+  markerLayer =
+    L.layerGroup().addTo(map);
+
+
+  measureLayer =
+    L.layerGroup().addTo(map);
+
+
+  map.on(
+    "click",
+    handleMapClick
+  );
+
+
+  map.on(
+    "mousemove",
+    event => {
+
+      if (!measureMode) {
+        return;
+      }
+
+      $("coords").textContent =
+        `${event.latlng.lat.toFixed(6)}, ${event.latlng.lng.toFixed(6)}`;
+
+    }
+  );
 
 }
 
 
+/* =========================================================
+   MENU
+========================================================= */
+
 $("menuBtn").addEventListener(
   "click",
-  () => setMenu(true)
+  () => {
+
+    $("menu")
+      .classList
+      .remove("hidden");
+
+  }
 );
 
 
 $("closeMenu").addEventListener(
   "click",
-  () => setMenu(false)
+  () => {
+
+    $("menu")
+      .classList
+      .add("hidden");
+
+  }
 );
 
 
-/* ======================================================
-   DRAWER
-====================================================== */
-
-function closeDrawer() {
-
-  $("drawer")
-    .classList
-    .add("hidden");
-
-}
-
-
-$("drawerClose").addEventListener(
-  "click",
-  closeDrawer
-);
-
-
-/* ======================================================
+/* =========================================================
    MENU PAGES
-====================================================== */
+========================================================= */
 
 document
   .querySelectorAll("[data-page]")
@@ -703,9 +764,6 @@ document
 
 
 function openPage(page) {
-
-  setMenu(false);
-
 
   const titles = {
 
@@ -728,9 +786,12 @@ function openPage(page) {
   };
 
 
-  if (page === "measure") {
+  if (
+    page === "admin" &&
+    !currentAccount?.admin
+  ) {
 
-    startMeasure();
+    toast("Admin access only.");
 
     return;
 
@@ -738,7 +799,7 @@ function openPage(page) {
 
 
   $("drawerTitle").textContent =
-    titles[page] || "ParcelScope";
+    titles[page] || page;
 
 
   $("drawer")
@@ -746,54 +807,83 @@ function openPage(page) {
     .remove("hidden");
 
 
-  switch (page) {
+  if (page === "saved") {
+    renderSaved();
+  }
 
-    case "saved":
-      renderSaved();
-      break;
+  if (page === "recent") {
+    renderRecent();
+  }
 
-    case "recent":
-      renderRecent();
-      break;
+  if (page === "notifications") {
+    renderNotifications();
+  }
 
-    case "notifications":
-      renderNotifications();
-      break;
+  if (page === "layers") {
+    renderLayers();
+  }
 
-    case "layers":
-      renderLayers();
-      break;
+  if (page === "measure") {
 
-    case "settings":
-      renderSettings();
-      break;
+    closeDrawer();
 
-    case "about":
-      renderAbout();
-      break;
+    startMeasure();
 
-    case "admin":
+  }
 
-      if (currentAccount.admin) {
+  if (page === "settings") {
+    renderSettings();
+  }
 
-        renderAdmin();
+  if (page === "about") {
+    renderAbout();
+  }
 
-      } else {
-
-        closeDrawer();
-
-      }
-
-      break;
-
+  if (page === "admin") {
+    renderAdmin();
   }
 
 }
 
 
-/* ======================================================
-   SAVED
-====================================================== */
+$("drawerClose").addEventListener(
+  "click",
+  closeDrawer
+);
+
+
+function closeDrawer() {
+
+  $("drawer")
+    .classList
+    .add("hidden");
+
+}
+
+
+/* =========================================================
+   SAVED PROPERTIES
+========================================================= */
+
+function getSaved() {
+
+  return readJSON(
+    storageKey("saved"),
+    []
+  );
+
+}
+
+
+function setSaved(properties) {
+
+  writeJSON(
+    storageKey("saved"),
+    properties
+  );
+
+}
+
 
 function renderSaved() {
 
@@ -821,24 +911,27 @@ function renderSaved() {
 
           <button
             class="result"
-            data-saved="${index}"
+            data-saved-index="${index}"
+            type="button"
           >
 
             <strong>
               ${escapeHTML(
                 property.address ||
-                property.parcelId ||
-                "Property"
+                "Saved Location"
               )}
             </strong>
 
             <small>
               ${escapeHTML(
-                property.county
+                property.state || ""
               )}
               ·
               ${escapeHTML(
-                property.state
+                property.lat
+              )},
+              ${escapeHTML(
+                property.lng
               )}
             </small>
 
@@ -850,7 +943,9 @@ function renderSaved() {
 
 
   document
-    .querySelectorAll("[data-saved]")
+    .querySelectorAll(
+      "[data-saved-index]"
+    )
     .forEach(button => {
 
       button.addEventListener(
@@ -860,14 +955,13 @@ function renderSaved() {
           const property =
             properties[
               Number(
-                button.dataset.saved
+                button.dataset.savedIndex
               )
             ];
 
-
           closeDrawer();
 
-          selectParcel(
+          selectProperty(
             property,
             true
           );
@@ -880,9 +974,66 @@ function renderSaved() {
 }
 
 
-/* ======================================================
+/* =========================================================
+   SAVE PROPERTY
+========================================================= */
+
+function saveCurrentProperty() {
+
+  if (!selectedProperty) {
+
+    return;
+
+  }
+
+
+  const saved =
+    getSaved();
+
+
+  const alreadySaved =
+    saved.some(
+      property =>
+        property.key ===
+        selectedProperty.key
+    );
+
+
+  if (alreadySaved) {
+
+    toast("Property is already saved.");
+
+    return;
+
+  }
+
+
+  saved.unshift(
+    selectedProperty
+  );
+
+
+  setSaved(saved);
+
+
+  toast("Property saved.");
+
+}
+
+
+/* =========================================================
    RECENT
-====================================================== */
+========================================================= */
+
+function getRecent() {
+
+  return readJSON(
+    storageKey("recent"),
+    []
+  );
+
+}
+
 
 function addRecent(property) {
 
@@ -890,16 +1041,15 @@ function addRecent(property) {
     getRecent()
       .filter(
         item =>
-          item.parcelId !==
-          property.parcelId
+          item.key !== property.key
       );
 
 
   recent.unshift(property);
 
 
-  setAccountData(
-    "recent",
+  writeJSON(
+    storageKey("recent"),
     recent.slice(0, 25)
   );
 
@@ -932,24 +1082,20 @@ function renderRecent() {
 
           <button
             class="result"
-            data-recent="${index}"
+            data-recent-index="${index}"
+            type="button"
           >
 
             <strong>
               ${escapeHTML(
                 property.address ||
-                property.parcelId ||
-                "Property"
+                "Recent Location"
               )}
             </strong>
 
             <small>
               ${escapeHTML(
-                property.county
-              )}
-              ·
-              ${escapeHTML(
-                property.state
+                property.state || ""
               )}
             </small>
 
@@ -961,7 +1107,9 @@ function renderRecent() {
 
 
   document
-    .querySelectorAll("[data-recent]")
+    .querySelectorAll(
+      "[data-recent-index]"
+    )
     .forEach(button => {
 
       button.addEventListener(
@@ -971,14 +1119,13 @@ function renderRecent() {
           const property =
             recent[
               Number(
-                button.dataset.recent
+                button.dataset.recentIndex
               )
             ];
 
-
           closeDrawer();
 
-          selectParcel(
+          selectProperty(
             property,
             true
           );
@@ -991,21 +1138,92 @@ function renderRecent() {
 }
 
 
-/* ======================================================
+/* =========================================================
    NOTIFICATIONS
-====================================================== */
+========================================================= */
 
-function updateNotificationDot() {
+function getNotifications() {
+
+  const notifications =
+    readJSON(
+      storageKey("notifications"),
+      []
+    );
+
+
+  const cutoff =
+    Date.now() -
+    (30 * 24 * 60 * 60 * 1000);
+
+
+  return notifications.filter(
+    notification =>
+      new Date(
+        notification.date
+      ).getTime() >= cutoff
+  );
+
+}
+
+
+function setNotifications(
+  notifications
+) {
+
+  writeJSON(
+    storageKey("notifications"),
+    notifications
+  );
+
+}
+
+
+function addNotification(
+  title,
+  message
+) {
 
   const notifications =
     getNotifications();
 
 
+  notifications.unshift({
+
+    id:
+      `${Date.now()}-${Math.random()}`,
+
+    title,
+
+    message,
+
+    date:
+      new Date().toISOString()
+
+  });
+
+
+  setNotifications(
+    notifications
+  );
+
+}
+
+
+/* =========================================================
+   NOTIFICATION DOT
+========================================================= */
+
+function updateNotificationDot() {
+
+  if (!currentAccount) {
+    return;
+  }
+
+
   const unread =
-    notifications.some(
-      notification =>
-        !notification.read
-    );
+    localStorage.getItem(
+      `parcelScope.unread.${currentAccount.id}`
+    ) === "1";
 
 
   $("redDot")
@@ -1018,123 +1236,135 @@ function updateNotificationDot() {
 }
 
 
-function renderNotifications() {
+function markNotificationsRead() {
 
-  let notifications =
-    getNotifications();
-
-
-  notifications =
-    notifications.map(
-      notification => ({
-        ...notification,
-        read: true
-      })
-    );
-
-
-  setNotifications(
-    notifications
+  localStorage.setItem(
+    `parcelScope.unread.${currentAccount.id}`,
+    "0"
   );
 
 
   updateNotificationDot();
 
+}
 
-  if (!notifications.length) {
 
-    $("drawerBody").innerHTML = `
-      <div class="menu-page">
+/* =========================================================
+   RENDER NOTIFICATIONS
+========================================================= */
 
-        <h3>
-          Notifications
-        </h3>
+function renderNotifications() {
 
-        <p>
-          No notifications.
-        </p>
+  markNotificationsRead();
 
-      </div>
+
+  const notifications =
+    getNotifications();
+
+
+  let html = `
+    <div class="menu-page">
+  `;
+
+
+  if (notifications.length) {
+
+    html += `
+      <button
+        id="deleteAllNotifications"
+        class="delete-all"
+        type="button"
+      >
+        Delete All
+      </button>
     `;
 
-    return;
 
-  }
-
-
-  $("drawerBody").innerHTML = `
-
-    <button
-      id="deleteAllNotifications"
-      class="delete-all"
-    >
-      Delete All
-    </button>
-
-    ${notifications
+    html += notifications
       .map(
         notification => `
 
           <div
             class="notification"
-            data-notification="${escapeHTML(
-              notification.id
-            )}"
           >
-
-            <strong>
-              ${escapeHTML(
-                notification.title
-              )}
-            </strong>
-
-            <small>
-              ${escapeHTML(
-                notification.message
-              )}
-            </small>
-
-            <small>
-              ${escapeHTML(
-                notification.date
-              )}
-            </small>
 
             <button
               class="notification-delete"
               data-delete-notification="${escapeHTML(
                 notification.id
               )}"
+              type="button"
+              aria-label="Delete notification"
             >
               ×
             </button>
+
+            <div class="notification-title">
+              ${escapeHTML(
+                notification.title
+              )}
+            </div>
+
+            <div class="notification-message">
+              ${escapeHTML(
+                notification.message
+              )}
+            </div>
+
+            <div class="notification-date">
+              ${formatDate(
+                notification.date
+              )}
+            </div>
 
           </div>
 
         `
       )
-      .join("")}
+      .join("");
 
+  } else {
+
+    html += `
+      <p>
+        No notifications.
+      </p>
+    `;
+
+  }
+
+
+  html += `
+    </div>
   `;
 
 
-  $("deleteAllNotifications")
-    .addEventListener(
+  $("drawerBody").innerHTML =
+    html;
+
+
+  const deleteAll =
+    $("deleteAllNotifications");
+
+
+  if (deleteAll) {
+
+    deleteAll.addEventListener(
       "click",
       () => {
 
         setNotifications([]);
 
-        updateNotificationDot();
-
         renderNotifications();
 
         toast(
-          "Notifications deleted."
+          "All notifications deleted."
         );
 
       }
     );
+
+  }
 
 
   document
@@ -1145,25 +1375,25 @@ function renderNotifications() {
 
       button.addEventListener(
         "click",
-        event => {
-
-          event.stopPropagation();
+        () => {
 
           const id =
             button.dataset
               .deleteNotification;
 
 
-          setNotifications(
+          const remaining =
             getNotifications()
               .filter(
-                notification =>
-                  notification.id !== id
-              )
+                item =>
+                  item.id !== id
+              );
+
+
+          setNotifications(
+            remaining
           );
 
-
-          updateNotificationDot();
 
           renderNotifications();
 
@@ -1175,128 +1405,42 @@ function renderNotifications() {
 }
 
 
-/* ======================================================
-   ADMIN
-====================================================== */
+/* =========================================================
+   LAYERS
+========================================================= */
 
-function renderAdmin() {
-
-  if (!currentAccount.admin) {
-
-    return;
-
-  }
-
-
-  const users =
-    Object.values(ACCOUNTS);
-
+function renderLayers() {
 
   $("drawerBody").innerHTML = `
 
     <div class="menu-page">
 
-      <h3>
-        Administration
-      </h3>
-
-      <p>
-        Send a notification to every account or to one
-        selected account.
-      </p>
-
-      <label>
-        Recipient
-      </label>
-
-      <select id="adminRecipient"
-        style="width:100%; padding:10px; margin:6px 0 12px;
-        background:#111d2a; color:white;
-        border:1px solid #26384b; border-radius:8px;"
-      >
-
-        <option value="ALL">
-          All Users
-        </option>
-
-        ${users
-          .map(
-            account => `
-              <option value="${account.id}">
-                ${account.id === "admin"
-                  ? "Admin"
-                  : account.id}
-              </option>
-            `
-          )
-          .join("")}
-
-      </select>
-
-
-      <label>
-        Notification Title
-      </label>
-
-      <input
-        id="adminNotificationTitle"
-        type="text"
-        placeholder="Notification title"
-        style="width:100%; padding:10px; margin:6px 0 12px;
-        background:#070e16; color:white;
-        border:1px solid #26384b; border-radius:8px;"
-      >
-
-
-      <label>
-        Message
-      </label>
-
-      <textarea
-        id="adminNotificationMessage"
-        placeholder="Write notification..."
-        rows="5"
-        style="width:100%; padding:10px; margin:6px 0 12px;
-        background:#070e16; color:white;
-        border:1px solid #26384b; border-radius:8px;
-        resize:vertical;"
-      ></textarea>
-
-
-      <button
-        id="sendAdminNotification"
-        style="width:100%;"
-      >
-        Send Notification
-      </button>
-
-
-      <h3>
-        Accounts
-      </h3>
-
       <div class="row">
-        <span>Total Accounts</span>
-        <strong>13</strong>
+        <span>Satellite</span>
+        <input
+          id="satelliteRadio"
+          type="radio"
+          name="basemap"
+          checked
+        >
       </div>
 
       <div class="row">
-        <span>Administrator</span>
-        <strong>1</strong>
+        <span>Street Map</span>
+        <input
+          id="streetRadio"
+          type="radio"
+          name="basemap"
+        >
       </div>
 
       <div class="row">
-        <span>Regular Users</span>
-        <strong>12</strong>
-      </div>
-
-
-      <h3>
-        Login Activity
-      </h3>
-
-      <div id="loginActivity">
-        ${renderLoginActivityHTML()}
+        <span>Location Marker</span>
+        <input
+          id="locationToggle"
+          type="checkbox"
+          checked
+        >
       </div>
 
     </div>
@@ -1304,119 +1448,397 @@ function renderAdmin() {
   `;
 
 
-  $("sendAdminNotification")
+  $("satelliteRadio")
     .addEventListener(
-      "click",
-      sendAdminNotification
+      "change",
+      () => {
+
+        if (!map) {
+          return;
+        }
+
+        if (
+          map.hasLayer(street)
+        ) {
+
+          map.removeLayer(street);
+
+        }
+
+        if (
+          !map.hasLayer(satellite)
+        ) {
+
+          satellite.addTo(map);
+
+        }
+
+      }
+    );
+
+
+  $("streetRadio")
+    .addEventListener(
+      "change",
+      () => {
+
+        if (!map) {
+          return;
+        }
+
+        if (
+          map.hasLayer(satellite)
+        ) {
+
+          map.removeLayer(satellite);
+
+        }
+
+        if (
+          !map.hasLayer(street)
+        ) {
+
+          street.addTo(map);
+
+        }
+
+      }
+    );
+
+
+  $("locationToggle")
+    .addEventListener(
+      "change",
+      event => {
+
+        if (!locationMarker) {
+          return;
+        }
+
+
+        if (event.target.checked) {
+
+          locationMarker.addTo(map);
+
+        } else {
+
+          map.removeLayer(
+            locationMarker
+          );
+
+        }
+
+      }
     );
 
 }
 
 
-function renderLoginActivityHTML() {
+/* =========================================================
+   SETTINGS
+========================================================= */
 
-  const activity =
-    JSON.parse(
-      localStorage.getItem(
-        "parcelScope.loginActivity"
-      ) || "[]"
+function renderSettings() {
+
+  $("drawerBody").innerHTML = `
+
+    <div class="menu-page">
+
+      <h3>
+        Account
+      </h3>
+
+      <p>
+        Change the name displayed for this account.
+      </p>
+
+      <input
+        id="accountNameInput"
+        class="admin-select"
+        maxlength="40"
+        value="${escapeHTML(
+          currentAccount.name
+        )}"
+        placeholder="User"
+      >
+
+      <button
+        id="saveNameButton"
+        type="button"
+      >
+        Save Name
+      </button>
+
+      <h3>
+        Account Information
+      </h3>
+
+      <div class="row">
+        <span>Account</span>
+        <strong>
+          ${escapeHTML(
+            currentAccount.id
+          )}
+        </strong>
+      </div>
+
+      <div class="row">
+        <span>Access</span>
+        <strong>
+          ${
+            currentAccount.admin
+              ? "Admin"
+              : "User"
+          }
+        </strong>
+      </div>
+
+    </div>
+
+  `;
+
+
+  $("saveNameButton")
+    .addEventListener(
+      "click",
+      () => {
+
+        const name =
+          $("accountNameInput")
+            .value
+            .trim() || "User";
+
+
+        saveAccountName(name);
+
+
+        $("menuAccountName")
+          .textContent =
+            name;
+
+
+        toast("Name saved.");
+
+        renderSettings();
+
+      }
     );
 
+}
 
-  if (!activity.length) {
 
-    return `
+/* =========================================================
+   ABOUT
+========================================================= */
+
+function renderAbout() {
+
+  $("drawerBody").innerHTML = `
+
+    <div class="menu-page">
+
+      <h3>
+        ParcelScope
+      </h3>
+
       <p>
-        No login activity recorded yet.
+        ParcelScope is a private property research
+        mapping application for Washington, Oregon,
+        Idaho and Montana.
       </p>
-    `;
+
+      <h3>
+        Current Account
+      </h3>
+
+      <p>
+        ${escapeHTML(
+          currentAccount.name
+        )}
+      </p>
+
+      <h3>
+        Data
+      </h3>
+
+      <p>
+        Map imagery and address search are provided
+        by the connected map services.
+      </p>
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   ADMIN PAGE
+========================================================= */
+
+function renderAdmin() {
+
+  if (!currentAccount?.admin) {
+
+    return;
 
   }
 
 
-  return activity
-    .slice()
-    .reverse()
-    .map(
-      entry => `
-
-        <div class="row">
-
-          <span>
-            ${escapeHTML(
-              entry.account
-            )}
-          </span>
-
-          <small>
-            ${escapeHTML(
-              entry.time
-            )}
-          </small>
-
-        </div>
-
-      `
-    )
-    .join("");
-
-}
+  const history =
+    getLoginHistory();
 
 
-function recordLogin(account) {
+  $("drawerBody").innerHTML = `
 
-  const activity =
-    JSON.parse(
-      localStorage.getItem(
-        "parcelScope.loginActivity"
-      ) || "[]"
+    <div class="menu-page">
+
+      <div class="admin-box">
+
+        <h3>
+          Send Notification
+        </h3>
+
+        <select
+          id="adminRecipient"
+          class="admin-select"
+        >
+
+          <option value="ALL">
+            All Users
+          </option>
+
+          ${Object.entries(ACCOUNTS)
+            .filter(
+              ([, account]) =>
+                !account.admin
+            )
+            .map(
+              ([password, account]) => `
+                <option value="${password}">
+                  ${escapeHTML(
+                    getAccountName(
+                      account.id
+                    ) || "User"
+                  )}
+                  —
+                  ${account.id}
+                </option>
+              `
+            )
+            .join("")}
+
+        </select>
+
+        <input
+          id="adminNotificationTitle"
+          class="admin-select"
+          maxlength="80"
+          placeholder="Notification title"
+        >
+
+        <textarea
+          id="adminNotificationMessage"
+          class="admin-text"
+          maxlength="1000"
+          placeholder="Notification message"
+        ></textarea>
+
+        <button
+          id="adminSendNotification"
+          class="admin-send"
+          type="button"
+        >
+          Send Notification
+        </button>
+
+      </div>
+
+
+      <div class="admin-box">
+
+        <h3>
+          Login Activity
+        </h3>
+
+        <p>
+          Login history is kept for 30 days.
+        </p>
+
+        ${
+          history.length
+            ? history
+                .map(
+                  entry => `
+
+                    <div class="login-record">
+
+                      <strong>
+                        ${escapeHTML(
+                          entry.accountName
+                        )}
+                        ${
+                          entry.admin
+                            ? " — ADMIN"
+                            : ""
+                        }
+                      </strong>
+
+                      <small>
+                        Account:
+                        ${escapeHTML(
+                          entry.accountId
+                        )}
+                        ·
+                        ${formatDate(
+                          entry.time
+                        )}
+                      </small>
+
+                    </div>
+
+                  `
+                )
+                .join("")
+            : `
+                <p>
+                  No login activity yet.
+                </p>
+              `
+        }
+
+      </div>
+
+    </div>
+
+  `;
+
+
+  $("adminSendNotification")
+    .addEventListener(
+      "click",
+      adminSendNotification
     );
 
-
-  activity.push({
-
-    account:
-      account.admin
-        ? "Admin"
-        : account.id,
-
-    time:
-      new Date().toLocaleString()
-
-  });
-
-
-  localStorage.setItem(
-    "parcelScope.loginActivity",
-    JSON.stringify(
-      activity.slice(-250)
-    )
-  );
-
 }
 
 
-/*
-Replace attemptLogin with activity recording after
-successful validation.
-*/
+/* =========================================================
+   ADMIN SEND NOTIFICATION
+========================================================= */
 
-const originalAttemptLogin = attemptLogin;
-
-
-/* ======================================================
-   ADMIN NOTIFICATIONS
-====================================================== */
-
-function sendAdminNotification() {
+function adminSendNotification() {
 
   const recipient =
     $("adminRecipient").value;
+
 
   const title =
     $("adminNotificationTitle")
       .value
       .trim();
+
 
   const message =
     $("adminNotificationMessage")
@@ -1435,836 +1857,135 @@ function sendAdminNotification() {
   }
 
 
-  const now =
-    new Date().toLocaleString();
+  if (recipient === "ALL") {
 
+    Object.values(ACCOUNTS)
+      .filter(
+        account =>
+          !account.admin
+      )
+      .forEach(
+        account => {
 
-  const accounts =
-    Object.values(ACCOUNTS);
+          sendToAccount(
+            account.id,
+            title,
+            message
+          );
 
-
-  const targets =
-    recipient === "ALL"
-      ? accounts
-      : accounts.filter(
-          account =>
-            account.id === recipient
-        );
-
-
-  targets.forEach(
-    account => {
-
-      const key =
-        `parcelScope.${account.id}.notifications`;
-
-
-      let notifications =
-        JSON.parse(
-          localStorage.getItem(key)
-          || "[]"
-        );
-
-
-      notifications.push({
-
-        id:
-          `${Date.now()}-${Math.random()}`,
-
-        title,
-
-        message,
-
-        date: now,
-
-        read: false
-
-      });
-
-
-      localStorage.setItem(
-        key,
-        JSON.stringify(
-          notifications
-        )
+        }
       );
 
+
+    toast(
+      "Notification sent to all users."
+    );
+
+  } else {
+
+    const account =
+      ACCOUNTS[recipient];
+
+
+    if (!account) {
+
+      toast(
+        "Account not found."
+      );
+
+      return;
+
     }
-  );
+
+
+    sendToAccount(
+      account.id,
+      title,
+      message
+    );
+
+
+    toast(
+      "Notification sent."
+    );
+
+  }
 
 
   $("adminNotificationTitle")
     .value = "";
 
+
   $("adminNotificationMessage")
     .value = "";
 
-
-  toast(
-    recipient === "ALL"
-      ? "Notification sent to all users."
-      : "Notification sent."
-  );
-
 }
 
 
-/* ======================================================
-   SETTINGS
-====================================================== */
-
-function renderSettings() {
-
-  const name =
-    getName();
-
-
-  $("drawerBody").innerHTML = `
-
-    <div class="menu-page">
-
-      <h3>
-        Account
-      </h3>
-
-      <div class="field">
-
-        <b>
-          Display Name
-        </b>
-
-        <input
-          id="nameInput"
-          type="text"
-          maxlength="30"
-          value="${escapeHTML(name)}"
-          style="
-            width:100%;
-            padding:10px;
-            background:#070e16;
-            color:white;
-            border:1px solid #26384b;
-            border-radius:8px;
-          "
-        >
-
-      </div>
-
-      <button
-        id="saveNameBtn"
-        style="width:100%; margin-top:10px;"
-      >
-        Save Name
-      </button>
-
-
-      <h3>
-        Map
-      </h3>
-
-      <div class="row">
-        <span>Follow Location</span>
-
-        <button id="settingsLocate">
-          ${
-            followingLocation
-              ? "Stop"
-              : "Start"
-          }
-        </button>
-
-      </div>
-
-    </div>
-
-  `;
-
-
-  $("saveNameBtn")
-    .addEventListener(
-      "click",
-      () => {
-
-        const newName =
-          $("nameInput")
-            .value
-            .trim()
-            .slice(0, 30);
-
-
-        setName(
-          newName || "User"
-        );
-
-
-        updateAccountUI();
-
-        toast(
-          "Name updated."
-        );
-
-      }
-    );
-
-
-  $("settingsLocate")
-    .addEventListener(
-      "click",
-      () => {
-
-        if (followingLocation) {
-
-          stopFollowing();
-
-        } else {
-
-          startFollowing();
-
-        }
-
-        renderSettings();
-
-      }
-    );
-
-}
-
-
-/* ======================================================
-   ABOUT
-====================================================== */
-
-function renderAbout() {
-
-  $("drawerBody").innerHTML = `
-
-    <div class="menu-page">
-
-      <h3>
-        ParcelScope
-      </h3>
-
-      <p>
-        A private parcel mapping application for
-        Washington, Oregon, Idaho and Montana.
-      </p>
-
-      <h3>
-        Account
-      </h3>
-
-      <p>
-        You are signed in as
-        <strong>
-          ${escapeHTML(
-            getName()
-          )}
-        </strong>.
-      </p>
-
-      <h3>
-        Version
-      </h3>
-
-      <p>
-        ParcelScope 1.0
-      </p>
-
-    </div>
-
-  `;
-
-}
-
-
-/* ======================================================
-   MAP LAYERS
-====================================================== */
-
-function renderLayers() {
-
-  $("drawerBody").innerHTML = `
-
-    <div class="menu-page">
-
-      <div class="row">
-
-        <span>
-          Satellite
-        </span>
-
-        <input
-          id="satelliteRadio"
-          type="radio"
-          name="basemap"
-          checked
-        >
-
-      </div>
-
-
-      <div class="row">
-
-        <span>
-          Street Map
-        </span>
-
-        <input
-          id="streetRadio"
-          type="radio"
-          name="basemap"
-        >
-
-      </div>
-
-
-      <div class="row">
-
-        <span>
-          Parcel Boundaries
-        </span>
-
-        <input
-          id="parcelToggle"
-          type="checkbox"
-          ${parcelsEnabled ? "checked" : ""}
-        >
-
-      </div>
-
-
-      <div class="row">
-
-        <span>
-          County Boundaries
-        </span>
-
-        <input
-          id="countyToggle"
-          type="checkbox"
-          ${countyLayerEnabled ? "checked" : ""}
-        >
-
-      </div>
-
-
-      <div class="row">
-
-        <span>
-          State Boundaries
-        </span>
-
-        <input
-          id="stateToggle"
-          type="checkbox"
-          ${stateLayerEnabled ? "checked" : ""}
-        >
-
-      </div>
-
-
-      <div class="row">
-
-        <span>
-          State & Town Labels
-        </span>
-
-        <input
-          id="labelsToggle"
-          type="checkbox"
-          ${labelsEnabled ? "checked" : ""}
-        >
-
-      </div>
-
-    </div>
-
-  `;
-
-
-  $("satelliteRadio").onchange =
-    () => {
-
-      map.removeLayer(
-        street
-      );
-
-      satellite.addTo(map);
-
-    };
-
-
-  $("streetRadio").onchange =
-    () => {
-
-      map.removeLayer(
-        satellite
-      );
-
-      street.addTo(map);
-
-    };
-
-
-  $("parcelToggle").onchange =
-    event => {
-
-      parcelsEnabled =
-        event.target.checked;
-
-      parcelLayer.clearLayers();
-
-      if (
-        parcelsEnabled &&
-        map.getZoom() >= PARCEL_ZOOM
-      ) {
-
-        loadVisibleParcels();
-
-      }
-
-    };
-
-
-  $("countyToggle").onchange =
-    event => {
-
-      countyLayerEnabled =
-        event.target.checked;
-
-    };
-
-
-  $("stateToggle").onchange =
-    event => {
-
-      stateLayerEnabled =
-        event.target.checked;
-
-    };
-
-
-  $("labelsToggle").onchange =
-    event => {
-
-      labelsEnabled =
-        event.target.checked;
-
-    };
-
-}
-
-
-/* ======================================================
-   PROPERTY
-====================================================== */
-
-function selectParcel(
-  property,
-  fromSaved = false
+function sendToAccount(
+  accountId,
+  title,
+  message
 ) {
 
-  selectedParcel =
-    property;
-
-
-  $("propertyTitle").textContent =
-    property.address ||
-    property.parcelId ||
-    "Property";
-
-
-  $("propertyBody").innerHTML = `
-
-    <div class="field">
-
-      <b>
-        Address
-      </b>
-
-      ${escapeHTML(
-        property.address
-      )}
-
-    </div>
-
-
-    <div class="field">
-
-      <b>
-        Parcel ID
-      </b>
-
-      ${escapeHTML(
-        property.parcelId
-      )}
-
-    </div>
-
-
-    <div class="field">
-
-      <b>
-        Owner
-      </b>
-
-      ${escapeHTML(
-        property.owner
-      )}
-
-    </div>
-
-
-    <div class="field">
-
-      <b>
-        County
-      </b>
-
-      ${escapeHTML(
-        property.county
-      )}
-
-    </div>
-
-
-    <div class="field">
-
-      <b>
-        State
-      </b>
-
-      ${escapeHTML(
-        property.state
-      )}
-
-    </div>
-
-
-    <div class="field">
-
-      <b>
-        Acres
-      </b>
-
-      ${escapeHTML(
-        property.acres
-      )}
-
-    </div>
-
-
-    <div class="field">
-
-      <b>
-        Assessed Value
-      </b>
-
-      ${escapeHTML(
-        property.value
-      )}
-
-    </div>
-
-  `;
-
-
-  updateSaveButton();
-
-
-  $("property")
-    .classList
-    .remove("hidden");
-
-
-  if (!fromSaved) {
-
-    addRecent(property);
-
-  }
-
-
-  if (
-    property.lat != null &&
-    property.lng != null
-  ) {
-
-    map.setView(
-      [
-        property.lat,
-        property.lng
-      ],
-      Math.max(
-        map.getZoom(),
-        15
-      )
-    );
-
-  }
-
-}
-
-
-function updateSaveButton() {
-
-  if (!selectedParcel) {
-
-    return;
-
-  }
-
-
-  const saved =
-    getSaved();
-
-
-  const exists =
-    saved.some(
-      property =>
-        property.parcelId ===
-        selectedParcel.parcelId
+  const notifications =
+    readJSON(
+      `parcelScope.notifications.${accountId}`,
+      []
     );
 
 
-  $("saveBtn").textContent =
-    exists
-      ? "Remove Saved Property"
-      : "Save Property";
+  notifications.unshift({
+
+    id:
+      `${Date.now()}-${Math.random()}`,
+
+    title,
+
+    message,
+
+    date:
+      new Date().toISOString()
+
+  });
+
+
+  const cutoff =
+    Date.now() -
+    (30 * 24 * 60 * 60 * 1000);
+
+
+  const cleaned =
+    notifications.filter(
+      notification =>
+        new Date(
+          notification.date
+        ).getTime() >= cutoff
+    );
+
+
+  writeJSON(
+    `parcelScope.notifications.${accountId}`,
+    cleaned
+  );
+
+
+  localStorage.setItem(
+    `parcelScope.unread.${accountId}`,
+    "1"
+  );
 
 }
 
 
-$("propertyClose")
-  .addEventListener(
-    "click",
-    () => {
-
-      $("property")
-        .classList
-        .add("hidden");
-
-      selectedLayer.clearLayers();
-
-    }
-  );
-
-
-$("saveBtn")
-  .addEventListener(
-    "click",
-    () => {
-
-      if (!selectedParcel) {
-
-        return;
-
-      }
-
-
-      const saved =
-        getSaved();
-
-
-      const index =
-        saved.findIndex(
-          property =>
-            property.parcelId ===
-            selectedParcel.parcelId
-        );
-
-
-      if (index >= 0) {
-
-        saved.splice(
-          index,
-          1
-        );
-
-        toast(
-          "Property removed."
-        );
-
-      } else {
-
-        saved.push(
-          selectedParcel
-        );
-
-        toast(
-          "Property saved."
-        );
-
-      }
-
-
-      setSaved(saved);
-
-      updateSaveButton();
-
-    }
-  );
-
-
-/* ======================================================
-   SHARE
-====================================================== */
-
-$("shareBtn")
-  .addEventListener(
-    "click",
-    async () => {
-
-      if (!selectedParcel) {
-
-        return;
-
-      }
-
-
-      const text =
-        `${selectedParcel.address || "Property"}\n` +
-        `Parcel ID: ${selectedParcel.parcelId || "Unavailable"}`;
-
-
-      try {
-
-        await navigator.clipboard.writeText(
-          text
-        );
-
-        toast(
-          "Parcel information copied."
-        );
-
-      } catch {
-
-        toast(
-          text
-        );
-
-      }
-
-    }
-  );
-
-
-/* ======================================================
-   MAPS
-====================================================== */
-
-$("mapsBtn")
-  .addEventListener(
-    "click",
-    () => {
-
-      if (!selectedParcel) {
-
-        return;
-
-      }
-
-
-      $("mapsModal")
-        .classList
-        .remove("hidden");
-
-    }
-  );
-
-
-function closeMapsModal() {
-
-  $("mapsModal")
-    .classList
-    .add("hidden");
-
-}
-
-
-$("mapsClose")
-  .addEventListener(
-    "click",
-    closeMapsModal
-  );
-
-$("mapsCancel")
-  .addEventListener(
-    "click",
-    closeMapsModal
-  );
-
-
-function getMapCoordinates() {
-
-  if (
-    selectedParcel &&
-    selectedParcel.lat != null &&
-    selectedParcel.lng != null
-  ) {
-
-    return [
-      selectedParcel.lat,
-      selectedParcel.lng
-    ];
-
-  }
-
-
-  return map.getCenter();
-
-}
-
-
-$("googleBtn")
-  .addEventListener(
-    "click",
-    () => {
-
-      const point =
-        getMapCoordinates();
-
-
-      window.open(
-        `https://www.google.com/maps/search/?api=1&query=${point.lat},${point.lng}`,
-        "_blank"
-      );
-
-
-      closeMapsModal();
-
-    }
-  );
-
-
-$("appleBtn")
-  .addEventListener(
-    "click",
-    () => {
-
-      const point =
-        getMapCoordinates();
-
-
-      window.open(
-        `https://maps.apple.com/?ll=${point.lat},${point.lng}`,
-        "_blank"
-      );
-
-
-      closeMapsModal();
-
-    }
-  );
-
-
-/* ======================================================
+/* =========================================================
    SEARCH
-====================================================== */
+========================================================= */
 
 $("searchBtn")
   .addEventListener(
     "click",
-    performSearch
+    searchAddress
   );
 
 
@@ -2275,7 +1996,9 @@ $("searchInput")
 
       if (event.key === "Enter") {
 
-        performSearch();
+        event.preventDefault();
+
+        searchAddress();
 
       }
 
@@ -2283,19 +2006,18 @@ $("searchInput")
   );
 
 
-function performSearch() {
+async function searchAddress() {
 
   const query =
     $("searchInput")
       .value
-      .trim()
-      .toLowerCase();
+      .trim();
 
 
   if (!query) {
 
     toast(
-      "Enter an address, owner or parcel ID."
+      "Enter an address to search."
     );
 
     return;
@@ -2307,104 +2029,103 @@ function performSearch() {
     $("stateSelect").value;
 
 
-  /*
-  Until live county FeatureServer endpoints are added,
-  this creates a useful search result from local saved
-  and recent properties.
-  */
-
-  const combined = [
-    ...getSaved(),
-    ...getRecent()
-  ];
+  const finalQuery =
+    state === "ALL"
+      ? query
+      : `${query}, ${state}`;
 
 
-  const unique = [];
+  $("searchBtn").disabled =
+    true;
 
-  combined.forEach(
-    property => {
 
-      if (
-        !unique.some(
-          item =>
-            item.parcelId ===
-            property.parcelId
-        )
-      ) {
+  $("searchBtn").textContent =
+    "Searching...";
 
-        unique.push(property);
 
-      }
+  try {
+
+    const url =
+      "https://nominatim.openstreetmap.org/search?" +
+      new URLSearchParams({
+
+        q: finalQuery,
+
+        format: "json",
+
+        limit: "8",
+
+        addressdetails: "1"
+
+      });
+
+
+    const response =
+      await fetch(url, {
+        headers: {
+          "Accept":
+            "application/json"
+        }
+      });
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        "Search request failed."
+      );
 
     }
-  );
 
 
-  const matches =
-    unique.filter(
-      property => {
-
-        const text =
-          [
-            property.address,
-            property.owner,
-            property.parcelId,
-            property.county,
-            property.state
-          ]
-          .join(" ")
-          .toLowerCase();
+    const results =
+      await response.json();
 
 
-        const stateMatch =
-          state === "ALL" ||
-          property.state === state;
-
-
-        return (
-          text.includes(query) &&
-          stateMatch
-        );
-
-      }
+    renderSearchResults(
+      results
     );
 
+  } catch (error) {
 
-  renderSearchResults(
-    matches
-  );
+    console.error(error);
+
+    toast(
+      "Search failed. Please try again."
+    );
+
+  } finally {
+
+    $("searchBtn").disabled =
+      false;
+
+    $("searchBtn").textContent =
+      "Search";
+
+  }
 
 }
 
 
+/* =========================================================
+   SEARCH RESULTS
+========================================================= */
+
 function renderSearchResults(
-  matches
+  results
 ) {
 
-  $("results")
-    .classList
-    .remove("hidden");
-
-
-  if (!matches.length) {
+  if (!results.length) {
 
     $("resultsBody").innerHTML = `
-
-      <div class="menu-page">
-
-        <p>
-          No local results found.
-        </p>
-
-        <p>
-          Live parcel GIS sources can be connected
-          to the STATE_SOURCES registry in the
-          production version.
-        </p>
-
-      </div>
-
+      <p>
+        No results found.
+      </p>
     `;
+
+    $("results")
+      .classList
+      .remove("hidden");
 
     return;
 
@@ -2412,33 +2133,26 @@ function renderSearchResults(
 
 
   $("resultsBody").innerHTML =
-    matches
+    results
       .map(
-        (property, index) => `
+        (result, index) => `
 
           <button
             class="result"
             data-search-result="${index}"
+            type="button"
           >
 
             <strong>
               ${escapeHTML(
-                property.address ||
-                property.parcelId
+                result.display_name
               )}
             </strong>
 
             <small>
               ${escapeHTML(
-                property.owner
-              )}
-              ·
-              ${escapeHTML(
-                property.county
-              )}
-              ·
-              ${escapeHTML(
-                property.state
+                result.type ||
+                "Location"
               )}
             </small>
 
@@ -2447,6 +2161,11 @@ function renderSearchResults(
         `
       )
       .join("");
+
+
+  $("results")
+    .classList
+    .remove("hidden");
 
 
   document
@@ -2459,12 +2178,41 @@ function renderSearchResults(
         "click",
         () => {
 
-          const property =
-            matches[
+          const result =
+            results[
               Number(
-                button.dataset.searchResult
+                button.dataset
+                  .searchResult
               )
             ];
+
+
+          const property = {
+
+            key:
+              `${result.lat},${result.lon}`,
+
+            address:
+              result.display_name,
+
+            state:
+              result.address?.state ||
+              "",
+
+            county:
+              result.address?.county ||
+              "",
+
+            parcelId:
+              "",
+
+            lat:
+              Number(result.lat),
+
+            lng:
+              Number(result.lon)
+
+          };
 
 
           $("results")
@@ -2472,7 +2220,7 @@ function renderSearchResults(
             .add("hidden");
 
 
-          selectParcel(
+          selectProperty(
             property,
             true
           );
@@ -2484,6 +2232,648 @@ function renderSearchResults(
 
 }
 
+
+/* =========================================================
+   SELECT PROPERTY
+========================================================= */
+
+function selectProperty(
+  property,
+  flyTo = false
+) {
+
+  selectedProperty =
+    property;
+
+
+  markerLayer.clearLayers();
+
+
+  const marker =
+    L.marker([
+      property.lat,
+      property.lng
+    ]);
+
+
+  marker.bindPopup(
+    `<strong>${escapeHTML(
+      property.address ||
+      "Selected Location"
+    )}</strong>`
+  );
+
+
+  marker.addTo(
+    markerLayer
+  );
+
+
+  if (flyTo) {
+
+    map.flyTo(
+      [
+        property.lat,
+        property.lng
+      ],
+      Math.max(
+        map.getZoom(),
+        15
+      ),
+      {
+        duration: 1
+      }
+    );
+
+  }
+
+
+  $("propertyTitle")
+    .textContent =
+      property.address ||
+      "Selected Location";
+
+
+  $("propertyBody").innerHTML = `
+
+    <div class="field">
+
+      <b>Address</b>
+
+      ${escapeHTML(
+        property.address ||
+        "Currently unavailable"
+      )}
+
+    </div>
+
+    <div class="field">
+
+      <b>County</b>
+
+      ${escapeHTML(
+        property.county ||
+        "Currently unavailable"
+      )}
+
+    </div>
+
+    <div class="field">
+
+      <b>State</b>
+
+      ${escapeHTML(
+        property.state ||
+        "Currently unavailable"
+      )}
+
+    </div>
+
+    <div class="field">
+
+      <b>Parcel ID</b>
+
+      ${escapeHTML(
+        property.parcelId ||
+        "Currently unavailable"
+      )}
+
+    </div>
+
+    <div class="field">
+
+      <b>Coordinates</b>
+
+      ${property.lat.toFixed(6)},
+      ${property.lng.toFixed(6)}
+
+    </div>
+
+  `;
+
+
+  $("property")
+    .classList
+    .remove("hidden");
+
+
+  addRecent(property);
+
+}
+
+
+/* =========================================================
+   PROPERTY CLOSE
+========================================================= */
+
+$("propertyClose")
+  .addEventListener(
+    "click",
+    () => {
+
+      $("property")
+        .classList
+        .add("hidden");
+
+      selectedProperty =
+        null;
+
+    }
+  );
+
+
+/* =========================================================
+   SAVE
+========================================================= */
+
+$("saveBtn")
+  .addEventListener(
+    "click",
+    saveCurrentProperty
+  );
+
+
+/* =========================================================
+   SHARE
+========================================================= */
+
+$("shareBtn")
+  .addEventListener(
+    "click",
+    async () => {
+
+      if (!selectedProperty) {
+        return;
+      }
+
+
+      const url =
+        `${location.origin}${location.pathname}` +
+        `?lat=${encodeURIComponent(
+          selectedProperty.lat
+        )}` +
+        `&lng=${encodeURIComponent(
+          selectedProperty.lng
+        )}`;
+
+
+      try {
+
+        await navigator.clipboard.writeText(
+          url
+        );
+
+        toast(
+          "Property link copied."
+        );
+
+      } catch {
+
+        toast(
+          "Unable to copy link."
+        );
+
+      }
+
+    }
+  );
+
+
+/* =========================================================
+   MAPS
+========================================================= */
+
+$("mapsBtn")
+  .addEventListener(
+    "click",
+    () => {
+
+      if (!selectedProperty) {
+        return;
+      }
+
+      $("mapsModal")
+        .classList
+        .remove("hidden");
+
+    }
+  );
+
+
+$("mapsClose")
+  .addEventListener(
+    "click",
+    closeMapsModal
+  );
+
+
+$("mapsCancel")
+  .addEventListener(
+    "click",
+    closeMapsModal
+  );
+
+
+function closeMapsModal() {
+
+  $("mapsModal")
+    .classList
+    .add("hidden");
+
+}
+
+
+$("googleBtn")
+  .addEventListener(
+    "click",
+    () => {
+
+      if (!selectedProperty) {
+        return;
+      }
+
+
+      const url =
+        "https://www.google.com/maps/search/?api=1&query=" +
+        encodeURIComponent(
+          `${selectedProperty.lat},${selectedProperty.lng}`
+        );
+
+
+      window.open(
+        url,
+        "_blank"
+      );
+
+    }
+  );
+
+
+$("appleBtn")
+  .addEventListener(
+    "click",
+    () => {
+
+      if (!selectedProperty) {
+        return;
+      }
+
+
+      const url =
+        "https://maps.apple.com/?ll=" +
+        encodeURIComponent(
+          `${selectedProperty.lat},${selectedProperty.lng}`
+        );
+
+
+      window.open(
+        url,
+        "_blank"
+      );
+
+    }
+  );
+
+
+/* =========================================================
+   LOCATE
+========================================================= */
+
+$("locateBtn")
+  .addEventListener(
+    "click",
+    locateUser
+  );
+
+
+function locateUser() {
+
+  if (!navigator.geolocation) {
+
+    toast(
+      "Location is not supported."
+    );
+
+    return;
+
+  }
+
+
+  toast(
+    "Finding your location..."
+  );
+
+
+  navigator.geolocation.getCurrentPosition(
+
+    position => {
+
+      const lat =
+        position.coords.latitude;
+
+      const lng =
+        position.coords.longitude;
+
+
+      if (
+        locationMarker &&
+        map.hasLayer(locationMarker)
+      ) {
+
+        map.removeLayer(
+          locationMarker
+        );
+
+      }
+
+
+      locationMarker =
+        L.circleMarker(
+          [lat, lng],
+          {
+            radius: 8
+          }
+        );
+
+
+      locationMarker.addTo(
+        map
+      );
+
+
+      map.flyTo(
+        [lat, lng],
+        16,
+        {
+          duration: 1
+        }
+      );
+
+
+      toast(
+        "Location found."
+      );
+
+    },
+
+    error => {
+
+      console.error(error);
+
+      toast(
+        "Unable to get your location."
+      );
+
+    },
+
+    {
+      enableHighAccuracy: true,
+
+      timeout: 10000,
+
+      maximumAge: 30000
+
+    }
+
+  );
+
+}
+
+
+/* =========================================================
+   MEASUREMENT
+========================================================= */
+
+function startMeasure() {
+
+  if (!map) {
+    return;
+  }
+
+
+  measureMode =
+    true;
+
+  measurePoints =
+    [];
+
+  measureLayer.clearLayers();
+
+
+  if (measureLine) {
+
+    measureLine = null;
+
+  }
+
+
+  $("measure")
+    .classList
+    .remove("hidden");
+
+
+  $("measureValue")
+    .textContent =
+      "0 ft";
+
+
+  toast(
+    "Tap the map to add measurement points."
+  );
+
+}
+
+
+function finishMeasure() {
+
+  measureMode =
+    false;
+
+
+  $("measure")
+    .classList
+    .add("hidden");
+
+
+  $("coords")
+    .classList
+    .add("hidden");
+
+
+  if (measurePoints.length) {
+
+    toast(
+      "Measurement finished."
+    );
+
+  }
+
+}
+
+
+function clearMeasure() {
+
+  measurePoints =
+    [];
+
+  measureLayer.clearLayers();
+
+  measureLine =
+    null;
+
+
+  $("measureValue")
+    .textContent =
+      "0 ft";
+
+}
+
+
+$("finishMeasure")
+  .addEventListener(
+    "click",
+    finishMeasure
+  );
+
+
+$("clearMeasure")
+  .addEventListener(
+    "click",
+    clearMeasure
+  );
+
+
+function handleMapClick(
+  event
+) {
+
+  if (!measureMode) {
+    return;
+  }
+
+
+  const point =
+    event.latlng;
+
+
+  measurePoints.push(
+    point
+  );
+
+
+  L.circleMarker(
+    point,
+    {
+      radius: 5
+    }
+  ).addTo(
+    measureLayer
+  );
+
+
+  if (
+    measurePoints.length >= 2
+  ) {
+
+    if (measureLine) {
+
+      measureLayer.removeLayer(
+        measureLine
+      );
+
+    }
+
+
+    measureLine =
+      L.polyline(
+        measurePoints
+      ).addTo(
+        measureLayer
+      );
+
+
+    let meters = 0;
+
+
+    for (
+      let i = 1;
+      i < measurePoints.length;
+      i++
+    ) {
+
+      meters +=
+        measurePoints[
+          i - 1
+        ].distanceTo(
+          measurePoints[i]
+        );
+
+    }
+
+
+    $("measureValue")
+      .textContent =
+        formatDistance(
+          meters
+        );
+
+  }
+
+}
+
+
+/* =========================================================
+   DISTANCE FORMAT
+========================================================= */
+
+function formatDistance(
+  meters
+) {
+
+  const feet =
+    meters * 3.28084;
+
+
+  if (feet < 5280) {
+
+    return `${Math.round(feet)} ft`;
+
+  }
+
+
+  return `${(
+    feet / 5280
+  ).toFixed(2)} mi`;
+
+}
+
+
+/* =========================================================
+   DATE FORMAT
+========================================================= */
+
+function formatDate(
+  value
+) {
+
+  try {
+
+    return new Date(
+      value
+    ).toLocaleString();
+
+  } catch {
+
+    return value;
+
+  }
+
+}
+
+
+/* =========================================================
+   CLOSE RESULTS
+========================================================= */
 
 $("resultsClose")
   .addEventListener(
@@ -2498,22 +2888,21 @@ $("resultsClose")
   );
 
 
-/* ======================================================
-   LOCATION
-====================================================== */
+/* =========================================================
+   CLOSE MODAL WHEN BACKGROUND CLICKED
+========================================================= */
 
-$("locateBtn")
+$("mapsModal")
   .addEventListener(
     "click",
-    () => {
+    event => {
 
-      if (followingLocation) {
+      if (
+        event.target ===
+        $("mapsModal")
+      ) {
 
-        stopFollowing();
-
-      } else {
-
-        startFollowing();
+        closeMapsModal();
 
       }
 
@@ -2521,401 +2910,53 @@ $("locateBtn")
   );
 
 
-function startFollowing() {
+/* =========================================================
+   CLEAN OLD LOGIN HISTORY
+========================================================= */
 
-  if (!navigator.geolocation) {
+(function cleanOldLoginHistory() {
 
-    toast(
-      "Location is not supported."
+  const history =
+    getLoginHistory();
+
+
+  const cutoff =
+    Date.now() -
+    (30 * 24 * 60 * 60 * 1000);
+
+
+  const cleaned =
+    history.filter(
+      entry =>
+        new Date(
+          entry.time
+        ).getTime() >= cutoff
     );
 
-    return;
 
-  }
-
-
-  followingLocation = true;
-
-  $("locateBtn").textContent =
-    "Stop";
-
-
-  locationWatch =
-    navigator.geolocation.watchPosition(
-
-      position => {
-
-        const lat =
-          position.coords.latitude;
-
-        const lng =
-          position.coords.longitude;
-
-
-        map.setView(
-          [
-            lat,
-            lng
-          ],
-          Math.max(
-            map.getZoom(),
-            15
-          )
-        );
-
-
-        coordinateLayer.clearLayers();
-
-
-        L.circleMarker(
-          [
-            lat,
-            lng
-          ],
-          {
-            radius: 7
-          }
-        )
-        .addTo(
-          coordinateLayer
-        );
-
-
-        $("coords")
-          .textContent =
-          `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-
-        $("coords")
-          .classList
-          .remove("hidden");
-
-      },
-
-      error => {
-
-        toast(
-          "Unable to access your location."
-        );
-
-        stopFollowing();
-
-      },
-
-      {
-        enableHighAccuracy: true,
-        maximumAge: 5000,
-        timeout: 15000
-      }
-
-    );
-
-}
-
-
-function stopFollowing() {
-
-  followingLocation = false;
-
-  $("locateBtn").textContent =
-    "Locate";
-
-
-  if (
-    locationWatch !== null
-  ) {
-
-    navigator.geolocation.clearWatch(
-      locationWatch
-    );
-
-    locationWatch = null;
-
-  }
-
-
-  coordinateLayer.clearLayers();
-
-  $("coords")
-    .classList
-    .add("hidden");
-
-}
-
-
-/* ======================================================
-   MEASURE
-====================================================== */
-
-function startMeasure() {
-
-  setMenu(false);
-
-  closeDrawer();
-
-  measureMode = true;
-
-  measurePoints = [];
-
-  measureLayer.clearLayers();
-
-  $("measure")
-    .classList
-    .remove("hidden");
-
-  updateMeasureValue();
-
-  toast(
-    "Tap the map to add measurement points."
+  writeJSON(
+    "parcelScope.loginHistory",
+    cleaned
   );
 
-}
+})();
 
 
-function stopMeasure() {
+/* =========================================================
+   NOTIFICATION CHECK
+========================================================= */
 
-  measureMode = false;
+updateNotificationDot();
 
-  measurePoints = [];
 
-  measureLayer.clearLayers();
-
-  $("measure")
-    .classList
-    .add("hidden");
-
-}
-
-
-function updateMeasureValue() {
-
-  let total = 0;
-
-
-  for (
-    let i = 1;
-    i < measurePoints.length;
-    i++
-  ) {
-
-    total +=
-      map.distance(
-        measurePoints[i - 1],
-        measurePoints[i]
-      );
-
-  }
-
-
-  let display;
-
-
-  if (total < 1609.344) {
-
-    display =
-      `${Math.round(total * 3.28084)} ft`;
-
-  } else {
-
-    display =
-      `${(total / 1609.344).toFixed(2)} mi`;
-
-  }
-
-
-  $("measureValue")
-    .textContent =
-    display;
-
-}
-
-
-$("finishMeasure")
-  .addEventListener(
-    "click",
-    () => {
-
-      measureMode = false;
-
-      toast(
-        "Measurement finished."
-      );
-
-    }
-  );
-
-
-$("clearMeasure")
-  .addEventListener(
-    "click",
-    () => {
-
-      measurePoints = [];
-
-      measureLayer.clearLayers();
-
-      updateMeasureValue();
-
-    }
-  );
-
-
-map.on(
-  "click",
-  event => {
-
-    if (!measureMode) {
-
-      return;
-
-    }
-
-
-    measurePoints.push(
-      event.latlng
-    );
-
-
-    L.circleMarker(
-      event.latlng,
-      {
-        radius: 5
-      }
-    )
-    .addTo(
-      measureLayer
-    );
-
-
-    if (
-      measurePoints.length > 1
-    ) {
-
-      L.polyline(
-        measurePoints
-      )
-      .addTo(
-        measureLayer
-      );
-
-    }
-
-
-    updateMeasureValue();
-
-  }
-);
-
-
-/* ======================================================
-   MAP COORDINATES
-====================================================== */
-
-map.on(
-  "mousemove",
-  event => {
-
-    $("coords")
-      .textContent =
-      `${event.latlng.lat.toFixed(6)}, ${event.latlng.lng.toFixed(6)}`;
-
-  }
-);
-
-
-/* ======================================================
-   PARCEL PLACEHOLDER
-====================================================== */
-
-function loadVisibleParcels() {
-
-  /*
-  No fake parcel data is generated here.
-
-  Real Washington, Oregon, Idaho and Montana parcel
-  FeatureServer endpoints should be added once the
-  county/state GIS sources are selected.
-
-  This prevents ParcelScope from displaying invented
-  property information.
-  */
-
-  parcelLayer.clearLayers();
-
-}
-
-
-/* ======================================================
-   MAP ZOOM
-====================================================== */
-
-map.on(
-  "zoomend",
-  () => {
-
-    if (
-      !parcelsEnabled
-    ) {
-
-      return;
-
-    }
-
-
-    if (
-      map.getZoom() >= PARCEL_ZOOM
-    ) {
-
-      loadVisibleParcels();
-
-    } else {
-
-      parcelLayer.clearLayers();
-
-    }
-
-  }
-);
-
-
-/* ======================================================
-   FIX ADMIN LOGIN ACTIVITY
-====================================================== */
-
-/*
-The login function above needs to record activity.
-We do that by listening for successful login state
-changes.
-*/
-
-const originalShowApp =
-  showApp;
-
-
-showApp = function() {
-
-  if (currentAccount) {
-
-    recordLogin(
-      currentAccount
-    );
-
-  }
-
-
-  originalShowApp();
-
-};
-
-
-/* ======================================================
-   INITIAL FOCUS
-====================================================== */
+/* =========================================================
+   INITIAL PASSWORD FOCUS
+========================================================= */
 
 setTimeout(
   () => {
 
     if (
-      $("loginScreen") &&
       !$("loginScreen")
         .classList
         .contains("hidden")
@@ -2927,5 +2968,5 @@ setTimeout(
     }
 
   },
-  250
+  150
 );
