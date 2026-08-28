@@ -11,7 +11,7 @@
   --muted: #8fa2b5;
   --blue: #55d6ff;
   --red: #ff4350;
-  --green: #52df9a;
+  --green: #52e2a5;
 }
 
 html,
@@ -33,7 +33,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -50,122 +51,129 @@ button:hover {
   border-color: var(--blue);
 }
 
-button:active {
-  transform: translateY(1px);
+.hidden {
+  display: none !important;
 }
 
 
-/* =====================================================
-   LOGIN
-===================================================== */
+/* LOGIN */
 
 .login-screen {
   position: fixed;
+  z-index: 3000;
   inset: 0;
-  z-index: 99999;
 
   display: grid;
   place-items: center;
 
+  padding: 20px;
+
   background:
     radial-gradient(
-      circle at center,
-      #122436 0,
+      circle at 50% 30%,
+      #132337,
       #080d14 60%
     );
 }
 
 .login-card {
-  width: min(360px, calc(100vw - 40px));
+  width: min(380px, 92vw);
 
-  padding: 30px;
-
-  background: #0c1622;
+  background: #0b141ff5;
 
   border: 1px solid var(--line);
 
   border-radius: 16px;
 
-  box-shadow:
-    0 30px 80px #000c;
+  padding: 28px;
+
+  box-shadow: 0 25px 80px #000b;
 
   text-align: center;
 }
 
-.login-logo {
-  font-size: 28px;
-  font-weight: 800;
-
-  margin-bottom: 8px;
+.login-brand {
+  font-size: 30px;
+  font-weight: 900;
 }
 
-.login-subtitle {
+.login-sub {
   color: var(--muted);
-
-  margin-bottom: 22px;
+  margin: 8px 0 22px;
 }
 
 .login-card input {
+  display: block;
+
   width: 100%;
 
-  padding: 14px;
-
-  border-radius: 9px;
-
-  border: 1px solid var(--line);
-
-  background: #07101a;
-
-  color: white;
-
-  text-align: center;
-
-  font-size: 25px;
+  font-size: 28px;
 
   letter-spacing: .35em;
 
-  outline: none;
-}
+  text-align: center;
 
-.login-card input:focus {
-  border-color: var(--blue);
+  background: #0e1a26;
+
+  color: var(--text);
+
+  border: 1px solid var(--line);
+
+  border-radius: 10px;
+
+  padding: 13px;
+
+  outline: none;
+
+  margin-bottom: 10px;
 }
 
 .login-card button {
   width: 100%;
-
-  margin-top: 12px;
-
-  background: #122536;
 }
 
-.login-error {
+.primary {
+  background: #123047;
+  border-color: #2e8db4;
+}
+
+.error {
+  color: #ff7b83;
+
   min-height: 20px;
 
-  color: var(--red);
-
-  margin-top: 12px;
+  margin-top: 8px;
 
   font-size: 13px;
 }
 
 
-/* =====================================================
-   MAP
-===================================================== */
+/* MAP */
 
 #map {
   position: fixed;
   inset: 0;
 }
 
+.leaflet-control-zoom {
+  display: none !important;
+}
 
-/* =====================================================
-   TOP BAR
-===================================================== */
+.leaflet-control-attribution {
+  background: #080d14d9 !important;
+  color: #8496a9 !important;
+}
+
+.leaflet-control-attribution a {
+  color: #8abbd4 !important;
+}
+
+
+/* TOP BAR */
 
 .topbar {
   position: fixed;
+
   z-index: 1000;
 
   top: 0;
@@ -173,7 +181,9 @@ button:active {
   right: 0;
 
   display: flex;
+
   align-items: center;
+
   gap: 10px;
 
   padding: 10px 12px;
@@ -195,6 +205,7 @@ button:active {
 .brand {
   font-size: 20px;
   font-weight: 800;
+
   white-space: nowrap;
 }
 
@@ -204,22 +215,12 @@ button:active {
 
   padding: 8px;
 
-  display: grid;
-  place-content: center;
-  gap: 4px;
-}
-
-.hamburger span {
-  display: block;
-
-  width: 19px;
-  height: 2px;
-
-  background: white;
+  font-size: 20px;
 }
 
 .search {
   display: flex;
+
   flex: 1;
 
   max-width: 900px;
@@ -239,6 +240,7 @@ button:active {
   min-width: 0;
 
   border: 0;
+
   outline: 0;
 
   background: transparent;
@@ -252,6 +254,7 @@ button:active {
   width: 150px;
 
   border: 0;
+
   border-left: 1px solid var(--line);
 
   background: #101c28;
@@ -263,6 +266,7 @@ button:active {
 
 .search button {
   border: 0;
+
   border-left: 1px solid var(--line);
 
   border-radius: 0;
@@ -273,9 +277,7 @@ button:active {
 }
 
 
-/* =====================================================
-   MENU
-===================================================== */
+/* PANELS */
 
 .menu,
 .drawer,
@@ -298,7 +300,9 @@ button:active {
 
 .menu {
   left: 0;
+
   top: 0;
+
   bottom: 0;
 
   width: min(360px, 88vw);
@@ -324,6 +328,7 @@ button:active {
   display: flex;
 
   align-items: center;
+
   justify-content: space-between;
 
   gap: 10px;
@@ -339,25 +344,11 @@ button:active {
   font-size: 21px;
 }
 
-.admin-menu {
-  border-color: #806b25 !important;
-
-  background:
-    linear-gradient(
-      90deg,
-      #2b2410,
-      transparent
-    ) !important;
-}
-
-
-/* =====================================================
-   DRAWERS
-===================================================== */
-
 .drawer {
   right: 0;
+
   top: 0;
+
   bottom: 0;
 
   width: min(430px, 92vw);
@@ -367,6 +358,7 @@ button:active {
 
 .property {
   right: 16px;
+
   bottom: 16px;
 
   width: min(440px, calc(100vw - 32px));
@@ -380,6 +372,7 @@ button:active {
 
 .results {
   left: 14px;
+
   top: 78px;
 
   width: min(480px, calc(100vw - 28px));
@@ -391,22 +384,8 @@ button:active {
   border-radius: 12px;
 }
 
-.drawerTop h2 {
-  margin: 0;
-}
 
-.drawerTop button,
-.propertyTop button,
-.menuTop button {
-  font-size: 25px;
-
-  padding: 2px 10px;
-}
-
-
-/* =====================================================
-   PROPERTY
-===================================================== */
+/* PROPERTY */
 
 .propertyTop small {
   font-size: 11px;
@@ -445,9 +424,7 @@ button:active {
 }
 
 
-/* =====================================================
-   SEARCH RESULTS
-===================================================== */
+/* RESULTS */
 
 .result {
   width: 100%;
@@ -468,9 +445,7 @@ button:active {
 }
 
 
-/* =====================================================
-   MENU CONTENT
-===================================================== */
+/* MENU */
 
 .menu-page h3 {
   font-size: 12px;
@@ -500,15 +475,46 @@ button:active {
   border-bottom: 1px solid var(--line);
 }
 
+.account-chip {
+  border: 1px solid var(--line);
 
-/* =====================================================
-   NOTIFICATION DOT
-===================================================== */
+  padding: 11px;
+
+  border-radius: 8px;
+
+  margin: 12px 0;
+
+  background: #0e1a26;
+}
+
+.account-chip span {
+  font-weight: 700;
+}
+
+.account-chip small {
+  display: block;
+
+  color: var(--muted);
+
+  margin-top: 3px;
+}
+
+.admin-only {
+  border-color: #7f5cff !important;
+}
+
+.danger-btn {
+  border-color: #59303a !important;
+}
+
+
+/* NOTIFICATIONS */
 
 .red-dot {
   display: inline-block;
 
   width: 8px;
+
   height: 8px;
 
   border-radius: 50%;
@@ -520,91 +526,82 @@ button:active {
   margin-top: 6px;
 }
 
-
-/* =====================================================
-   ADMIN
-===================================================== */
-
-.admin-card {
-  padding: 12px;
-
-  margin-bottom: 12px;
-
-  background: #0d1824;
-
+.notice {
   border: 1px solid var(--line);
 
   border-radius: 9px;
+
+  padding: 12px;
+
+  margin: 8px 0;
+
+  background: #0d1824;
 }
 
-.admin-card strong {
-  display: block;
+.notice-head {
+  display: flex;
 
-  margin-bottom: 5px;
+  justify-content: space-between;
+
+  gap: 10px;
 }
 
-.admin-section-title {
-  color: var(--muted);
 
-  font-size: 12px;
+/* ADMIN */
 
-  text-transform: uppercase;
+.admin-grid {
+  display: grid;
 
-  letter-spacing: .08em;
-
-  margin: 18px 0 8px;
+  gap: 10px;
 }
 
-.admin-log {
-  padding: 9px 0;
-
-  border-bottom: 1px solid var(--line);
-
-  font-size: 13px;
-}
-
-.admin-log small {
-  display: block;
-
-  color: var(--muted);
-
-  margin-top: 3px;
-}
-
-.admin-form input,
-.admin-form textarea,
-.admin-form select {
+.admin-grid input,
+.admin-grid textarea,
+.admin-grid select {
   width: 100%;
 
-  padding: 10px;
+  background: #0d1824;
 
-  margin: 5px 0;
+  color: var(--text);
 
   border: 1px solid var(--line);
 
   border-radius: 8px;
 
-  background: #08111b;
-
-  color: white;
+  padding: 10px;
 }
 
-.admin-form textarea {
+.admin-grid textarea {
   min-height: 100px;
 
   resize: vertical;
 }
 
-.admin-form button {
+.admin-table {
   width: 100%;
 
-  margin-top: 7px;
+  border-collapse: collapse;
+
+  font-size: 13px;
+}
+
+.admin-table th,
+.admin-table td {
+  text-align: left;
+
+  border-bottom: 1px solid var(--line);
+
+  padding: 8px 5px;
+
+  vertical-align: top;
+}
+
+.muted {
+  color: var(--muted);
 }
 
 
-/* =====================================================
-   MEASURE
-===================================================== */
+/* MEASURE */
 
 .measure {
   position: fixed;
@@ -612,6 +609,7 @@ button:active {
   z-index: 1200;
 
   left: 50%;
+
   top: 78px;
 
   transform: translateX(-50%);
@@ -638,9 +636,7 @@ button:active {
 }
 
 
-/* =====================================================
-   COORDINATES / TOAST
-===================================================== */
+/* COORDINATES / TOAST */
 
 .coords,
 .toast {
@@ -649,6 +645,7 @@ button:active {
   z-index: 1300;
 
   left: 50%;
+
   bottom: 24px;
 
   transform: translateX(-50%);
@@ -664,10 +661,12 @@ button:active {
   box-shadow: 0 10px 30px #0008;
 }
 
+.toast {
+  bottom: 72px;
+}
 
-/* =====================================================
-   MODAL
-===================================================== */
+
+/* MODAL */
 
 .modal {
   position: fixed;
@@ -708,37 +707,7 @@ button:active {
 }
 
 
-/* =====================================================
-   LEAFLET
-===================================================== */
-
-.leaflet-control-zoom {
-  display: none !important;
-}
-
-.leaflet-control-attribution {
-  background: #080d14d9 !important;
-
-  color: #8496a9 !important;
-}
-
-.leaflet-control-attribution a {
-  color: #8abbd4 !important;
-}
-
-
-/* =====================================================
-   HIDDEN
-===================================================== */
-
-.hidden {
-  display: none !important;
-}
-
-
-/* =====================================================
-   MOBILE
-===================================================== */
+/* MOBILE */
 
 @media (max-width: 720px) {
 
@@ -772,16 +741,9 @@ button:active {
 
   .property {
     right: 8px;
+
     bottom: 8px;
 
     width: calc(100vw - 16px);
-  }
-
-  .measure {
-    max-width: calc(100vw - 20px);
-
-    flex-wrap: wrap;
-
-    justify-content: center;
   }
 }
