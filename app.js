@@ -1,238 +1,236 @@
-/* =========================================================
-   PARCELSCOPE
-   Static Cloudflare version
-   ========================================================= */
+/*
+==========================================================
+PARCELSCOPE
+STATIC CLOUDFLARE VERSION
+==========================================================
+
+13 accounts.
+4678 = Admin.
+
+No backend.
+Account-specific data is stored in browser storage.
+Closing the site logs the user out.
+==========================================================
+*/
 
 
-/* =========================================================
-   13 FIXED ACCOUNTS
+/* ======================================================
+   ACCOUNTS
+====================================================== */
 
-   Account 0 = Admin
-   Accounts 1-12 = Users
+const ACCOUNTS = {
 
-   Passwords are intentionally hard-coded because this
-   version does not use a backend.
-========================================================= */
-
-const ACCOUNTS = [
-  { id: "admin", password: "7314", admin: true },
-
-  { id: "user1",  password: "4826", admin: false },
-  { id: "user2",  password: "9153", admin: false },
-  { id: "user3",  password: "2047", admin: false },
-  { id: "user4",  password: "6381", admin: false },
-  { id: "user5",  password: "7504", admin: false },
-  { id: "user6",  password: "3169", admin: false },
-  { id: "user7",  password: "8472", admin: false },
-  { id: "user8",  password: "5618", admin: false },
-  { id: "user9",  password: "2935", admin: false },
-  { id: "user10", password: "6740", admin: false },
-  { id: "user11", password: "1085", admin: false },
-  { id: "user12", password: "4263", admin: false }
-];
-
-
-/* =========================================================
-   GIS SOURCES
-
-   Washington:
-   Current statewide parcels.
-
-   Idaho:
-   Public statewide parcel layer.
-
-   Montana:
-   Montana cadastral parcel service.
-
-   Oregon:
-   Oregon Department of Forestry service containing
-   county taxlot layers 0-34.
-========================================================= */
-
-const GIS = {
-
-  WA: {
-    name: "Washington",
-    url:
-      "https://services.arcgis.com/jsIt88o09Q0r1j8h/ArcGIS/rest/services/Current_Parcels/FeatureServer/0",
-    type: "feature",
-    fields: {
-      id: "PARCEL_ID_NR",
-      address: "SITUS_ADDRESS",
-      city: "SITUS_CITY_NM",
-      county: "COUNTY_NM",
-      owner: null,
-      acres: null,
-      value: "VALUE_LAND"
-    }
+  "4678": {
+    id: "u01",
+    name: "User",
+    admin: true
   },
 
-  ID: {
-    name: "Idaho",
-    url:
-      "https://services1.arcgis.com/CNPdEkvnGl65jCX8/ArcGIS/rest/services/Public_Idaho_Parcels_/FeatureServer/7",
-    type: "feature",
-    fields: {
-      id: "PARCEL_ID",
-      address: "SITE_ADD",
-      city: "SITE_CITY",
-      county: "County",
-      owner: "OWNER1",
-      acres: "ASR_ACRES",
-      value: "VAL_TOTAL"
-    }
+  "7453": {
+    id: "u02",
+    name: "User",
+    admin: false
   },
 
-  MT: {
-    name: "Montana",
-    url:
-      "https://gis.dnrc.mt.gov/arcgis/rest/services/DNRALL/Cadastral/FeatureServer/0",
-    type: "feature",
-    fields: {
-      id: "PARCELID",
-      address: "AddressLine1",
-      city: "CityStateZip",
-      county: "COUNTYCD",
-      owner: "OwnerName",
-      acres: "GISAcres",
-      value: "TotalValue"
-    }
+  "2110": {
+    id: "u03",
+    name: "User",
+    admin: false
   },
 
-  OR: {
-    name: "Oregon",
-    url:
-      "https://gis.odf.oregon.gov/ags1/rest/services/WebMercator/TaxlotsDisplay/MapServer",
-    type: "oregon"
+  "8657": {
+    id: "u04",
+    name: "User",
+    admin: false
+  },
+
+  "8061": {
+    id: "u05",
+    name: "User",
+    admin: false
+  },
+
+  "2104": {
+    id: "u06",
+    name: "User",
+    admin: false
+  },
+
+  "4487": {
+    id: "u07",
+    name: "User",
+    admin: false
+  },
+
+  "5609": {
+    id: "u08",
+    name: "User",
+    admin: false
+  },
+
+  "0553": {
+    id: "u09",
+    name: "User",
+    admin: false
+  },
+
+  "3282": {
+    id: "u10",
+    name: "User",
+    admin: false
+  },
+
+  "1318": {
+    id: "u11",
+    name: "User",
+    admin: false
+  },
+
+  "7467": {
+    id: "u12",
+    name: "User",
+    admin: false
+  },
+
+  "4979": {
+    id: "u13",
+    name: "User",
+    admin: false
   }
 
 };
 
 
-/* =========================================================
-   OREGON COUNTY LAYERS
-========================================================= */
+/* ======================================================
+   GIS
+====================================================== */
 
-const OREGON_COUNTIES = [
-  "Baker",
-  "Benton",
-  "Clackamas",
-  "Clatsop",
-  "Columbia",
-  "Coos",
-  "Crook",
-  "Curry",
-  "Deschutes",
-  "Douglas",
-  "Gilliam",
-  "Grant",
-  "Harney",
-  "Hood River",
-  "Jackson",
-  "Jefferson",
-  "Josephine",
-  "Klamath",
-  "Lake",
-  "Lane",
-  "Lincoln",
-  "Linn",
-  "Malheur",
-  "Marion",
-  "Morrow",
-  "Multnomah",
-  "Polk",
-  "Sherman",
-  "Tillamook",
-  "Umatilla",
-  "Union",
-  "Wallowa",
-  "Wasco",
-  "Washington",
-  "Wheeler",
-  "Yamhill"
-];
+const SOURCES = {
 
+  WA: {
+    name: "Washington",
 
-/* =========================================================
-   MAP
-========================================================= */
+    url:
+      "https://services.arcgis.com/jsIt88o09Q0r1j8h/ArcGIS/rest/services/Current_Parcels/FeatureServer/0",
 
-const PARCEL_ZOOM = 10;
+    fields: {
+      id: "PARCEL_ID_NR",
+      address: "SITUS_ADDRESS",
+      city: "SITUS_CITY_NM",
+      zip: "SITUS_ZIP_NR",
+      county: "COUNTY_NM",
+      owner: null,
+      acres: null,
+      land: "VALUE_LAND",
+      bldg: "VALUE_BLDG",
+      total: null
+    }
+  },
 
-const NORTHWEST_CENTER = [
-  46.1,
-  -116.7
-];
+  ID: {
+    name: "Idaho",
 
-const map = L.map("map", {
+    url:
+      "https://services1.arcgis.com/CNPdEkvnGl65jCX8/ArcGIS/rest/services/Public_Idaho_Parcels_/FeatureServer/7",
 
-  zoomControl: false,
+    fields: {
+      id: "PARCEL_ID",
+      address: "SITE_ADD",
+      city: "SITE_CITY",
+      zip: "SITE_ZIP",
+      county: "County",
+      owner: "OWNER1",
+      acres: "ASR_ACRES",
+      land: "VAL_LAND",
+      bldg: "VAL_IMPVTS",
+      total: "VAL_TOTAL"
+    }
+  },
 
-  doubleClickZoom: false,
+  MT: {
+    name: "Montana",
 
-  touchZoom: true,
+    url:
+      "https://gis.dnrc.mt.gov/arcgis/rest/services/DNRALL/Cadastral/FeatureServer/0",
 
-  scrollWheelZoom: true,
+    fields: {
+      id: "PARCELID",
+      address: "AddressLine1",
+      city: "CityStateZip",
+      zip: null,
+      county: "COUNTYCD",
+      owner: "OwnerName",
+      acres: "TotalAcres",
+      land: "TotalLandValue",
+      bldg: "TotalBuildingValue",
+      total: "TotalValue"
+    }
+  },
 
-  dragging: true,
+  OR: {
+    name: "Oregon",
 
-  keyboard: true
+    url:
+      "https://gis.wrd.state.or.us/server/rest/services/tax/Tax_Lots_Public_View_WGS84/FeatureServer/2",
 
-}).setView(
-  NORTHWEST_CENTER,
-  5.55
-);
-
-
-/* =========================================================
-   BASE MAPS
-========================================================= */
-
-const satellite = L.tileLayer(
-  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-  {
-    maxZoom: 19,
-    attribution: "Tiles © Esri"
+    fields: {
+      id: "maptaxlot",
+      address: "site_address",
+      city: "site_citystatezip",
+      zip: null,
+      county: "county_name",
+      owner: "owner_address",
+      acres: "taxlot_acre",
+      land: null,
+      bldg: null,
+      total: null
+    }
   }
-);
 
-const street = L.tileLayer(
-  "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-  {
-    maxZoom: 19,
-    attribution: "© OpenStreetMap contributors"
+};
+
+
+/* ======================================================
+   STORAGE
+====================================================== */
+
+const storage = {
+
+  get(key, fallback) {
+
+    try {
+
+      const value =
+        localStorage.getItem(key);
+
+      if (value === null)
+        return fallback;
+
+      return JSON.parse(value);
+
+    } catch {
+
+      return fallback;
+
+    }
+
+  },
+
+  set(key, value) {
+
+    localStorage.setItem(
+      key,
+      JSON.stringify(value)
+    );
+
   }
-);
 
-satellite.addTo(map);
-
-
-/* =========================================================
-   DATA LAYERS
-========================================================= */
-
-const parcelLayer =
-  L.layerGroup().addTo(map);
-
-const selectedLayer =
-  L.layerGroup().addTo(map);
-
-const measureLayer =
-  L.layerGroup().addTo(map);
-
-const coordinateLayer =
-  L.layerGroup().addTo(map);
+};
 
 
-/* =========================================================
-   APPLICATION STATE
-========================================================= */
-
-let currentAccount = null;
+let current = null;
 
 let selectedParcel = null;
-
-let followingLocation = false;
 
 let locationWatch = null;
 
@@ -240,20 +238,12 @@ let measureMode = false;
 
 let measurePoints = [];
 
-let parcelsEnabled = true;
-
-let countyLayerEnabled = false;
-
-let stateLayerEnabled = false;
-
-let labelsEnabled = true;
-
-let notificationTimer = null;
+let measureLine = null;
 
 
-/* =========================================================
+/* ======================================================
    HELPERS
-========================================================= */
+====================================================== */
 
 function $(id) {
   return document.getElementById(id);
@@ -265,174 +255,166 @@ function escapeHTML(value) {
   return String(
     value ?? "Currently unavailable"
   )
+
   .replaceAll("&", "&amp;")
   .replaceAll("<", "&lt;")
   .replaceAll(">", "&gt;")
   .replaceAll('"', "&quot;");
+
 }
 
 
-function now() {
+function stateName(state) {
 
-  return new Date().toLocaleString();
+  return SOURCES[state]?.name || state;
+
+}
+
+
+function accountKey(name) {
+
+  return `parcelScope.${current.id}.${name}`;
+
+}
+
+
+function getAccountData(name, fallback) {
+
+  return storage.get(
+    accountKey(name),
+    fallback
+  );
+
+}
+
+
+function setAccountData(name, value) {
+
+  storage.set(
+    accountKey(name),
+    value
+  );
 
 }
 
 
 function toast(message) {
 
-  $("toast").textContent = message;
+  $("toast").textContent =
+    message;
 
   $("toast")
     .classList
     .remove("hidden");
 
-  clearTimeout(notificationTimer);
+  clearTimeout(
+    window.toastTimer
+  );
 
-  notificationTimer =
+  window.toastTimer =
     setTimeout(() => {
 
       $("toast")
         .classList
         .add("hidden");
 
-    }, 2600);
-}
-
-
-function accountKey(name) {
-
-  return `parcelScope.${name}`;
+    }, 2800);
 
 }
 
 
-/* =========================================================
-   ACCOUNT NAME
-========================================================= */
+function displayName() {
 
-function getAccountName() {
+  const names =
+    storage.get(
+      "parcelScope.names",
+      {}
+    );
 
-  if (!currentAccount)
-    return "User";
-
-  return localStorage.getItem(
-    accountKey(
-      `${currentAccount.id}.name`
-    )
-  ) || "User";
+  return (
+    names[current.id] ||
+    current.name ||
+    "User"
+  );
 
 }
 
 
-function setAccountName(name) {
+/* ======================================================
+   LOGIN
+====================================================== */
 
-  if (!currentAccount)
+function login() {
+
+  const code =
+    $("loginCode")
+      .value
+      .replace(/\D/g, "")
+      .slice(0, 4);
+
+  $("loginCode").value =
+    code;
+
+  const account =
+    ACCOUNTS[code];
+
+  if (!account) {
+
+    $("loginError")
+      .textContent =
+      "Invalid 4-digit code.";
+
     return;
 
-  const clean =
-    name.trim() || "User";
+  }
 
-  localStorage.setItem(
-    accountKey(
-      `${currentAccount.id}.name`
-    ),
-    clean
+  current = {
+    ...account,
+    code
+  };
+
+  /*
+    Session storage means closing the
+    browser/tab ends the session.
+  */
+
+  sessionStorage.setItem(
+    "parcelScope.session",
+    JSON.stringify(current)
   );
 
-}
 
-
-/* =========================================================
-   LOGIN
-========================================================= */
-
-function findAccount(password) {
-
-  return ACCOUNTS.find(
-    account =>
-      account.password === password
-  );
-
-}
-
-
-function recordLogin(account, success) {
+  /* Login activity */
 
   const logs =
-    JSON.parse(
-      localStorage.getItem(
-        "parcelScope.loginLogs"
-      ) || "[]"
+    storage.get(
+      "parcelScope.loginLogs",
+      []
     );
 
   logs.unshift({
 
-    account:
-      account ? account.id : "unknown",
+    id: account.id,
 
-    success,
+    name: account.name,
+
+    admin: account.admin,
 
     time:
       new Date().toISOString()
 
   });
 
-  localStorage.setItem(
+  storage.set(
     "parcelScope.loginLogs",
-    JSON.stringify(
-      logs.slice(0, 500)
-    )
+    logs.slice(0, 500)
   );
 
-}
 
+  $("loginError")
+    .textContent = "";
 
-function login() {
-
-  const password =
-    $("loginPassword").value.trim();
-
-  const account =
-    findAccount(password);
-
-  if (!account) {
-
-    recordLogin(
-      null,
-      false
-    );
-
-    $("loginError").textContent =
-      "Invalid access code.";
-
-    $("loginPassword").value = "";
-
-    return;
-
-  }
-
-  currentAccount = account;
-
-  recordLogin(
-    account,
-    true
-  );
-
-  sessionStorage.setItem(
-    "parcelScope.loggedIn",
-    account.id
-  );
-
-  $("loginScreen")
-    .classList
-    .add("hidden");
-
-  $("app")
-    .classList
-    .remove("hidden");
-
-  setupAfterLogin();
+  showApp();
 
 }
 
@@ -441,134 +423,1204 @@ $("loginBtn").onclick =
   login;
 
 
-$("loginPassword").addEventListener(
-  "keydown",
-  event => {
+$("loginCode")
+  .addEventListener(
+    "keydown",
+    event => {
 
-    if (
-      event.key === "Enter"
-    ) {
+      if (
+        event.key === "Enter"
+      ) {
 
-      login();
+        login();
+
+      }
+
+    }
+  );
+
+
+$("loginCode")
+  .addEventListener(
+    "input",
+    () => {
+
+      if (
+        $("loginCode")
+          .value
+          .length === 4
+      ) {
+
+        login();
+
+      }
+
+    }
+  );
+
+
+try {
+
+  const savedSession =
+    sessionStorage.getItem(
+      "parcelScope.session"
+    );
+
+  if (savedSession) {
+
+    current =
+      JSON.parse(
+        savedSession
+      );
+
+  }
+
+} catch {}
+
+
+/* ======================================================
+   MAP
+====================================================== */
+
+const map =
+  L.map("map", {
+
+    zoomControl: false,
+
+    doubleClickZoom: false,
+
+    rotate: false,
+
+    touchZoom: true,
+
+    scrollWheelZoom: true,
+
+    dragging: true,
+
+    keyboard: true
+
+  })
+
+  .setView(
+    [46.1, -116.7],
+    5.55
+  );
+
+
+const satellite =
+  L.tileLayer(
+
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+
+    {
+
+      maxZoom: 19,
+
+      attribution:
+        "Tiles © Esri"
+
+    }
+
+  );
+
+
+const street =
+  L.tileLayer(
+
+    "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+    {
+
+      maxZoom: 19,
+
+      attribution:
+        "© OpenStreetMap contributors"
+
+    }
+
+  );
+
+
+satellite.addTo(map);
+
+
+const parcelLayer =
+  L.geoJSON(
+
+    null,
+
+    {
+
+      style: {
+
+        color: "#55d6ff",
+
+        weight: 1,
+
+        fillOpacity: .02
+
+      },
+
+      onEachFeature:
+        (feature, layer) => {
+
+          layer.on(
+            "click",
+            () => {
+
+              selectParcel(
+
+                normalizeFeature(
+                  feature.properties,
+                  feature.geometry
+                ),
+
+                false
+
+              );
+
+            }
+          );
+
+        }
+
+    }
+
+  ).addTo(map);
+
+
+const selectedLayer =
+  L.geoJSON(
+
+    null,
+
+    {
+
+      style: {
+
+        color: "#ff4350",
+
+        weight: 3,
+
+        fillOpacity: .12
+
+      }
+
+    }
+
+  ).addTo(map);
+
+
+/* ======================================================
+   GIS FUNCTIONS
+====================================================== */
+
+function queryURL(
+  source,
+  params
+) {
+
+  const url =
+    new URL(
+      source.url + "/query"
+    );
+
+  Object.entries({
+
+    ...params,
+
+    f: "geojson",
+
+    outSR: "4326"
+
+  })
+
+  .forEach(
+    ([key, value]) => {
+
+      url.searchParams.set(
+        key,
+        value
+      );
+
+    }
+  );
+
+  return url.toString();
+
+}
+
+
+async function arcgis(
+  source,
+  params
+) {
+
+  const response =
+    await fetch(
+      queryURL(
+        source,
+        params
+      )
+    );
+
+  if (!response.ok)
+    throw new Error(
+      "GIS request failed"
+    );
+
+  const json =
+    await response.json();
+
+  if (json.error)
+    throw new Error(
+      json.error.message ||
+      "GIS error"
+    );
+
+  return json;
+
+}
+
+
+function whereForSource(
+  state,
+  search
+) {
+
+  const fields =
+    SOURCES[state].fields;
+
+  const safe =
+    search
+      .replaceAll("'", "''");
+
+  const searchable = [
+
+    fields.id,
+
+    fields.address,
+
+    fields.city,
+
+    fields.county,
+
+    fields.owner
+
+  ].filter(Boolean);
+
+  if (!searchable.length)
+    return "1=0";
+
+  return searchable
+    .map(
+      field =>
+        `${field} LIKE '%${safe}%'`
+    )
+    .join(" OR ");
+
+}
+
+
+function normalizeFeature(
+  properties,
+  geometry
+) {
+
+  const state =
+    properties.__state ||
+    $("stateSelect").value;
+
+  const fields =
+    SOURCES[state]?.fields || {};
+
+  return {
+
+    state,
+
+    parcelId:
+      properties[fields.id],
+
+    address:
+      properties[fields.address],
+
+    city:
+      properties[fields.city],
+
+    zip:
+      properties[fields.zip],
+
+    county:
+      properties[fields.county],
+
+    owner:
+      properties[fields.owner],
+
+    acres:
+      properties[fields.acres],
+
+    land:
+      properties[fields.land],
+
+    bldg:
+      properties[fields.bldg],
+
+    total:
+      properties[fields.total],
+
+    geometry,
+
+    raw:
+      properties
+
+  };
+
+}
+
+
+/* ======================================================
+   LOAD PARCELS
+====================================================== */
+
+async function loadVisibleParcels() {
+
+  if (
+    map.getZoom() < 10
+  )
+    return;
+
+
+  const bounds =
+    map.getBounds();
+
+  const selectedState =
+    $("stateSelect").value;
+
+  const states =
+    selectedState === "ALL"
+      ? Object.keys(SOURCES)
+      : [selectedState];
+
+
+  const geometry =
+    JSON.stringify({
+
+      xmin:
+        bounds.getWest(),
+
+      ymin:
+        bounds.getSouth(),
+
+      xmax:
+        bounds.getEast(),
+
+      ymax:
+        bounds.getNorth(),
+
+      spatialReference: {
+        wkid: 4326
+      }
+
+    });
+
+
+  parcelLayer.clearLayers();
+
+
+  for (
+    const state of states
+  ) {
+
+    try {
+
+      const result =
+        await arcgis(
+          SOURCES[state],
+          {
+
+            where: "1=1",
+
+            geometry,
+
+            geometryType:
+              "esriGeometryEnvelope",
+
+            inSR: "4326",
+
+            spatialRel:
+              "esriSpatialRelIntersects",
+
+            outFields: "*",
+
+            returnGeometry:
+              "true",
+
+            resultRecordCount:
+              350
+
+          }
+        );
+
+
+      const features =
+        result.features || [];
+
+
+      features.forEach(
+        feature => {
+
+          feature.properties.__state =
+            state;
+
+        }
+      );
+
+
+      if (features.length) {
+
+        parcelLayer
+          .addData(features);
+
+      }
+
+    } catch (error) {
+
+      console.warn(
+        state,
+        error
+      );
 
     }
 
   }
-);
-
-
-/* =========================================================
-   LOGOUT
-========================================================= */
-
-function logout() {
-
-  sessionStorage.removeItem(
-    "parcelScope.loggedIn"
-  );
-
-  currentAccount = null;
-
-  location.reload();
 
 }
 
 
-/*
-   sessionStorage deliberately means that closing the
-   browser/tab ends the login session.
-*/
+/* ======================================================
+   SEARCH
+====================================================== */
 
+async function search() {
 
-/* =========================================================
-   SESSION RESTORE
-========================================================= */
+  const query =
+    $("searchInput")
+      .value
+      .trim();
 
-function checkSession() {
+  if (!query) {
 
-  const id =
-    sessionStorage.getItem(
-      "parcelScope.loggedIn"
+    toast(
+      "Enter an address, owner, or parcel ID."
     );
 
-  if (!id)
-    return false;
+    return;
 
-  const account =
-    ACCOUNTS.find(
-      a => a.id === id
-    );
+  }
 
-  if (!account)
-    return false;
 
-  currentAccount = account;
-
-  $("loginScreen")
-    .classList
-    .add("hidden");
-
-  $("app")
+  $("results")
     .classList
     .remove("hidden");
 
-  setupAfterLogin();
 
-  return true;
+  $("resultsBody")
+    .innerHTML =
+    "<p class='muted'>Searching GIS sources…</p>";
+
+
+  const selectedState =
+    $("stateSelect").value;
+
+
+  const states =
+    selectedState === "ALL"
+      ? Object.keys(SOURCES)
+      : [selectedState];
+
+
+  const results = [];
+
+
+  for (
+    const state of states
+  ) {
+
+    try {
+
+      const response =
+        await arcgis(
+
+          SOURCES[state],
+
+          {
+
+            where:
+              whereForSource(
+                state,
+                query
+              ),
+
+            outFields:
+              "*",
+
+            returnGeometry:
+              "true",
+
+            resultRecordCount:
+              25
+
+          }
+
+        );
+
+
+      (
+        response.features ||
+        []
+      ).forEach(
+        feature => {
+
+          feature.properties.__state =
+            state;
+
+          results.push(
+            feature
+          );
+
+        }
+      );
+
+    } catch (error) {
+
+      console.warn(
+        state,
+        error
+      );
+
+    }
+
+  }
+
+
+  if (!results.length) {
+
+    $("resultsBody")
+      .innerHTML =
+      "<p>No matching public parcel records were returned.</p>";
+
+    return;
+
+  }
+
+
+  $("resultsBody")
+    .innerHTML =
+
+    results
+      .map(
+        (feature, index) => {
+
+          const property =
+            normalizeFeature(
+              feature.properties,
+              feature.geometry
+            );
+
+          return `
+
+            <button
+              class="result"
+              data-result="${index}"
+            >
+
+              <strong>
+                ${escapeHTML(
+                  property.address ||
+                  property.parcelId ||
+                  "Parcel"
+                )}
+              </strong>
+
+              <small>
+
+                ${escapeHTML(
+                  property.county || ""
+                )}
+
+                ${property.city
+                  ? " · " +
+                    escapeHTML(
+                      property.city
+                    )
+                  : ""}
+
+                ·
+
+                ${escapeHTML(
+                  stateName(
+                    property.state
+                  )
+                )}
+
+              </small>
+
+            </button>
+
+          `;
+
+        }
+      )
+      .join("");
+
+
+  results.forEach(
+    (feature, index) => {
+
+      const button =
+        document.querySelector(
+          `[data-result="${index}"]`
+        );
+
+      button.onclick =
+        () => {
+
+          const property =
+            normalizeFeature(
+              feature.properties,
+              feature.geometry
+            );
+
+          selectParcel(
+            property,
+            true
+          );
+
+          $("results")
+            .classList
+            .add("hidden");
+
+        };
+
+    }
+  );
 
 }
 
 
-/* =========================================================
-   MENU
-========================================================= */
+$("searchBtn").onclick =
+  search;
 
-function setMenu(open) {
 
-  $("menu")
+$("searchInput")
+  .addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key === "Enter"
+      )
+        search();
+
+    }
+  );
+
+
+/* ======================================================
+   PROPERTY
+====================================================== */
+
+function propertyId(
+  property
+) {
+
+  return (
+
+    property.state +
+    ":" +
+    (
+      property.parcelId ||
+      property.address ||
+      JSON.stringify(
+        property.geometry
+      )
+    )
+
+  );
+
+}
+
+
+function selectParcel(
+  property,
+  fit
+) {
+
+  selectedParcel =
+    property;
+
+
+  selectedLayer
+    .clearLayers();
+
+
+  if (
+    property.geometry
+  ) {
+
+    const layer =
+      L.geoJSON({
+
+        type: "Feature",
+
+        geometry:
+          property.geometry
+
+      });
+
+
+    layer.setStyle({
+
+      color: "#ff4350",
+
+      weight: 3,
+
+      fillOpacity: .12
+
+    });
+
+
+    selectedLayer
+      .addLayer(layer);
+
+
+    if (fit) {
+
+      try {
+
+        map.fitBounds(
+          layer
+            .getBounds()
+            .pad(.25)
+        );
+
+      } catch {}
+
+    }
+
+  }
+
+
+  addRecent(
+    property
+  );
+
+
+  renderProperty();
+
+}
+
+
+function renderProperty() {
+
+  const property =
+    selectedParcel;
+
+
+  $("property")
     .classList
-    .toggle(
-      "hidden",
-      !open
+    .remove("hidden");
+
+
+  $("propertyTitle")
+    .textContent =
+
+    property.address ||
+    property.parcelId ||
+    "Property";
+
+
+  const rows = [
+
+    [
+      "Address",
+
+      property.address
+        ? `${property.address}${
+            property.city
+              ? ", " + property.city
+              : ""
+          }${
+            property.zip
+              ? " " + property.zip
+              : ""
+          }`
+
+        : null
+    ],
+
+    [
+      "Owner",
+      property.owner
+    ],
+
+    [
+      "Parcel ID",
+      property.parcelId
+    ],
+
+    [
+      "State",
+      stateName(
+        property.state
+      )
+    ],
+
+    [
+      "County",
+      property.county
+    ],
+
+    [
+      "Acres",
+
+      property.acres != null
+
+        ? Number(
+            property.acres
+          ).toLocaleString() +
+          " acres"
+
+        : null
+    ],
+
+    [
+      "Land Value",
+      formatMoney(
+        property.land
+      )
+    ],
+
+    [
+      "Building Value",
+      formatMoney(
+        property.bldg
+      )
+    ],
+
+    [
+      "Total Value",
+      formatMoney(
+        property.total
+      )
+    ]
+
+  ];
+
+
+  $("propertyBody")
+    .innerHTML =
+
+    rows
+      .map(
+        ([label, value]) => `
+
+          <div class="field">
+
+            <b>
+              ${label}
+            </b>
+
+            <span>
+              ${escapeHTML(
+                value
+              )}
+            </span>
+
+          </div>
+
+        `
+      )
+      .join("");
+
+
+  $("saveBtn")
+    .textContent =
+    isSaved(property)
+
+      ? "Remove Saved Property"
+
+      : "Save Property";
+
+}
+
+
+function formatMoney(
+  value
+) {
+
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  )
+    return "Currently unavailable";
+
+
+  return Number(
+    value
+  ).toLocaleString(
+    "en-US",
+    {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0
+    }
+  );
+
+}
+
+
+/* ======================================================
+   SAVED
+====================================================== */
+
+function getSaved() {
+
+  return getAccountData(
+    "saved",
+    []
+  );
+
+}
+
+
+function setSaved(
+  properties
+) {
+
+  setAccountData(
+    "saved",
+    properties
+  );
+
+}
+
+
+function isSaved(
+  property
+) {
+
+  const id =
+    propertyId(
+      property
+    );
+
+  return getSaved()
+    .some(
+      property =>
+        property._key === id
     );
 
 }
 
 
-$("menuBtn").onclick = () => {
+$("saveBtn").onclick =
+  () => {
 
-  setMenu(true);
+    const property =
+      selectedParcel;
 
-};
+    let saved =
+      getSaved();
 
-
-$("closeMenu").onclick = () => {
-
-  setMenu(false);
-
-};
-
-
-/* =========================================================
-   MENU PAGES
-========================================================= */
-
-document
-  .querySelectorAll("[data-page]")
-  .forEach(button => {
-
-    button.onclick = () => {
-
-      openPage(
-        button.dataset.page
+    const id =
+      propertyId(
+        property
       );
 
-    };
+
+    if (
+      saved.some(
+        item =>
+          item._key === id
+      )
+    ) {
+
+      saved =
+        saved.filter(
+          item =>
+            item._key !== id
+        );
+
+      toast(
+        "Property removed."
+      );
+
+    } else {
+
+      saved.unshift({
+
+        ...property,
+
+        _key: id
+
+      });
+
+      toast(
+        "Property saved."
+      );
+
+    }
+
+
+    setSaved(
+      saved.slice(
+        0,
+        200
+      )
+    );
+
+
+    renderProperty();
+
+  };
+
+
+/* ======================================================
+   RECENT
+====================================================== */
+
+function getRecent() {
+
+  return getAccountData(
+    "recent",
+    []
+  );
+
+}
+
+
+function addRecent(
+  property
+) {
+
+  const id =
+    propertyId(
+      property
+    );
+
+
+  let recent =
+    getRecent()
+      .filter(
+        item =>
+          item._key !== id
+      );
+
+
+  recent.unshift({
+
+    ...property,
+
+    _key: id
 
   });
 
 
-function openPage(page) {
+  setAccountData(
+    "recent",
+    recent.slice(
+      0,
+      25
+    )
+  );
+
+}
+
+
+/* ======================================================
+   MENU
+====================================================== */
+
+$("menuBtn").onclick =
+  () => {
+
+    $("menu")
+      .classList
+      .remove("hidden");
+
+    updateNotificationDot();
+
+  };
+
+
+$("closeMenu").onclick =
+  () => {
+
+    $("menu")
+      .classList
+      .add("hidden");
+
+  };
+
+
+$("drawerClose").onclick =
+  () => {
+
+    $("drawer")
+      .classList
+      .add("hidden");
+
+  };
+
+
+$("resultsClose").onclick =
+  () => {
+
+    $("results")
+      .classList
+      .add("hidden");
+
+  };
+
+
+$("propertyClose").onclick =
+  () => {
+
+    $("property")
+      .classList
+      .add("hidden");
+
+    selectedLayer
+      .clearLayers();
+
+    selectedParcel =
+      null;
+
+  };
+
+
+document
+  .querySelectorAll(
+    "[data-page]"
+  )
+  .forEach(
+    button => {
+
+      button.onclick =
+        () =>
+          openPage(
+            button.dataset.page
+          );
+
+    }
+  );
+
+
+function openPage(
+  page
+) {
 
   const titles = {
 
@@ -596,7 +1648,23 @@ function openPage(page) {
   };
 
 
-  $("drawerTitle").textContent =
+  if (
+    page === "measure"
+  ) {
+
+    startMeasure();
+
+    $("menu")
+      .classList
+      .add("hidden");
+
+    return;
+
+  }
+
+
+  $("drawerTitle")
+    .textContent =
     titles[page];
 
 
@@ -605,189 +1673,99 @@ function openPage(page) {
     .remove("hidden");
 
 
-  if (page === "saved")
+  if (
+    page === "saved"
+  )
     renderSaved();
 
 
-  if (page === "recent")
+  if (
+    page === "recent"
+  )
     renderRecent();
 
 
-  if (page === "notifications")
+  if (
+    page === "notifications"
+  )
     renderNotifications();
 
 
-  if (page === "layers")
+  if (
+    page === "layers"
+  )
     renderLayers();
 
 
-  if (page === "measure") {
-
-    closeDrawer();
-
-    startMeasure();
-
-  }
-
-
-  if (page === "settings")
+  if (
+    page === "settings"
+  )
     renderSettings();
 
 
-  if (page === "about")
+  if (
+    page === "about"
+  )
     renderAbout();
 
 }
 
 
-$("drawerClose").onclick =
-  closeDrawer;
+/* ======================================================
+   SAVED / RECENT DISPLAY
+====================================================== */
 
-
-function closeDrawer() {
-
-  $("drawer")
-    .classList
-    .add("hidden");
-
-}
-
-
-/* =========================================================
-   SAVED PROPERTIES
-========================================================= */
-
-function savedStorageKey() {
-
-  return accountKey(
-    `${currentAccount.id}.saved`
-  );
-
-}
-
-
-function getSaved() {
-
-  return JSON.parse(
-    localStorage.getItem(
-      savedStorageKey()
-    ) || "[]"
-  );
-
-}
-
-
-function setSaved(properties) {
-
-  localStorage.setItem(
-    savedStorageKey(),
-    JSON.stringify(properties)
-  );
-
-}
-
-
-function isSaved(parcelId) {
-
-  return getSaved()
-    .some(
-      p =>
-        p.parcelId === parcelId
-    );
-
-}
-
-
-function saveCurrentProperty() {
-
-  if (!selectedParcel)
-    return;
-
-  const saved =
-    getSaved();
-
-  const exists =
-    saved.some(
-      p =>
-        p.parcelId ===
-        selectedParcel.parcelId
-    );
-
-  if (exists) {
-
-    toast(
-      "Property already saved."
-    );
-
-    return;
-
-  }
-
-  saved.unshift(
-    selectedParcel
-  );
-
-  setSaved(
-    saved.slice(0, 250)
-  );
-
-  toast(
-    "Property saved."
-  );
-
-  $("saveBtn").textContent =
-    "Saved";
-
-}
-
-
-$("saveBtn").onclick =
-  saveCurrentProperty;
-
-
-function renderSaved() {
-
-  const properties =
-    getSaved();
-
+function renderPropertyList(
+  properties
+) {
 
   if (!properties.length) {
 
-    $("drawerBody").innerHTML =
-      `<div class="menu-page">
-        <p>No saved properties.</p>
-      </div>`;
+    $("drawerBody")
+      .innerHTML =
+      "<p class='muted'>No properties yet.</p>";
 
     return;
 
   }
 
 
-  $("drawerBody").innerHTML =
+  $("drawerBody")
+    .innerHTML =
+
     properties
       .map(
         (property, index) => `
 
           <button
             class="result"
-            data-saved="${index}"
+            data-property="${index}"
           >
 
             <strong>
+
               ${escapeHTML(
                 property.address ||
-                property.parcelId
+                property.parcelId ||
+                "Property"
               )}
+
             </strong>
 
             <small>
+
               ${escapeHTML(
-                property.county
+                property.county || ""
               )}
+
               ·
+
               ${escapeHTML(
-                property.state
+                stateName(
+                  property.state
+                )
               )}
+
             </small>
 
           </button>
@@ -797,78 +1775,34 @@ function renderSaved() {
       .join("");
 
 
-  document
-    .querySelectorAll(
-      "[data-saved]"
-    )
-    .forEach(button => {
+  properties.forEach(
+    (property, index) => {
 
-      button.onclick = () => {
-
-        const property =
-          properties[
-            Number(
-              button.dataset.saved
-            )
-          ];
-
-        closeDrawer();
+      document.querySelector(
+        `[data-property="${index}"]`
+      ).onclick = () => {
 
         selectParcel(
           property,
           true
         );
 
+        $("drawer")
+          .classList
+          .add("hidden");
+
       };
 
-    });
-
-}
-
-
-/* =========================================================
-   RECENT
-========================================================= */
-
-function recentStorageKey() {
-
-  return accountKey(
-    `${currentAccount.id}.recent`
+    }
   );
 
 }
 
 
-function getRecent() {
+function renderSaved() {
 
-  return JSON.parse(
-    localStorage.getItem(
-      recentStorageKey()
-    ) || "[]"
-  );
-
-}
-
-
-function addRecent(property) {
-
-  const recent =
-    getRecent()
-      .filter(
-        p =>
-          p.parcelId !==
-          property.parcelId
-      );
-
-  recent.unshift(
-    property
-  );
-
-  localStorage.setItem(
-    recentStorageKey(),
-    JSON.stringify(
-      recent.slice(0, 25)
-    )
+  renderPropertyList(
+    getSaved()
   );
 
 }
@@ -876,155 +1810,35 @@ function addRecent(property) {
 
 function renderRecent() {
 
-  const recent =
-    getRecent();
-
-
-  if (!recent.length) {
-
-    $("drawerBody").innerHTML =
-      `<div class="menu-page">
-        <p>No recent properties.</p>
-      </div>`;
-
-    return;
-
-  }
-
-
-  $("drawerBody").innerHTML =
-    recent
-      .map(
-        (property, index) => `
-
-          <button
-            class="result"
-            data-recent="${index}"
-          >
-
-            <strong>
-              ${escapeHTML(
-                property.address ||
-                property.parcelId
-              )}
-            </strong>
-
-            <small>
-              ${escapeHTML(
-                property.county
-              )}
-              ·
-              ${escapeHTML(
-                property.state
-              )}
-            </small>
-
-          </button>
-
-        `
-      )
-      .join("");
-
-
-  document
-    .querySelectorAll(
-      "[data-recent]"
-    )
-    .forEach(button => {
-
-      button.onclick = () => {
-
-        const property =
-          recent[
-            Number(
-              button.dataset.recent
-            )
-          ];
-
-        closeDrawer();
-
-        selectParcel(
-          property,
-          true
-        );
-
-      };
-
-    });
-
-}
-
-
-/* =========================================================
-   NOTIFICATIONS
-========================================================= */
-
-function notificationStorageKey() {
-
-  return accountKey(
-    `${currentAccount.id}.notifications`
+  renderPropertyList(
+    getRecent()
   );
 
 }
 
+
+/* ======================================================
+   NOTIFICATIONS
+====================================================== */
 
 function getNotifications() {
 
-  return JSON.parse(
-    localStorage.getItem(
-      notificationStorageKey()
-    ) || "[]"
+  return getAccountData(
+    "notifications",
+    []
   );
 
 }
 
 
-function setNotifications(list) {
+function setNotifications(
+  notifications
+) {
 
-  localStorage.setItem(
-    notificationStorageKey(),
-    JSON.stringify(list)
+  setAccountData(
+    "notifications",
+    notifications
   );
-
-}
-
-
-function addNotification(message) {
-
-  const notifications =
-    getNotifications();
-
-  notifications.unshift({
-
-    id:
-      Date.now() +
-      Math.random(),
-
-    message,
-
-    time:
-      new Date().toLocaleString(),
-
-    read: false
-
-  });
-
-  setNotifications(
-    notifications.slice(0, 100)
-  );
-
-  updateNotificationDot();
-
-}
-
-
-function unreadNotifications() {
-
-  return getNotifications()
-    .some(
-      notification =>
-        !notification.read
-    );
 
 }
 
@@ -1032,238 +1846,239 @@ function unreadNotifications() {
 function updateNotificationDot() {
 
   const unread =
-    unreadNotifications();
+    getNotifications()
+      .some(
+        notification =>
+          !notification.read
+      );
 
-  $("redDot")
+
+  $("menuRedDot")
     .classList
     .toggle(
       "hidden",
       !unread
     );
 
-  if ($("adminRedDot")) {
-
-    $("adminRedDot")
-      .classList
-      .toggle(
-        "hidden",
-        !unread
-      );
-
-  }
-
-}
-
-
-function deleteNotification(id) {
-
-  const list =
-    getNotifications()
-      .filter(
-        notification =>
-          String(notification.id) !==
-          String(id)
-      );
-
-  setNotifications(list);
-
-  renderNotifications();
-
-  updateNotificationDot();
-
-}
-
-
-function deleteAllNotifications() {
-
-  setNotifications([]);
-
-  renderNotifications();
-
-  updateNotificationDot();
-
 }
 
 
 function renderNotifications() {
 
-  const notifications =
+  let notifications =
     getNotifications();
 
 
-  notifications.forEach(
-    notification => {
-      notification.read = true;
-    }
-  );
+  notifications =
+    notifications.map(
+      notification => ({
+
+        ...notification,
+
+        read: true
+
+      })
+    );
+
 
   setNotifications(
     notifications
   );
+
 
   updateNotificationDot();
 
 
   if (!notifications.length) {
 
-    $("drawerBody").innerHTML = `
+    $("drawerBody")
+      .innerHTML =
+      `
 
-      <div class="menu-page">
+        <div class="menu-page">
 
-        <button
-          id="deleteAllNotifications"
-          disabled
-        >
-          Delete All
-        </button>
+          <p>
+            No notifications.
+          </p>
 
-        <p>
-          No notifications.
-        </p>
+        </div>
 
-      </div>
-
-    `;
+      `;
 
     return;
 
   }
 
 
-  $("drawerBody").innerHTML = `
+  $("drawerBody")
+    .innerHTML =
 
-    <div class="menu-page">
+    `
 
       <button
         id="deleteAllNotifications"
+        class="danger-btn"
       >
         Delete All
       </button>
 
-      ${notifications.map(
-        notification => `
+    ` +
 
-          <div class="admin-card">
+    notifications
+      .map(
+        (notification, index) => `
 
-            <div
-              style="
-                display:flex;
-                justify-content:space-between;
-                gap:10px;
-              "
-            >
+          <div class="notice">
 
-              <div>
+            <div class="notice-head">
+
+              <strong>
                 ${escapeHTML(
-                  notification.message
+                  notification.title
                 )}
-              </div>
+              </strong>
 
               <button
-                data-delete-notification="${escapeHTML(
-                  notification.id
-                )}"
+                data-delete-notification="${index}"
               >
                 ×
               </button>
 
             </div>
 
-            <small>
+            <div>
               ${escapeHTML(
-                notification.time
+                notification.body
               )}
+            </div>
+
+            <small class="muted">
+
+              ${new Date(
+                notification.time
+              ).toLocaleString()}
+
             </small>
 
           </div>
 
         `
-      ).join("")}
-
-    </div>
-
-  `;
+      )
+      .join("");
 
 
   $("deleteAllNotifications")
-    .onclick =
-      deleteAllNotifications;
+    .onclick = () => {
+
+      setNotifications([]);
+
+      renderNotifications();
+
+      updateNotificationDot();
+
+    };
 
 
-  document
-    .querySelectorAll(
-      "[data-delete-notification]"
-    )
-    .forEach(button => {
+  notifications.forEach(
+    (notification, index) => {
 
-      button.onclick = () => {
+      document.querySelector(
+        `[data-delete-notification="${index}"]`
+      ).onclick = () => {
 
-        deleteNotification(
-          button.dataset
-            .deleteNotification
+        const list =
+          getNotifications();
+
+        list.splice(
+          index,
+          1
         );
+
+        setNotifications(
+          list
+        );
+
+        renderNotifications();
+
+        updateNotificationDot();
 
       };
 
-    });
+    }
+  );
 
 }
 
 
-/* =========================================================
-   MAP LAYERS
-========================================================= */
+/* ======================================================
+   LAYERS
+====================================================== */
 
 function renderLayers() {
 
-  $("drawerBody").innerHTML = `
+  $("drawerBody")
+    .innerHTML = `
 
-    <div class="menu-page">
+      <div class="menu-page">
 
-      <div class="row">
-        <span>Satellite</span>
+        <div class="row">
 
-        <input
-          id="satelliteRadio"
-          type="radio"
-          name="basemap"
-          checked
-        >
+          <span>
+            Satellite
+          </span>
+
+          <input
+            id="satRadio"
+            type="radio"
+            name="base"
+            checked
+          >
+
+        </div>
+
+        <div class="row">
+
+          <span>
+            Street Map
+          </span>
+
+          <input
+            id="streetRadio"
+            type="radio"
+            name="base"
+          >
+
+        </div>
+
+        <div class="row">
+
+          <span>
+            Parcel Boundaries
+          </span>
+
+          <input
+            id="parcelToggle"
+            type="checkbox"
+            checked
+          >
+
+        </div>
+
       </div>
 
-      <div class="row">
-        <span>Street Map</span>
-
-        <input
-          id="streetRadio"
-          type="radio"
-          name="basemap"
-        >
-      </div>
-
-      <div class="row">
-        <span>Parcel Boundaries</span>
-
-        <input
-          id="parcelToggle"
-          type="checkbox"
-          ${parcelsEnabled ? "checked" : ""}
-        >
-      </div>
-
-    </div>
-
-  `;
+    `;
 
 
-  $("satelliteRadio").onchange =
+  $("satRadio").onchange =
     () => {
 
       map.removeLayer(
         street
       );
 
-      satellite.addTo(map);
+      satellite.addTo(
+        map
+      );
 
     };
 
@@ -1275,24 +2090,27 @@ function renderLayers() {
         satellite
       );
 
-      street.addTo(map);
+      street.addTo(
+        map
+      );
 
     };
 
 
-  $("parcelToggle").onchange =
+  $("parcelToggle")
+    .onchange =
     event => {
 
-      parcelsEnabled =
-        event.target.checked;
+      if (
+        event.target.checked
+      ) {
 
-      if (!parcelsEnabled) {
-
-        parcelLayer.clearLayers();
+        loadVisibleParcels();
 
       } else {
 
-        loadVisibleParcels();
+        parcelLayer
+          .clearLayers();
 
       }
 
@@ -1301,1374 +2119,800 @@ function renderLayers() {
 }
 
 
-/* =========================================================
+/* ======================================================
    SETTINGS
-========================================================= */
+====================================================== */
 
 function renderSettings() {
 
-  $("drawerBody").innerHTML = `
+  $("drawerBody")
+    .innerHTML = `
 
-    <div class="menu-page">
+      <div class="menu-page">
 
-      <h3>
-        Account
-      </h3>
+        <h3>
+          Profile
+        </h3>
 
-      <div class="admin-card">
+        <div class="admin-grid">
 
-        <strong>
-          Logged in as
-        </strong>
+          <label>
 
-        ${escapeHTML(
-          getAccountName()
-        )}
+            Display name
+
+            <input
+              id="nameInput"
+              maxlength="40"
+              value="${escapeHTML(
+                displayName()
+              )}"
+            >
+
+          </label>
+
+          <button
+            id="saveName"
+          >
+            Save Name
+          </button>
+
+        </div>
+
+        <h3>
+          Session
+        </h3>
+
+        <button
+          id="settingsLogout"
+          class="danger-btn"
+        >
+          Log Out
+        </button>
 
       </div>
 
-      <label>
-        Your Name
-      </label>
-
-      <input
-        id="nameSetting"
-        value="${escapeHTML(
-          getAccountName() === "User"
-            ? ""
-            : getAccountName()
-        )}"
-        placeholder="User"
-        style="
-          width:100%;
-          padding:10px;
-          margin:7px 0;
-          background:#08111b;
-          color:white;
-          border:1px solid var(--line);
-          border-radius:8px;
-        "
-      >
-
-      <button id="saveNameSetting">
-        Save Name
-      </button>
-
-      <h3>
-        Session
-      </h3>
-
-      <button id="logoutButton">
-        Log Out
-      </button>
-
-    </div>
-
-  `;
+    `;
 
 
-  $("saveNameSetting").onclick =
-    () => {
+  $("saveName")
+    .onclick = () => {
 
-      setAccountName(
-        $("nameSetting").value
+      const name =
+        $("nameInput")
+          .value
+          .trim() ||
+        "User";
+
+
+      const names =
+        storage.get(
+          "parcelScope.names",
+          {}
+        );
+
+
+      names[current.id] =
+        name;
+
+
+      storage.set(
+        "parcelScope.names",
+        names
       );
+
+
+      $("menuUserName")
+        .textContent =
+        name;
+
 
       toast(
-        "Name updated."
+        "Name saved."
       );
-
-      renderSettings();
 
     };
 
 
-  $("logoutButton").onclick =
+  $("settingsLogout")
+    .onclick =
     logout;
 
 }
 
 
-/* =========================================================
+/* ======================================================
    ABOUT
-========================================================= */
+====================================================== */
 
 function renderAbout() {
 
-  $("drawerBody").innerHTML = `
+  $("drawerBody")
+    .innerHTML = `
 
-    <div class="menu-page">
+      <div class="menu-page">
 
-      <h3>
-        ParcelScope
-      </h3>
+        <h3>
+          ParcelScope
+        </h3>
 
-      <p>
-        ParcelScope is a property mapping and
-        parcel research interface for Washington,
-        Oregon, Idaho and Montana.
-      </p>
+        <p>
+          Private parcel research
+          interface for Washington,
+          Oregon, Idaho and Montana.
+        </p>
 
-      <p>
-        Parcel information is supplied by public
-        GIS services and should be verified with
-        the appropriate county or state agency.
-      </p>
+        <p class="muted">
 
-      <p>
-        Version 1.0
-      </p>
+          Parcel data comes from
+          public GIS services and
+          should be verified with
+          the appropriate county or
+          state agency before being
+          relied upon.
 
-    </div>
+        </p>
 
-  `;
+      </div>
+
+    `;
 
 }
 
 
-/* =========================================================
+/* ======================================================
    ADMIN
-========================================================= */
+====================================================== */
 
-function openAdmin() {
+function renderAdmin() {
 
-  if (!currentAccount ||
-      !currentAccount.admin) {
-
-    toast(
-      "Admin access required."
-    );
-
+  if (!current.admin)
     return;
 
-  }
 
-  setMenu(false);
-
-  $("drawerTitle").textContent =
+  $("drawerTitle")
+    .textContent =
     "Admin";
+
 
   $("drawer")
     .classList
     .remove("hidden");
 
-  renderAdmin();
-
-}
-
-
-function renderAdmin() {
 
   const logs =
-    JSON.parse(
-      localStorage.getItem(
-        "parcelScope.loginLogs"
-      ) || "[]"
+    storage.get(
+      "parcelScope.loginLogs",
+      []
     );
 
 
-  const accountRows =
-    ACCOUNTS.map(
-      account => {
+  const names =
+    storage.get(
+      "parcelScope.names",
+      {}
+    );
 
-        const name =
-          localStorage.getItem(
-            accountKey(
-              `${account.id}.name`
-            )
-          ) || "User";
 
-        return `
+  $("drawerBody")
+    .innerHTML = `
 
-          <div class="admin-card">
+      <div class="menu-page">
 
-            <strong>
-              ${account.admin
-                ? "Admin"
-                : "User"}
-            </strong>
+        <h3>
+          Send Notification
+        </h3>
 
-            <div>
-              Name:
-              ${escapeHTML(name)}
-            </div>
+        <div class="admin-grid">
 
-            <small>
-              Account:
-              ${escapeHTML(account.id)}
-            </small>
+          <input
+            id="noticeTitle"
+            placeholder="Title"
+          >
 
-          </div>
+          <textarea
+            id="noticeBody"
+            placeholder="Message"
+          ></textarea>
 
-        `;
+          <select
+            id="noticeTarget"
+          >
+
+            <option value="ALL">
+              All Users
+            </option>
+
+            ${
+              Object.entries(
+                ACCOUNTS
+              )
+
+              .filter(
+                ([code, account]) =>
+                  !account.admin
+              )
+
+              .map(
+                ([code, account]) => `
+
+                  <option
+                    value="${account.id}"
+                  >
+
+                    ${escapeHTML(
+                      names[
+                        account.id
+                      ] ||
+                      "User"
+                    )}
+
+                    (${account.id})
+
+                  </option>
+
+                `
+              )
+
+              .join("")
+            }
+
+          </select>
+
+          <button
+            id="sendNotice"
+            class="primary"
+          >
+            Send Notification
+          </button>
+
+        </div>
+
+
+        <h3>
+          Login Activity
+        </h3>
+
+        ${
+          logs.length
+
+          ? `
+
+            <table
+              class="admin-table"
+            >
+
+              <thead>
+
+                <tr>
+
+                  <th>
+                    Account
+                  </th>
+
+                  <th>
+                    Time
+                  </th>
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                ${
+                  logs
+                    .map(
+                      log => `
+
+                        <tr>
+
+                          <td>
+
+                            ${escapeHTML(
+                              names[
+                                log.id
+                              ] ||
+                              "User"
+                            )}
+
+                            ${
+                              log.admin
+                                ? " · Admin"
+                                : ""
+                            }
+
+                          </td>
+
+                          <td>
+
+                            ${new Date(
+                              log.time
+                            ).toLocaleString()}
+
+                          </td>
+
+                        </tr>
+
+                      `
+                    )
+                    .join("")
+                }
+
+              </tbody>
+
+            </table>
+
+          `
+
+          : "<p>No login activity.</p>"
+        }
+
+
+        <h3>
+          Account Codes
+        </h3>
+
+        <table
+          class="admin-table"
+        >
+
+          <tbody>
+
+            ${
+              Object.entries(
+                ACCOUNTS
+              )
+              .map(
+                ([code, account]) => `
+
+                  <tr>
+
+                    <td>
+
+                      ${
+                        account.admin
+                          ? "Admin"
+                          : escapeHTML(
+                              names[
+                                account.id
+                              ] ||
+                              "User"
+                            )
+                      }
+
+                    </td>
+
+                    <td>
+                      ${code}
+                    </td>
+
+                  </tr>
+
+                `
+              )
+              .join("")
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    `;
+
+
+  $("sendNotice")
+    .onclick = () => {
+
+      const title =
+        $("noticeTitle")
+          .value
+          .trim() ||
+        "ParcelScope";
+
+
+      const body =
+        $("noticeBody")
+          .value
+          .trim();
+
+
+      if (!body) {
+
+        toast(
+          "Enter a message."
+        );
+
+        return;
 
       }
-    ).join("");
 
 
-  $("drawerBody").innerHTML = `
-
-    <div class="menu-page">
-
-      <div class="admin-section-title">
-        Accounts
-      </div>
-
-      ${accountRows}
+      const target =
+        $("noticeTarget")
+          .value;
 
 
-      <div class="admin-section-title">
-        Send Notification
-      </div>
+      const userIds =
+        target === "ALL"
 
-      <div class="admin-form">
+          ? Object.values(
+              ACCOUNTS
+            )
 
-        <select id="notificationTarget">
-
-          <option value="all">
-            All Users
-          </option>
-
-          ${ACCOUNTS
             .filter(
               account =>
                 !account.admin
             )
+
             .map(
-              account => `
-
-                <option
-                  value="${account.id}"
-                >
-                  ${escapeHTML(
-                    localStorage.getItem(
-                      accountKey(
-                        `${account.id}.name`
-                      )
-                    ) || "User"
-                  )}
-                  (${account.id})
-                </option>
-
-              `
+              account =>
+                account.id
             )
-            .join("")}
 
-        </select>
-
-
-        <textarea
-          id="notificationMessage"
-          placeholder="Notification message..."
-        ></textarea>
+          : [target];
 
 
-        <button id="sendNotification">
-          Send Notification
-        </button>
+      userIds.forEach(
+        userId => {
 
-      </div>
-
-
-      <div class="admin-section-title">
-        Login History
-      </div>
-
-      ${
-        logs.length
-          ? logs.map(
-              log => `
-
-                <div class="admin-log">
-
-                  <strong>
-                    ${escapeHTML(
-                      log.account
-                    )}
-                  </strong>
-
-                  <small>
-                    ${log.success
-                      ? "Successful login"
-                      : "Failed login"}
-                    ·
-                    ${escapeHTML(
-                      new Date(
-                        log.time
-                      ).toLocaleString()
-                    )}
-                  </small>
-
-                </div>
-
-              `
-            ).join("")
-          : `
-            <p>
-              No login history.
-            </p>
-          `
-      }
-
-    </div>
-
-  `;
+          const key =
+            `parcelScope.${userId}.notifications`;
 
 
-  $("sendNotification").onclick =
-    sendAdminNotification;
-
-}
-
-
-function sendAdminNotification() {
-
-  const target =
-    $("notificationTarget").value;
-
-  const message =
-    $("notificationMessage")
-      .value
-      .trim();
+          const notifications =
+            storage.get(
+              key,
+              []
+            );
 
 
-  if (!message) {
+          notifications.unshift({
 
-    toast(
-      "Enter a notification first."
-    );
+            id:
+              String(
+                Date.now() +
+                Math.random()
+              ),
 
-    return;
+            title,
 
-  }
+            body,
+
+            time:
+              new Date()
+                .toISOString(),
+
+            read: false
+
+          });
 
 
-  if (target === "all") {
+          storage.set(
+            key,
 
-    ACCOUNTS
-      .filter(
-        account =>
-          !account.admin
-      )
-      .forEach(
-        account => {
+            notifications.slice(
+              0,
+              200
+            )
 
-          const old =
-            currentAccount;
-
-          currentAccount =
-            account;
-
-          addNotification(
-            message
           );
-
-          currentAccount =
-            old;
 
         }
       );
 
-  } else {
 
-    const old =
-      currentAccount;
+      $("noticeBody")
+        .value = "";
 
-    const targetAccount =
-      ACCOUNTS.find(
-        account =>
-          account.id === target
+
+      toast(
+        target === "ALL"
+
+          ? "Notification sent to all users."
+
+          : "Notification sent."
+
       );
 
-    if (targetAccount) {
+    };
 
-      currentAccount =
-        targetAccount;
+}
 
-      addNotification(
-        message
+
+$("adminMenu")
+  .onclick =
+  renderAdmin;
+
+
+/* ======================================================
+   LOGOUT
+====================================================== */
+
+function logout() {
+
+  sessionStorage.removeItem(
+    "parcelScope.session"
+  );
+
+  location.reload();
+
+}
+
+
+$("logoutBtn")
+  .onclick =
+  logout;
+
+
+/* ======================================================
+   LOCATION
+====================================================== */
+
+$("locateBtn")
+  .onclick = () => {
+
+    if (
+      !navigator.geolocation
+    ) {
+
+      toast(
+        "Location is not supported."
       );
+
+      return;
 
     }
 
-    currentAccount =
-      old;
 
-  }
+    if (locationWatch) {
 
-
-  $("notificationMessage")
-    .value = "";
-
-  toast(
-    "Notification sent."
-  );
-
-}
-
-
-/* =========================================================
-   GIS HELPERS
-========================================================= */
-
-function buildQueryURL(
-  base,
-  params
-) {
-
-  const url =
-    new URL(
-      `${base}/query`
-    );
-
-  Object.entries(params)
-    .forEach(
-      ([key, value]) => {
-
-        url.searchParams.set(
-          key,
-          value
+      navigator.geolocation
+        .clearWatch(
+          locationWatch
         );
 
-      }
-    );
+      locationWatch =
+        null;
 
-  return url.toString();
+      $("locateBtn")
+        .textContent =
+        "Locate";
 
-}
+      return;
+
+    }
 
 
-function normalizeFeature(
-  feature,
-  state,
-  source
-) {
+    $("locateBtn")
+      .textContent =
+      "Following";
 
-  const a =
-    feature.attributes || {};
 
-  const f =
-    source.fields || {};
+    locationWatch =
+      navigator.geolocation
+        .watchPosition(
 
-  return {
+          position => {
 
-    state,
+            const lat =
+              position.coords
+                .latitude;
 
-    sourceUrl:
-      source.url,
+            const lng =
+              position.coords
+                .longitude;
 
-    objectId:
-      a.OBJECTID,
 
-    parcelId:
-      a[f.id] ||
-      a.PARCELID ||
-      a.PARCEL_ID ||
-      a.ORTaxlot ||
-      a.ORMapNum ||
-      `OBJECT-${a.OBJECTID}`,
+            map.setView(
+              [
+                lat,
+                lng
+              ],
 
-    address:
-      a[f.address] ||
-      a.SITUS_ADDRESS ||
-      a.SITE_ADD ||
-      a.AddressLine1 ||
-      a.SITEADDNAM ||
-      "",
+              Math.max(
+                map.getZoom(),
+                15
+              )
+            );
 
-    city:
-      a[f.city] ||
-      a.SITUS_CITY_NM ||
-      a.SITE_CITY ||
-      "",
+          },
 
-    county:
-      a[f.county] ||
-      a.COUNTY_NM ||
-      a.County ||
-      "",
+          () => {
 
-    owner:
-      a[f.owner] ||
-      a.OwnerName ||
-      a.OWNER1 ||
-      a.OWNERLINE1 ||
-      "",
+            toast(
+              "Location permission was denied or unavailable."
+            );
 
-    acres:
-      a[f.acres] ??
-      a.GISAcres ??
-      a.ASR_ACRES ??
-      a.TaxlotAcre ??
-      "",
+          },
 
-    value:
-      a[f.value] ??
-      a.TotalValue ??
-      a.VAL_TOTAL ??
-      "",
+          {
 
-    attributes:
-      a,
+            enableHighAccuracy:
+              true
 
-    geometry:
-      feature.geometry,
+          }
 
-    layerUrl:
-      source.url
+        );
 
   };
 
-}
 
+/* ======================================================
+   MEASUREMENT
+====================================================== */
 
-/* =========================================================
-   SEARCH GIS
-========================================================= */
+function startMeasure() {
 
-async function searchFeatureSource(
-  state,
-  source,
-  search
-) {
+  measureMode =
+    true;
 
-  const fields = [
-    source.fields.id,
-    source.fields.address,
-    source.fields.city,
-    source.fields.county,
-    source.fields.owner
-  ]
-    .filter(Boolean);
+  measurePoints =
+    [];
 
 
-  if (!fields.length)
-    return [];
+  $("measure")
+    .classList
+    .remove("hidden");
 
 
-  const safe =
-    search
-      .replaceAll("'", "''");
+  $("measureValue")
+    .textContent =
+    "0 ft";
 
 
-  const where =
-    fields
-      .map(
-        field =>
-          `UPPER(${field}) LIKE UPPER('%${safe}%')`
-      )
-      .join(" OR ");
-
-
-  const url =
-    buildQueryURL(
-      source.url,
-      {
-        where,
-
-        outFields: "*",
-
-        returnGeometry: "true",
-
-        outSR: "4326",
-
-        resultRecordCount: "25",
-
-        f: "geojson"
-      }
-    );
-
-
-  const response =
-    await fetch(url);
-
-
-  if (!response.ok)
-    throw new Error(
-      `${state} GIS request failed`
-    );
-
-
-  const data =
-    await response.json();
-
-
-  return (
-    data.features || []
-  )
-    .map(
-      feature =>
-        normalizeFeature(
-          feature,
-          state,
-          source
-        )
-    );
-
-}
-
-
-/* =========================================================
-   OREGON SEARCH
-========================================================= */
-
-async function searchOregon(
-  search
-) {
-
-  const results = [];
-
-  const safe =
-    search
-      .replaceAll("'", "''");
-
-
-  for (
-    let layerId = 0;
-    layerId < OREGON_COUNTIES.length;
-    layerId++
-  ) {
-
-    const url =
-      `${GIS.OR.url}/${layerId}`;
-
-
-    try {
-
-      const infoResponse =
-        await fetch(
-          `${url}?f=json`
-        );
-
-      if (!infoResponse.ok)
-        continue;
-
-      const info =
-        await infoResponse.json();
-
-
-      const fields =
-        (info.fields || [])
-          .map(
-            field =>
-              field.name
-          )
-          .filter(
-            field =>
-              ![
-                "OBJECTID",
-                "Shape",
-                "Shape__Area",
-                "Shape__Length"
-              ].includes(field)
-          );
-
-
-      const useful =
-        fields.filter(
-          field =>
-            /tax|owner|address|site|map|parcel|ortax/i
-              .test(field)
-        );
-
-
-      if (!useful.length)
-        continue;
-
-
-      const where =
-        useful
-          .map(
-            field =>
-              `UPPER(${field}) LIKE UPPER('%${safe}%')`
-          )
-          .join(" OR ");
-
-
-      const query =
-        buildQueryURL(
-          url,
-          {
-            where,
-
-            outFields: "*",
-
-            returnGeometry: "true",
-
-            outSR: "4326",
-
-            resultRecordCount: "20",
-
-            f: "geojson"
-          }
-        );
-
-
-      const response =
-        await fetch(query);
-
-
-      if (!response.ok)
-        continue;
-
-
-      const data =
-        await response.json();
-
-
-      for (
-        const feature of
-        data.features || []
-      ) {
-
-        const a =
-          feature.properties || {};
-
-
-        results.push({
-
-          state: "OR",
-
-          sourceUrl: url,
-
-          parcelId:
-            a.ORTaxlot ||
-            a.ORMapNum ||
-            a.MapTaxlot ||
-            a.Taxlot ||
-            `OBJECT-${a.OBJECTID}`,
-
-          address:
-            a.SITEADDNAM ||
-            "",
-
-          city:
-            a.SITEADDCTY ||
-            "",
-
-          county:
-            OREGON_COUNTIES[
-              layerId
-            ],
-
-          owner:
-            a.OWNERLINE1 ||
-            "",
-
-          acres:
-            a.TaxlotAcre ||
-            "",
-
-          value: "",
-
-          attributes: a,
-
-          geometry:
-            feature.geometry,
-
-          layerUrl: url
-
-        });
-
-      }
-
-    } catch (error) {
-
-      console.warn(
-        "Oregon layer failed:",
-        layerId,
-        error
-      );
-
-    }
-
-  }
-
-
-  return results.slice(
-    0,
-    100
+  toast(
+    "Tap the map to add measurement points."
   );
 
 }
 
 
-/* =========================================================
-   SEARCH
-========================================================= */
+function addMeasurePoint(
+  point
+) {
 
-async function performSearch() {
-
-  const search =
-    $("searchInput")
-      .value
-      .trim();
-
-  const state =
-    $("stateSelect")
-      .value;
+  measurePoints.push(
+    point
+  );
 
 
-  if (!search) {
+  if (
+    measurePoints.length >
+    1
+  ) {
 
-    toast(
-      "Enter an address, owner or parcel ID."
-    );
+    if (measureLine)
+      map.removeLayer(
+        measureLine
+      );
 
-    return;
+
+    measureLine =
+      L.polyline(
+        measurePoints,
+        {
+          color:
+            "#55d6ff",
+
+          weight: 3
+        }
+      )
+      .addTo(map);
+
+  }
+
+
+  let total = 0;
+
+
+  for (
+    let i = 1;
+
+    i <
+    measurePoints.length;
+
+    i++
+  ) {
+
+    total +=
+      map.distance(
+        measurePoints[
+          i - 1
+        ],
+
+        measurePoints[i]
+      );
 
   }
 
 
-  $("searchBtn").disabled =
-    true;
+  $("measureValue")
+    .textContent =
 
-  $("searchBtn").textContent =
-    "Searching...";
+    total < 5280
 
+      ? `${Math.round(total)} ft`
 
-  try {
-
-    let results = [];
-
-
-    const states =
-      state === "ALL"
-        ? ["WA", "OR", "ID", "MT"]
-        : [state];
-
-
-    for (
-      const stateCode of states
-    ) {
-
-      if (
-        stateCode === "OR"
-      ) {
-
-        const orResults =
-          await searchOregon(
-            search
-          );
-
-        results.push(
-          ...orResults
-        );
-
-      } else {
-
-        const source =
-          GIS[stateCode];
-
-
-        const features =
-          await searchFeatureSource(
-            stateCode,
-            source,
-            search
-          );
-
-
-        results.push(
-          ...features
-        );
-
-      }
-
-    }
-
-
-    showSearchResults(
-      results
-    );
-
-  } catch (error) {
-
-    console.error(error);
-
-    toast(
-      "GIS search failed. Check your connection."
-    );
-
-  } finally {
-
-    $("searchBtn").disabled =
-      false;
-
-    $("searchBtn").textContent =
-      "Search";
-
-  }
+      : `${(
+          total / 5280
+        ).toFixed(2)} mi`;
 
 }
 
 
-$("searchBtn").onclick =
-  performSearch;
+function finishMeasure() {
+
+  measureMode =
+    false;
+
+  $("measure")
+    .classList
+    .add("hidden");
+
+}
 
 
-$("searchInput").addEventListener(
-  "keydown",
+function clearMeasure() {
+
+  measurePoints =
+    [];
+
+
+  if (measureLine) {
+
+    map.removeLayer(
+      measureLine
+    );
+
+    measureLine =
+      null;
+
+  }
+
+
+  $("measureValue")
+    .textContent =
+    "0 ft";
+
+}
+
+
+$("finishMeasure")
+  .onclick =
+  finishMeasure;
+
+
+$("clearMeasure")
+  .onclick =
+  clearMeasure;
+
+
+map.on(
+  "click",
   event => {
 
     if (
-      event.key === "Enter"
+      measureMode
     ) {
 
-      performSearch();
+      addMeasurePoint(
+        event.latlng
+      );
 
     }
 
   }
 );
-
-
-/* =========================================================
-   SEARCH RESULTS
-========================================================= */
-
-function showSearchResults(
-  results
-) {
-
-  $("results")
-    .classList
-    .remove("hidden");
-
-
-  if (!results.length) {
-
-    $("resultsBody").innerHTML =
-      `<p>No parcels found.</p>`;
-
-    return;
-
-  }
-
-
-  $("resultsBody").innerHTML =
-    results.map(
-      (property, index) => `
-
-        <button
-          class="result"
-          data-search-result="${index}"
-        >
-
-          <strong>
-            ${escapeHTML(
-              property.address ||
-              property.parcelId
-            )}
-          </strong>
-
-          <small>
-            ${escapeHTML(
-              property.owner ||
-              "Owner unavailable"
-            )}
-            ·
-            ${escapeHTML(
-              property.county
-            )}
-            ·
-            ${escapeHTML(
-              property.state
-            )}
-          </small>
-
-        </button>
-
-      `
-    ).join("");
-
-
-  document
-    .querySelectorAll(
-      "[data-search-result]"
-    )
-    .forEach(button => {
-
-      button.onclick = () => {
-
-        const property =
-          results[
-            Number(
-              button.dataset
-                .searchResult
-            )
-          ];
-
-        $("results")
-          .classList
-          .add("hidden");
-
-        selectParcel(
-          property,
-          true
-        );
-
-      };
-
-    });
-
-}
-
-
-/* =========================================================
-   SELECT PARCEL
-========================================================= */
-
-function selectParcel(
-  property,
-  zoom
-) {
-
-  selectedParcel =
-    property;
-
-
-  selectedLayer.clearLayers();
-
-
-  if (
-    property.geometry
-  ) {
-
-    const layer =
-      L.geoJSON(
-        {
-          type: "Feature",
-          geometry:
-            property.geometry,
-          properties: {}
-        },
-        {
-          style: {
-            color: "#55d6ff",
-            weight: 4,
-            fillOpacity: 0.12
-          }
-        }
-      );
-
-
-    selectedLayer.addLayer(
-      layer
-    );
-
-
-    if (zoom) {
-
-      try {
-
-        map.fitBounds(
-          layer.getBounds(),
-          {
-            padding: [
-              30,
-              30
-            ],
-            maxZoom: 17
-          }
-        );
-
-      } catch {}
-
-    }
-
-  }
-
-
-  $("propertyTitle")
-    .textContent =
-      property.address ||
-      property.parcelId ||
-      "Property";
-
-
-  $("propertyBody").innerHTML = `
-
-    <div class="field">
-      <b>Parcel ID</b>
-      ${escapeHTML(
-        property.parcelId
-      )}
-    </div>
-
-    <div class="field">
-      <b>Address</b>
-      ${escapeHTML(
-        property.address
-      )}
-    </div>
-
-    <div class="field">
-      <b>Owner</b>
-      ${escapeHTML(
-        property.owner
-      )}
-    </div>
-
-    <div class="field">
-      <b>County</b>
-      ${escapeHTML(
-        property.county
-      )}
-    </div>
-
-    <div class="field">
-      <b>State</b>
-      ${escapeHTML(
-        property.state
-      )}
-    </div>
-
-    <div class="field">
-      <b>Acres</b>
-      ${escapeHTML(
-        property.acres
-      )}
-    </div>
-
-    <div class="field">
-      <b>Value</b>
-      ${
-        property.value !== "" &&
-        property.value !== null
-          ? "$" +
-            Number(
-              property.value
-            ).toLocaleString()
-          : "Currently unavailable"
-      }
-    </div>
-
-  `;
-
-
-  $("property")
-    .classList
-    .remove("hidden");
-
-
-  $("saveBtn").textContent =
-    isSaved(
-      property.parcelId
-    )
-      ? "Saved"
-      : "Save Property";
-
-
-  addRecent(
-    property
-  );
-
-}
-
-
-/* =========================================================
-   CLOSE PROPERTY
-========================================================= */
-
-$("propertyClose").onclick =
-  () => {
-
-    $("property")
-      .classList
-      .add("hidden");
-
-    selectedLayer.clearLayers();
-
-  };
-
-
-$("resultsClose").onclick =
-  () => {
-
-    $("results")
-      .classList
-      .add("hidden");
-
-  };
-
-
-/* =========================================================
-   SHARE
-========================================================= */
-
-$("shareBtn").onclick =
-  async () => {
-
-    if (!selectedParcel)
-      return;
-
-
-    const text =
-      `ParcelScope parcel: ${
-        selectedParcel.parcelId
-      } ${
-        selectedParcel.address || ""
-      }`;
-
-
-    try {
-
-      if (
-        navigator.share
-      ) {
-
-        await navigator.share({
-          title:
-            "ParcelScope Property",
-          text
-        });
-
-      } else if (
-        navigator.clipboard
-      ) {
-
-        await navigator.clipboard
-          .writeText(text);
-
-        toast(
-          "Parcel information copied."
-        );
-
-      }
-
-    } catch {}
-
-  };
-
-
-/* =========================================================
-   MAP LINKS
-========================================================= */
-
-$("mapsBtn").onclick =
-  () => {
-
-    if (!selectedParcel)
-      return;
-
-    $("mapsModal")
-      .classList
-      .remove("hidden");
-
-  };
-
-
-$("mapsClose").onclick =
-$("mapsCancel").onclick =
-  () => {
-
-    $("mapsModal")
-      .classList
-      .add("hidden");
-
-  };
-
-
-function selectedCoordinates() {
-
-  if (
-    !selectedParcel ||
-    !selectedParcel.geometry
-  )
-    return null;
-
-
-  const bounds =
-    L.geoJSON(
-      selectedParcel.geometry
-    ).getBounds();
-
-
-  const center =
-    bounds.getCenter();
-
-
-  return center;
-
-}
-
-
-$("googleBtn").onclick =
-  () => {
-
-    const center =
-      selectedCoordinates();
-
-    if (!center)
-      return;
-
-
-    window.open(
-      `https://www.google.com/maps/search/?api=1&query=${
-        center.lat
-      },${
-        center.lng
-      }`,
-      "_blank"
-    );
-
-  };
-
-
-$("appleBtn").onclick =
-  () => {
-
-    const center =
-      selectedCoordinates();
-
-    if (!center)
-      return;
-
-
-    window.open(
-      `https://maps.apple.com/?ll=${
-        center.lat
-      },${
-        center.lng
-      }`,
-      "_blank"
-    );
-
-  };
-
-
-/* =========================================================
-   VISIBLE PARCELS
-========================================================= */
-
-let parcelRequestTimer = null;
 
 
 map.on(
   "moveend",
   () => {
 
-    clearTimeout(
-      parcelRequestTimer
-    );
-
-    parcelRequestTimer =
-      setTimeout(
-        loadVisibleParcels,
-        500
-      );
-
-  }
-);
-
-
-map.on(
-  "zoomend",
-  () => {
-
     if (
-      parcelsEnabled
+      map.getZoom() >= 10
     ) {
 
       loadVisibleParcels();
@@ -2679,614 +2923,86 @@ map.on(
 );
 
 
-async function loadVisibleParcels() {
-
-  if (
-    !parcelsEnabled ||
-    map.getZoom() <
-      PARCEL_ZOOM
-  ) {
-
-    parcelLayer.clearLayers();
-
-    return;
-
-  }
-
-
-  const bounds =
-    map.getBounds();
-
-
-  const south =
-    bounds.getSouth();
-
-  const west =
-    bounds.getWest();
-
-  const north =
-    bounds.getNorth();
-
-  const east =
-    bounds.getEast();
-
-
-  parcelLayer.clearLayers();
-
-
-  /*
-    Don't hammer all 35 Oregon layers on every map move.
-    For Oregon, parcels are displayed after the user
-    searches or when the map is centered in Oregon.
-  */
-
-
-  const center =
-    map.getCenter();
-
-
-  const isOregon =
-    center.lat >= 41.9 &&
-    center.lat <= 46.4 &&
-    center.lng >= -124.8 &&
-    center.lng <= -116.4;
-
-
-  const states = [];
-
-
-  if (
-    center.lng >= -124.8 &&
-    center.lng <= -116.9
-  ) {
-
-    states.push("WA");
-
-  }
-
-
-  if (
-    center.lat >= 41.9 &&
-    center.lat <= 46.4 &&
-    center.lng >= -124.8 &&
-    center.lng <= -116.4
-  ) {
-
-    states.push("OR");
-
-  }
-
-
-  if (
-    center.lat >= 41.9 &&
-    center.lat <= 49.1 &&
-    center.lng >= -117.3 &&
-    center.lng <= -110.9
-  ) {
-
-    states.push("ID");
-
-  }
-
-
-  if (
-    center.lat >= 44.2 &&
-    center.lat <= 49.1 &&
-    center.lng >= -116.2 &&
-    center.lng <= -104.0
-  ) {
-
-    states.push("MT");
-
-  }
-
-
-  for (
-    const state of states
-  ) {
-
-    if (
-      state === "OR"
-    ) {
-
-      if (!isOregon)
-        continue;
-
-      /*
-        Oregon's service contains separate county
-        layers. Determine likely county layers by
-        querying their extent would be expensive,
-        so Oregon parcel display is primarily handled
-        through search.
-      */
-
-      continue;
-
-    }
-
-
-    const source =
-      GIS[state];
-
-
-    const envelope =
-      JSON.stringify({
-        xmin: west,
-        ymin: south,
-        xmax: east,
-        ymax: north,
-        spatialReference: {
-          wkid: 4326
-        }
-      });
-
-
-    const url =
-      buildQueryURL(
-        source.url,
-        {
-          where: "1=1",
-
-          geometry:
-            envelope,
-
-          geometryType:
-            "esriGeometryEnvelope",
-
-          inSR: "4326",
-
-          spatialRel:
-            "esriSpatialRelIntersects",
-
-          outFields:
-            source.fields.id,
-
-          returnGeometry:
-            "true",
-
-          outSR:
-            "4326",
-
-          resultRecordCount:
-            "1500",
-
-          f:
-            "geojson"
-        }
-      );
-
-
-    try {
-
-      const response =
-        await fetch(url);
-
-
-      if (!response.ok)
-        continue;
-
-
-      const data =
-        await response.json();
-
-
-      (
-        data.features || []
-      ).forEach(
-        feature => {
-
-          const layer =
-            L.geoJSON(
-              feature,
-              {
-                style: {
-                  color:
-                    "#55d6ff",
-
-                  weight: 1,
-
-                  opacity: .65,
-
-                  fillOpacity: 0
-                }
-              }
-            );
-
-
-          layer.on(
-            "click",
-            () => {
-
-              const property =
-                normalizeFeature(
-                  feature,
-                  state,
-                  source
-                );
-
-              selectParcel(
-                property,
-                false
-              );
-
-            }
-          );
-
-
-          parcelLayer.addLayer(
-            layer
-          );
-
-        }
-      );
-
-    } catch (
-      error
-    ) {
-
-      console.warn(
-        "Parcel layer error:",
-        state,
-        error
-      );
-
-    }
-
-  }
-
-}
-
-
-/* =========================================================
-   LOCATION
-========================================================= */
-
-$("locateBtn").onclick =
-  () => {
-
-    if (
-      followingLocation
-    ) {
-
-      stopFollowingLocation();
-
-    } else {
-
-      startFollowingLocation();
-
-    }
-
-  };
-
-
-function startFollowingLocation() {
-
-  if (
-    !navigator.geolocation
-  ) {
-
-    toast(
-      "Location is not available."
-    );
-
-    return;
-
-  }
-
-
-  followingLocation =
-    true;
-
-  $("locateBtn")
-    .textContent =
-      "Stop";
-
-
-  locationWatch =
-    navigator.geolocation.watchPosition(
-      position => {
-
-        const lat =
-          position.coords.latitude;
-
-        const lng =
-          position.coords.longitude;
-
-
-        coordinateLayer.clearLayers();
-
-
-        L.circleMarker(
-          [
-            lat,
-            lng
-          ],
-          {
-            radius: 7,
-
-            color:
-              "#55d6ff",
-
-            fillColor:
-              "#55d6ff",
-
-            fillOpacity: 1
-          }
-        )
-        .addTo(
-          coordinateLayer
-        );
-
-
-        map.setView(
-          [
-            lat,
-            lng
-          ],
-          Math.max(
-            map.getZoom(),
-            14
-          )
-        );
-
-      },
-      error => {
-
-        console.warn(
-          error
-        );
-
-        stopFollowingLocation();
-
-        toast(
-          "Unable to get your location."
-        );
-
-      },
-      {
-        enableHighAccuracy: true,
-
-        maximumAge: 5000,
-
-        timeout: 15000
-      }
-    );
-
-}
-
-
-function stopFollowingLocation() {
-
-  followingLocation =
-    false;
-
-  $("locateBtn")
-    .textContent =
-      "Locate";
-
-
-  if (
-    locationWatch !== null
-  ) {
-
-    navigator.geolocation
-      .clearWatch(
-        locationWatch
-      );
-
-    locationWatch = null;
-
-  }
-
-}
-
-
-/* =========================================================
-   MEASURE
-========================================================= */
-
-function startMeasure() {
-
-  measureMode =
-    true;
-
-  measurePoints =
-    [];
-
-  measureLayer.clearLayers();
-
-  $("measure")
-    .classList
-    .remove("hidden");
-
-  updateMeasure();
-
-}
-
-
-$("finishMeasure").onclick =
-  () => {
-
-    measureMode =
-      false;
-
-    toast(
-      "Measurement finished."
-    );
-
-  };
-
-
-$("clearMeasure").onclick =
-  () => {
-
-    measurePoints =
-      [];
-
-    measureLayer.clearLayers();
-
-    updateMeasure();
-
-  };
-
-
 map.on(
-  "click",
+  "mousemove",
   event => {
 
-    if (
-      !measureMode
-    )
-      return;
+    $("coords")
+      .textContent =
+      `${event.latlng.lat.toFixed(6)}, ${event.latlng.lng.toFixed(6)}`;
 
-
-    measurePoints.push(
-      event.latlng
-    );
-
-
-    if (
-      measurePoints.length > 1
-    ) {
-
-      L.polyline(
-        measurePoints,
-        {
-          color:
-            "#55d6ff",
-
-          weight: 4
-        }
-      )
-      .addTo(
-        measureLayer
-      );
-
-    }
-
-
-    L.circleMarker(
-      event.latlng,
-      {
-        radius: 5,
-
-        color:
-          "#55d6ff",
-
-        fillColor:
-          "#55d6ff",
-
-        fillOpacity: 1
-      }
-    )
-    .addTo(
-      measureLayer
-    );
-
-
-    updateMeasure();
+    $("coords")
+      .classList
+      .remove("hidden");
 
   }
 );
 
 
-function updateMeasure() {
+map.on(
+  "mouseout",
+  () => {
 
-  let meters = 0;
-
-
-  for (
-    let i = 1;
-    i < measurePoints.length;
-    i++
-  ) {
-
-    meters +=
-      measurePoints[
-        i - 1
-      ].distanceTo(
-        measurePoints[i]
-      );
-
-  }
-
-
-  const feet =
-    meters *
-    3.280839895;
-
-
-  if (
-    feet < 5280
-  ) {
-
-    $("measureValue")
-      .textContent =
-        `${Math.round(
-          feet
-        )} ft`;
-
-  } else {
-
-    $("measureValue")
-      .textContent =
-        `${(
-          feet / 5280
-        ).toFixed(2)} mi`;
-
-  }
-
-}
-
-
-/* =========================================================
-   ADMIN BUTTON
-========================================================= */
-
-$("adminMenuButton").onclick =
-  openAdmin;
-
-
-/* =========================================================
-   INITIALIZATION
-========================================================= */
-
-function setupAfterLogin() {
-
-  if (
-    currentAccount.admin
-  ) {
-
-    $("adminMenuButton")
-      .classList
-      .remove("hidden");
-
-  } else {
-
-    $("adminMenuButton")
+    $("coords")
       .classList
       .add("hidden");
 
   }
+);
+
+
+/* ======================================================
+   START APP
+====================================================== */
+
+function showApp() {
+
+  $("loginScreen")
+    .classList
+    .add("hidden");
+
+
+  $("menuUserName")
+    .textContent =
+    displayName();
+
+
+  $("menuUserCode")
+    .textContent =
+
+    current.admin
+
+      ? "Administrator"
+
+      : "Account";
+
+
+  $("adminMenu")
+    .classList
+    .toggle(
+      "hidden",
+      !current.admin
+    );
 
 
   updateNotificationDot();
 
-  loadVisibleParcels();
+
+  setTimeout(
+    () => {
+
+      loadVisibleParcels();
+
+    },
+
+    500
+  );
 
 }
 
 
-/* =========================================================
-   START
-========================================================= */
+if (current) {
 
-if (
-  !checkSession()
-) {
-
-  $("loginScreen")
-    .classList
-    .remove("hidden");
+  showApp();
 
 }
