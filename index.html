@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta name="theme-color" content="#080d14">
+
   <title>ParcelScope</title>
 
   <link rel="stylesheet"
@@ -14,260 +16,329 @@
 
 <body>
 
+<!-- LOGIN -->
+
 <div id="loginScreen" class="login-screen">
+
   <div class="login-card">
-    <div class="login-brand">ParcelScope</div>
-    <div class="login-sub">Enter your 4-digit access code</div>
 
-    <input
-      id="loginCode"
-      type="password"
-      inputmode="numeric"
-      maxlength="4"
-      autocomplete="off"
-      placeholder="••••"
-    >
+    <div class="login-logo">
+      ParcelScope
+    </div>
 
-    <button id="loginBtn" class="primary">
-      Log In
-    </button>
+    <div class="login-subtitle">
+      Private Property Map
+    </div>
 
-    <div id="loginError" class="error"></div>
+    <form id="loginForm">
+
+      <input
+        id="passwordInput"
+        type="password"
+        inputmode="numeric"
+        pattern="[0-9]{4}"
+        maxlength="4"
+        autocomplete="off"
+        placeholder="4-digit password"
+        required
+      >
+
+      <button type="submit">
+        Log In
+      </button>
+
+    </form>
+
+    <div id="loginError" class="login-error hidden">
+      Invalid password.
+    </div>
+
   </div>
+
 </div>
 
 
-<header class="topbar">
+<!-- APPLICATION -->
 
-  <button id="menuBtn" class="hamburger">
-    ☰
-  </button>
+<div id="app" class="hidden">
 
-  <div class="brand">
-    ParcelScope
-  </div>
+  <header class="topbar">
 
-  <div class="search">
-
-    <input
-      id="searchInput"
-      type="search"
-      placeholder="Search address, owner, parcel ID..."
-      autocomplete="off"
-    >
-
-    <select id="stateSelect">
-      <option value="ALL">All States</option>
-      <option value="WA">Washington</option>
-      <option value="OR">Oregon</option>
-      <option value="ID">Idaho</option>
-      <option value="MT">Montana</option>
-    </select>
-
-    <button id="searchBtn">
-      Search
+    <button id="menuBtn" class="hamburger" type="button">
+      <span></span>
+      <span></span>
+      <span></span>
     </button>
 
-  </div>
-
-  <button id="locateBtn" class="locate">
-    Locate
-  </button>
-
-</header>
-
-
-<div id="map"></div>
-
-
-<aside id="menu" class="menu hidden">
-
-  <div class="menuTop">
-    <strong>ParcelScope</strong>
-
-    <button id="closeMenu">
-      ×
-    </button>
-  </div>
-
-  <div class="account-chip">
-    <span id="menuUserName">User</span>
-    <small id="menuUserCode"></small>
-  </div>
-
-  <button data-page="saved">
-    Saved Properties
-  </button>
-
-  <button data-page="recent">
-    Recent Properties
-  </button>
-
-  <button data-page="notifications">
-    Notifications
-    <span id="menuRedDot" class="red-dot hidden"></span>
-  </button>
-
-  <button data-page="layers">
-    Map Layers
-  </button>
-
-  <button data-page="measure">
-    Measure Distance
-  </button>
-
-  <button data-page="settings">
-    Settings
-  </button>
-
-  <button data-page="about">
-    About ParcelScope
-  </button>
-
-  <button id="adminMenu" class="admin-only hidden">
-    Admin
-  </button>
-
-  <button id="logoutBtn" class="danger-btn">
-    Log Out
-  </button>
-
-</aside>
-
-
-<section id="drawer" class="drawer hidden">
-
-  <div class="drawerTop">
-    <h2 id="drawerTitle"></h2>
-
-    <button id="drawerClose">
-      ×
-    </button>
-  </div>
-
-  <div id="drawerBody"></div>
-
-</section>
-
-
-<section id="property" class="property hidden">
-
-  <div class="propertyTop">
-
-    <div>
-      <small>SELECTED PARCEL</small>
-
-      <h2 id="propertyTitle">
-        Property
-      </h2>
+    <div class="brand">
+      ParcelScope
     </div>
 
-    <button id="propertyClose">
-      ×
+    <div class="search">
+
+      <input
+        id="searchInput"
+        type="search"
+        placeholder="Search address, owner, parcel ID..."
+        autocomplete="off"
+      >
+
+      <select id="stateSelect">
+        <option value="ALL">All States</option>
+        <option value="WA">Washington</option>
+        <option value="OR">Oregon</option>
+        <option value="ID">Idaho</option>
+        <option value="MT">Montana</option>
+      </select>
+
+      <button id="searchBtn" type="button">
+        Search
+      </button>
+
+    </div>
+
+    <button id="locateBtn" class="locate" type="button">
+      Locate
     </button>
 
-  </div>
-
-  <div id="propertyBody"></div>
-
-  <div class="propertyActions">
-
-    <button id="saveBtn">
-      Save Property
-    </button>
-
-    <button id="shareBtn">
-      Share Parcel Link
-    </button>
-
-    <button id="mapsBtn">
-      Open Property In
-    </button>
-
-  </div>
-
-</section>
+  </header>
 
 
-<section id="results" class="results hidden">
-
-  <div class="drawerTop">
-
-    <h2>
-      Search Results
-    </h2>
-
-    <button id="resultsClose">
-      ×
-    </button>
-
-  </div>
-
-  <div id="resultsBody"></div>
-
-</section>
+  <div id="map"></div>
 
 
-<section id="mapsModal" class="modal hidden">
+  <!-- MENU -->
 
-  <div class="modalCard">
+  <aside id="menu" class="menu hidden">
 
-    <div class="drawerTop">
+    <div class="menuTop">
 
-      <h2>
-        Open Property In
-      </h2>
+      <strong>ParcelScope</strong>
 
-      <button id="mapsClose">
+      <button id="closeMenu" type="button">
         ×
       </button>
 
     </div>
 
-    <button id="appleBtn">
-      Apple Maps
+    <div class="current-user">
+
+      <span>
+        Signed in as
+      </span>
+
+      <strong id="menuUserName">
+        User
+      </strong>
+
+    </div>
+
+    <button data-page="saved" type="button">
+      Saved Properties
     </button>
 
-    <button id="googleBtn">
-      Google Maps
+    <button data-page="recent" type="button">
+      Recent Properties
     </button>
 
-    <button id="mapsCancel">
-      Cancel
+    <button
+      data-page="notifications"
+      id="notificationsMenuBtn"
+      type="button"
+    >
+      Notifications
+      <span id="redDot" class="red-dot hidden"></span>
+    </button>
+
+    <button data-page="layers" type="button">
+      Map Layers
+    </button>
+
+    <button data-page="measure" type="button">
+      Measure Distance
+    </button>
+
+    <button data-page="settings" type="button">
+      Settings
+    </button>
+
+    <button data-page="about" type="button">
+      About ParcelScope
+    </button>
+
+    <button
+      id="adminMenuBtn"
+      data-page="admin"
+      class="admin-menu-button hidden"
+      type="button"
+    >
+      Admin
+    </button>
+
+    <button
+      id="logoutBtn"
+      class="logout-button"
+      type="button"
+    >
+      Log Out
+    </button>
+
+  </aside>
+
+
+  <!-- DRAWER -->
+
+  <section id="drawer" class="drawer hidden">
+
+    <div class="drawerTop">
+
+      <h2 id="drawerTitle"></h2>
+
+      <button id="drawerClose" type="button">
+        ×
+      </button>
+
+    </div>
+
+    <div id="drawerBody"></div>
+
+  </section>
+
+
+  <!-- PROPERTY -->
+
+  <section id="property" class="property hidden">
+
+    <div class="propertyTop">
+
+      <div>
+
+        <small>
+          SELECTED PARCEL
+        </small>
+
+        <h2 id="propertyTitle">
+          Property
+        </h2>
+
+      </div>
+
+      <button id="propertyClose" type="button">
+        ×
+      </button>
+
+    </div>
+
+    <div id="propertyBody"></div>
+
+    <div class="propertyActions">
+
+      <button id="saveBtn" type="button">
+        Save Property
+      </button>
+
+      <button id="shareBtn" type="button">
+        Share Parcel Link
+      </button>
+
+      <button id="mapsBtn" type="button">
+        Open Property In
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- SEARCH RESULTS -->
+
+  <section id="results" class="results hidden">
+
+    <div class="drawerTop">
+
+      <h2>
+        Search Results
+      </h2>
+
+      <button id="resultsClose" type="button">
+        ×
+      </button>
+
+    </div>
+
+    <div id="resultsBody"></div>
+
+  </section>
+
+
+  <!-- MAP CHOOSER -->
+
+  <section id="mapsModal" class="modal hidden">
+
+    <div class="modalCard">
+
+      <div class="drawerTop">
+
+        <h2>
+          Open Property In
+        </h2>
+
+        <button id="mapsClose" type="button">
+          ×
+        </button>
+
+      </div>
+
+      <button id="appleBtn" type="button">
+        Apple Maps
+      </button>
+
+      <button id="googleBtn" type="button">
+        Google Maps
+      </button>
+
+      <button id="mapsCancel" type="button">
+        Cancel
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- MEASURE -->
+
+  <div id="measure" class="measure hidden">
+
+    <strong>
+      Measure Distance
+    </strong>
+
+    <span id="measureValue">
+      0 ft
+    </span>
+
+    <button id="finishMeasure" type="button">
+      Finish
+    </button>
+
+    <button id="clearMeasure" type="button">
+      Clear
     </button>
 
   </div>
 
-</section>
 
+  <div id="coords" class="coords hidden"></div>
 
-<div id="measure" class="measure hidden">
-
-  <strong>
-    Measure Distance
-  </strong>
-
-  <span id="measureValue">
-    0 ft
-  </span>
-
-  <button id="finishMeasure">
-    Finish
-  </button>
-
-  <button id="clearMeasure">
-    Clear
-  </button>
+  <div id="toast" class="toast hidden"></div>
 
 </div>
 
 
-<div id="coords" class="coords hidden"></div>
-
-<div id="toast" class="toast hidden"></div>
-
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
 
 <script src="script.js"></script>
 
