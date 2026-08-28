@@ -1,193 +1,348 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Parcelscope — Property Ownership & Acreage Search | ID · WA · OR</title>
-  <meta name="description" content="Search and view public property ownership, acreage, and parcel data across Idaho, Washington, and Oregon." />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#080d14">
+
+  <title>ParcelScope</title>
+
+  <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <!-- Top Bar -->
-  <header id="topbar">
-    <button id="menu-btn" class="icon-btn" aria-label="Open menu" title="Menu">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-      </svg>
+
+<!-- LOGIN -->
+
+<section id="loginScreen" class="login-screen">
+
+  <div class="login-card">
+
+    <div class="login-logo">
+      ParcelScope
+    </div>
+
+    <p class="login-subtitle">
+      Enter your 4-digit password
+    </p>
+
+    <input
+      id="loginPassword"
+      type="password"
+      inputmode="numeric"
+      pattern="[0-9]*"
+      maxlength="4"
+      autocomplete="off"
+      placeholder="••••"
+    >
+
+    <button id="loginBtn">
+      Log In
     </button>
 
-    <div class="brand">
-      <span class="brand-icon">◈</span>
-      <span class="brand-text">Parcelscope</span>
+    <div id="loginError" class="login-error hidden">
+      Invalid password.
     </div>
 
-    <div class="search-wrap">
-      <input
-        type="search"
-        id="search-input"
-        placeholder="Search by address, owner name, city, or parcel ID…"
-        autocomplete="off"
-        spellcheck="false"
-      />
-      <button id="search-btn" class="icon-btn search-btn" aria-label="Search">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-      </button>
-    </div>
-
-    <div class="top-actions">
-      <button id="locate-btn" class="icon-btn" title="My location" aria-label="Locate me">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-        </svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- Side Menu -->
-  <nav id="side-menu" class="panel left" aria-hidden="true">
-    <div class="panel-header">
-      <h2>Menu</h2>
-      <button class="close-panel icon-btn" data-panel="side-menu" aria-label="Close">×</button>
-    </div>
-    <ul class="menu-list">
-      <li><button data-action="saved"><span class="mi">★</span> Saved Properties</button></li>
-      <li><button data-action="settings"><span class="mi">⚙</span> Settings</button></li>
-      <li><button data-action="about"><span class="mi">ⓘ</span> About</button></li>
-      <li class="divider"></li>
-      <li><button data-action="clear-map"><span class="mi">🗑</span> Clear Map</button></li>
-    </ul>
-    <div class="menu-footer">
-      <small>ID · WA · OR public GIS</small>
-    </div>
-  </nav>
-
-  <!-- Results Panel -->
-  <aside id="results-panel" class="panel right" aria-hidden="true">
-    <div class="panel-header">
-      <h2>Search Results</h2>
-      <button class="close-panel icon-btn" data-panel="results-panel" aria-label="Close">×</button>
-    </div>
-    <div id="results-content" class="panel-body">
-      <p class="empty-state">Search for an address, owner name, or place to see property records.</p>
-    </div>
-  </aside>
-
-  <!-- Saved Panel -->
-  <aside id="saved-panel" class="panel right" aria-hidden="true">
-    <div class="panel-header">
-      <h2>Saved Properties</h2>
-      <button class="close-panel icon-btn" data-panel="saved-panel" aria-label="Close">×</button>
-    </div>
-    <div id="saved-content" class="panel-body">
-      <p class="empty-state">No saved properties yet. Save one from search results.</p>
-    </div>
-  </aside>
-
-  <!-- Settings Panel -->
-  <aside id="settings-panel" class="panel right" aria-hidden="true">
-    <div class="panel-header">
-      <h2>Settings</h2>
-      <button class="close-panel icon-btn" data-panel="settings-panel" aria-label="Close">×</button>
-    </div>
-    <div class="panel-body settings-body">
-      <label class="setting-row">
-        <span>Map Style</span>
-        <select id="setting-basemap">
-          <option value="satellite">Satellite</option>
-          <option value="hybrid">Hybrid (labels)</option>
-          <option value="streets">Streets</option>
-          <option value="topo">Topographic</option>
-        </select>
-      </label>
-
-      <label class="setting-row">
-        <span>Area Units</span>
-        <select id="setting-units">
-          <option value="acres">Acres</option>
-          <option value="hectares">Hectares</option>
-          <option value="sqft">Square Feet</option>
-        </select>
-      </label>
-
-      <label class="setting-row">
-        <span>Default Region</span>
-        <select id="setting-region">
-          <option value="all">All (ID + WA + OR)</option>
-          <option value="ID">Idaho</option>
-          <option value="WA">Washington</option>
-          <option value="OR">Oregon</option>
-        </select>
-      </label>
-
-      <label class="setting-row toggle">
-        <span>Show State Boundaries</span>
-        <input type="checkbox" id="setting-boundaries" checked />
-      </label>
-
-      <label class="setting-row toggle">
-        <span>Show County Labels</span>
-        <input type="checkbox" id="setting-counties" checked />
-      </label>
-
-      <label class="setting-row toggle">
-        <span>Dark Theme</span>
-        <input type="checkbox" id="setting-dark" checked />
-      </label>
-
-      <label class="setting-row">
-        <span>Result Limit</span>
-        <select id="setting-limit">
-          <option value="5">5</option>
-          <option value="10" selected>10</option>
-          <option value="20">20</option>
-        </select>
-      </label>
-
-      <button id="reset-settings" class="btn secondary full">Reset to Defaults</button>
-    </div>
-  </aside>
-
-  <!-- About Panel -->
-  <aside id="about-panel" class="panel right" aria-hidden="true">
-    <div class="panel-header">
-      <h2>About Parcelscope</h2>
-      <button class="close-panel icon-btn" data-panel="about-panel" aria-label="Close">×</button>
-    </div>
-    <div class="panel-body about-body">
-      <p><strong>Parcelscope</strong> helps you explore public property information across <strong>Idaho, Washington, and Oregon</strong>.</p>
-      <p>Search by street address, owner / last name, city, or approximate parcel ID. Results include estimated acreage, assessed values, land use, and links to official county GIS portals where available.</p>
-      <h3>Data Sources</h3>
-      <ul>
-        <li>Satellite imagery © Esri & partners</li>
-        <li>Geocoding via OpenStreetMap Nominatim</li>
-        <li>Boundaries derived from public Census / state GIS data</li>
-        <li>Parcel attributes are illustrative (real ownership data is published county-by-county and often requires direct assessor portals)</li>
-      </ul>
-      <h3>Disclaimer</h3>
-      <p class="disclaimer">This is a demonstration interface. Always verify ownership, acreage, and legal descriptions with the official county assessor or recorder. Parcelscope does not store or sell personal data beyond what you save locally in your browser.</p>
-      <p class="version">v1.0 · Built for public GIS exploration</p>
-    </div>
-  </aside>
-
-  <!-- Map -->
-  <div id="map"></div>
-
-  <!-- Toast -->
-  <div id="toast" role="status" aria-live="polite"></div>
-
-  <!-- Loading overlay for search -->
-  <div id="loading" class="hidden">
-    <div class="spinner"></div>
-    <span>Searching public records…</span>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="app.js"></script>
+</section>
+
+
+<!-- APP -->
+
+<div id="app" class="hidden">
+
+<header class="topbar">
+
+  <button id="menuBtn" class="hamburger">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <div class="brand">
+    ParcelScope
+  </div>
+
+  <div class="search">
+
+    <input
+      id="searchInput"
+      type="search"
+      placeholder="Search address, owner, parcel ID..."
+      autocomplete="off">
+
+    <select id="stateSelect">
+      <option value="ALL">All States</option>
+      <option value="WA">Washington</option>
+      <option value="OR">Oregon</option>
+      <option value="ID">Idaho</option>
+      <option value="MT">Montana</option>
+    </select>
+
+    <button id="searchBtn">
+      Search
+    </button>
+
+  </div>
+
+  <button id="locateBtn" class="locate">
+    Locate
+  </button>
+
+</header>
+
+
+<div id="map"></div>
+
+
+<!-- MENU -->
+
+<aside id="menu" class="menu hidden">
+
+  <div class="menuTop">
+
+    <strong>
+      ParcelScope
+    </strong>
+
+    <button id="closeMenu">
+      ×
+    </button>
+
+  </div>
+
+
+  <div class="account-banner">
+
+    <small>
+      SIGNED IN AS
+    </small>
+
+    <strong id="menuAccountName">
+      User
+    </strong>
+
+  </div>
+
+
+  <button data-page="saved">
+    Saved Properties
+  </button>
+
+  <button data-page="recent">
+    Recent Properties
+  </button>
+
+  <button data-page="notifications">
+
+    Notifications
+
+    <span
+      id="menuRedDot"
+      class="red-dot hidden">
+    </span>
+
+  </button>
+
+  <button data-page="layers">
+    Map Layers
+  </button>
+
+  <button data-page="measure">
+    Measure Distance
+  </button>
+
+  <button data-page="settings">
+    Settings
+  </button>
+
+  <button data-page="about">
+    About ParcelScope
+  </button>
+
+
+  <!-- ADMIN ONLY -->
+
+  <button
+    id="adminMenuButton"
+    class="admin-menu-button hidden"
+    data-page="admin">
+
+    Admin
+
+  </button>
+
+
+  <button
+    id="logoutBtn"
+    class="logout-button">
+
+    Log Out
+
+  </button>
+
+</aside>
+
+
+<!-- DRAWER -->
+
+<section id="drawer" class="drawer hidden">
+
+  <div class="drawerTop">
+
+    <h2 id="drawerTitle"></h2>
+
+    <button id="drawerClose">
+      ×
+    </button>
+
+  </div>
+
+  <div id="drawerBody"></div>
+
+</section>
+
+
+<!-- PROPERTY -->
+
+<section id="property" class="property hidden">
+
+  <div class="propertyTop">
+
+    <div>
+
+      <small>
+        SELECTED PARCEL
+      </small>
+
+      <h2 id="propertyTitle">
+        Property
+      </h2>
+
+    </div>
+
+    <button id="propertyClose">
+      ×
+    </button>
+
+  </div>
+
+  <div id="propertyBody"></div>
+
+  <div class="propertyActions">
+
+    <button id="saveBtn">
+      Save Property
+    </button>
+
+    <button id="shareBtn">
+      Share Parcel Link
+    </button>
+
+    <button id="mapsBtn">
+      Open Property In
+    </button>
+
+  </div>
+
+</section>
+
+
+<!-- SEARCH RESULTS -->
+
+<section id="results" class="results hidden">
+
+  <div class="drawerTop">
+
+    <h2>
+      Search Results
+    </h2>
+
+    <button id="resultsClose">
+      ×
+    </button>
+
+  </div>
+
+  <div id="resultsBody"></div>
+
+</section>
+
+
+<!-- MAP CHOOSER -->
+
+<section id="mapsModal" class="modal hidden">
+
+  <div class="modalCard">
+
+    <div class="drawerTop">
+
+      <h2>
+        Open Property In
+      </h2>
+
+      <button id="mapsClose">
+        ×
+      </button>
+
+    </div>
+
+    <button id="appleBtn">
+      Apple Maps
+    </button>
+
+    <button id="googleBtn">
+      Google Maps
+    </button>
+
+    <button id="mapsCancel">
+      Cancel
+    </button>
+
+  </div>
+
+</section>
+
+
+<!-- DISTANCE -->
+
+<div id="measure" class="measure hidden">
+
+  <strong>
+    Measure Distance
+  </strong>
+
+  <span id="measureValue">
+    0 ft
+  </span>
+
+  <button id="finishMeasure">
+    Finish
+  </button>
+
+  <button id="clearMeasure">
+    Clear
+  </button>
+
+</div>
+
+
+<div id="coords" class="coords hidden"></div>
+
+<div id="toast" class="toast hidden"></div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="script.js"></script>
+
+</div>
+
 </body>
 </html>
