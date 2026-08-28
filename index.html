@@ -2,23 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta name="theme-color" content="#080d14">
 
   <title>ParcelScope</title>
 
-  <link rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  >
 
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<!-- LOGIN -->
+<!-- =====================================================
+     LOGIN
+===================================================== -->
 
-<div id="loginScreen" class="login-screen">
+<section id="loginScreen" class="login-screen">
 
   <div class="login-card">
 
@@ -30,24 +33,23 @@
       Private Property Map
     </div>
 
-    <form id="loginForm">
+    <label for="passwordInput">
+      Account Password
+    </label>
 
-      <input
-        id="passwordInput"
-        type="password"
-        inputmode="numeric"
-        pattern="[0-9]{4}"
-        maxlength="4"
-        autocomplete="off"
-        placeholder="4-digit password"
-        required
-      >
+    <input
+      id="passwordInput"
+      type="password"
+      inputmode="numeric"
+      pattern="[0-9]*"
+      maxlength="4"
+      autocomplete="off"
+      placeholder="••••"
+    >
 
-      <button type="submit">
-        Log In
-      </button>
-
-    </form>
+    <button id="loginBtn" class="primary-btn">
+      Login
+    </button>
 
     <div id="loginError" class="login-error hidden">
       Invalid password.
@@ -55,16 +57,18 @@
 
   </div>
 
-</div>
+</section>
 
 
-<!-- APPLICATION -->
+<!-- =====================================================
+     APP
+===================================================== -->
 
 <div id="app" class="hidden">
 
   <header class="topbar">
 
-    <button id="menuBtn" class="hamburger" type="button">
+    <button id="menuBtn" class="hamburger" aria-label="Menu">
       <span></span>
       <span></span>
       <span></span>
@@ -91,13 +95,13 @@
         <option value="MT">Montana</option>
       </select>
 
-      <button id="searchBtn" type="button">
+      <button id="searchBtn">
         Search
       </button>
 
     </div>
 
-    <button id="locateBtn" class="locate" type="button">
+    <button id="locateBtn" class="locate">
       Locate
     </button>
 
@@ -107,7 +111,9 @@
   <div id="map"></div>
 
 
-  <!-- MENU -->
+  <!-- ===================================================
+       MENU
+  ==================================================== -->
 
   <aside id="menu" class="menu hidden">
 
@@ -115,78 +121,84 @@
 
       <strong>ParcelScope</strong>
 
-      <button id="closeMenu" type="button">
+      <button id="closeMenu">
         ×
       </button>
 
     </div>
 
-    <div class="current-user">
+    <div class="account-banner">
 
-      <span>
-        Signed in as
-      </span>
+      <div class="account-avatar" id="accountAvatar">
+        U
+      </div>
 
-      <strong id="menuUserName">
-        User
-      </strong>
+      <div>
+        <strong id="accountName">
+          User
+        </strong>
+
+        <small id="accountType">
+          User Account
+        </small>
+      </div>
 
     </div>
 
-    <button data-page="saved" type="button">
+
+    <button data-page="saved">
       Saved Properties
     </button>
 
-    <button data-page="recent" type="button">
+    <button data-page="recent">
       Recent Properties
     </button>
 
-    <button
-      data-page="notifications"
-      id="notificationsMenuBtn"
-      type="button"
-    >
+    <button data-page="notifications" id="notificationsMenuBtn">
       Notifications
       <span id="redDot" class="red-dot hidden"></span>
     </button>
 
-    <button data-page="layers" type="button">
+    <button data-page="layers">
       Map Layers
     </button>
 
-    <button data-page="measure" type="button">
+    <button data-page="measure">
       Measure Distance
     </button>
 
-    <button data-page="settings" type="button">
+    <button data-page="settings">
       Settings
     </button>
 
-    <button data-page="about" type="button">
+    <button data-page="about">
       About ParcelScope
     </button>
 
-    <button
-      id="adminMenuBtn"
-      data-page="admin"
-      class="admin-menu-button hidden"
-      type="button"
-    >
-      Admin
-    </button>
+    <div id="adminMenuSection" class="hidden">
 
-    <button
-      id="logoutBtn"
-      class="logout-button"
-      type="button"
-    >
-      Log Out
-    </button>
+      <div class="admin-divider"></div>
+
+      <button data-page="admin" class="admin-button">
+        Admin
+      </button>
+
+    </div>
+
+    <div class="menu-bottom">
+
+      <button id="logoutBtn">
+        Log Out
+      </button>
+
+    </div>
 
   </aside>
 
 
-  <!-- DRAWER -->
+  <!-- ===================================================
+       DRAWER
+  ==================================================== -->
 
   <section id="drawer" class="drawer hidden">
 
@@ -194,7 +206,7 @@
 
       <h2 id="drawerTitle"></h2>
 
-      <button id="drawerClose" type="button">
+      <button id="drawerClose">
         ×
       </button>
 
@@ -205,7 +217,9 @@
   </section>
 
 
-  <!-- PROPERTY -->
+  <!-- ===================================================
+       PROPERTY
+  ==================================================== -->
 
   <section id="property" class="property hidden">
 
@@ -213,9 +227,7 @@
 
       <div>
 
-        <small>
-          SELECTED PARCEL
-        </small>
+        <small>SELECTED PARCEL</small>
 
         <h2 id="propertyTitle">
           Property
@@ -223,7 +235,7 @@
 
       </div>
 
-      <button id="propertyClose" type="button">
+      <button id="propertyClose">
         ×
       </button>
 
@@ -233,15 +245,15 @@
 
     <div class="propertyActions">
 
-      <button id="saveBtn" type="button">
+      <button id="saveBtn">
         Save Property
       </button>
 
-      <button id="shareBtn" type="button">
+      <button id="shareBtn">
         Share Parcel Link
       </button>
 
-      <button id="mapsBtn" type="button">
+      <button id="mapsBtn">
         Open Property In
       </button>
 
@@ -250,7 +262,9 @@
   </section>
 
 
-  <!-- SEARCH RESULTS -->
+  <!-- ===================================================
+       SEARCH RESULTS
+  ==================================================== -->
 
   <section id="results" class="results hidden">
 
@@ -260,7 +274,7 @@
         Search Results
       </h2>
 
-      <button id="resultsClose" type="button">
+      <button id="resultsClose">
         ×
       </button>
 
@@ -271,7 +285,9 @@
   </section>
 
 
-  <!-- MAP CHOOSER -->
+  <!-- ===================================================
+       MAP CHOOSER
+  ==================================================== -->
 
   <section id="mapsModal" class="modal hidden">
 
@@ -283,21 +299,21 @@
           Open Property In
         </h2>
 
-        <button id="mapsClose" type="button">
+        <button id="mapsClose">
           ×
         </button>
 
       </div>
 
-      <button id="appleBtn" type="button">
+      <button id="appleBtn">
         Apple Maps
       </button>
 
-      <button id="googleBtn" type="button">
+      <button id="googleBtn">
         Google Maps
       </button>
 
-      <button id="mapsCancel" type="button">
+      <button id="mapsCancel">
         Cancel
       </button>
 
@@ -306,7 +322,9 @@
   </section>
 
 
-  <!-- MEASURE -->
+  <!-- ===================================================
+       DISTANCE
+  ==================================================== -->
 
   <div id="measure" class="measure hidden">
 
@@ -318,11 +336,11 @@
       0 ft
     </span>
 
-    <button id="finishMeasure" type="button">
+    <button id="finishMeasure">
       Finish
     </button>
 
-    <button id="clearMeasure" type="button">
+    <button id="clearMeasure">
       Clear
     </button>
 
