@@ -1,37 +1,99 @@
-/* ======================================================
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #080d14;
+  --panel: #0d1621;
+  --panel2: #111d2a;
+  --line: #26384b;
+  --text: #e8f0f7;
+  --muted: #8fa2b5;
+  --blue: #55d6ff;
+  --red: #ff4350;
+  --green: #52df9a;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  color: var(--text);
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--blue);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+
+/* =====================================================
    LOGIN
-====================================================== */
+===================================================== */
 
 .login-screen {
   position: fixed;
   inset: 0;
-
-  z-index: 9999;
+  z-index: 99999;
 
   display: grid;
   place-items: center;
 
-  background: var(--bg);
+  background:
+    radial-gradient(
+      circle at center,
+      #122436 0,
+      #080d14 60%
+    );
 }
 
 .login-card {
-  width: min(360px, calc(100vw - 32px));
+  width: min(360px, calc(100vw - 40px));
 
   padding: 30px;
 
-  background: var(--panel);
+  background: #0c1622;
 
   border: 1px solid var(--line);
 
-  border-radius: 14px;
+  border-radius: 16px;
 
-  box-shadow: 0 25px 70px #000b;
+  box-shadow:
+    0 30px 80px #000c;
 
   text-align: center;
 }
 
 .login-logo {
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 800;
 
   margin-bottom: 8px;
@@ -40,31 +102,29 @@
 .login-subtitle {
   color: var(--muted);
 
-  margin: 0 0 22px;
+  margin-bottom: 22px;
 }
 
 .login-card input {
   width: 100%;
 
-  padding: 15px;
-
-  text-align: center;
-
-  font-size: 26px;
-
-  letter-spacing: .45em;
-
-  background: #080f17;
-
-  color: var(--text);
-
-  border: 1px solid var(--line);
+  padding: 14px;
 
   border-radius: 9px;
 
-  outline: none;
+  border: 1px solid var(--line);
 
-  margin-bottom: 12px;
+  background: #07101a;
+
+  color: white;
+
+  text-align: center;
+
+  font-size: 25px;
+
+  letter-spacing: .35em;
+
+  outline: none;
 }
 
 .login-card input:focus {
@@ -74,12 +134,14 @@
 .login-card button {
   width: 100%;
 
-  padding: 13px;
+  margin-top: 12px;
 
-  font-weight: 700;
+  background: #122536;
 }
 
 .login-error {
+  min-height: 20px;
+
   color: var(--red);
 
   margin-top: 12px;
@@ -88,54 +150,400 @@
 }
 
 
-/* ======================================================
-   ACCOUNT
-====================================================== */
+/* =====================================================
+   MAP
+===================================================== */
 
-.account-banner {
-  padding: 12px;
+#map {
+  position: fixed;
+  inset: 0;
+}
 
-  margin-bottom: 10px;
+
+/* =====================================================
+   TOP BAR
+===================================================== */
+
+.topbar {
+  position: fixed;
+  z-index: 1000;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 10px 12px;
+
+  background:
+    linear-gradient(
+      #070c13ef,
+      #070c1390,
+      transparent
+    );
+
+  pointer-events: none;
+}
+
+.topbar > * {
+  pointer-events: auto;
+}
+
+.brand {
+  font-size: 20px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.hamburger {
+  width: 42px;
+  height: 42px;
+
+  padding: 8px;
+
+  display: grid;
+  place-content: center;
+  gap: 4px;
+}
+
+.hamburger span {
+  display: block;
+
+  width: 19px;
+  height: 2px;
+
+  background: white;
+}
+
+.search {
+  display: flex;
+  flex: 1;
+
+  max-width: 900px;
+
+  background: #0c151f;
+
+  border: 1px solid var(--line);
+
+  border-radius: 10px;
+
+  overflow: hidden;
+}
+
+.search input {
+  flex: 1;
+
+  min-width: 0;
+
+  border: 0;
+  outline: 0;
+
+  background: transparent;
+
+  color: var(--text);
+
+  padding: 11px;
+}
+
+.search select {
+  width: 150px;
+
+  border: 0;
+  border-left: 1px solid var(--line);
 
   background: #101c28;
+
+  color: var(--text);
+
+  padding: 0 8px;
+}
+
+.search button {
+  border: 0;
+  border-left: 1px solid var(--line);
+
+  border-radius: 0;
+}
+
+.locate {
+  white-space: nowrap;
+}
+
+
+/* =====================================================
+   MENU
+===================================================== */
+
+.menu,
+.drawer,
+.property,
+.results {
+  position: fixed;
+
+  z-index: 1100;
+
+  background: #0a131ef8;
+
+  border: 1px solid var(--line);
+
+  box-shadow: 0 18px 50px #0008;
+
+  backdrop-filter: blur(12px);
+
+  overflow: auto;
+}
+
+.menu {
+  left: 0;
+  top: 0;
+  bottom: 0;
+
+  width: min(360px, 88vw);
+
+  padding: 18px;
+}
+
+.menu button {
+  display: block;
+
+  width: 100%;
+
+  text-align: left;
+
+  margin: 7px 0;
+
+  background: transparent;
+}
+
+.menuTop,
+.drawerTop,
+.propertyTop {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  border-bottom: 1px solid var(--line);
+
+  padding-bottom: 12px;
+
+  margin-bottom: 12px;
+}
+
+.menuTop strong {
+  font-size: 21px;
+}
+
+.admin-menu {
+  border-color: #806b25 !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      #2b2410,
+      transparent
+    ) !important;
+}
+
+
+/* =====================================================
+   DRAWERS
+===================================================== */
+
+.drawer {
+  right: 0;
+  top: 0;
+  bottom: 0;
+
+  width: min(430px, 92vw);
+
+  padding: 20px;
+}
+
+.property {
+  right: 16px;
+  bottom: 16px;
+
+  width: min(440px, calc(100vw - 32px));
+
+  max-height: 78vh;
+
+  padding: 20px;
+
+  border-radius: 12px;
+}
+
+.results {
+  left: 14px;
+  top: 78px;
+
+  width: min(480px, calc(100vw - 28px));
+
+  max-height: 70vh;
+
+  padding: 18px;
+
+  border-radius: 12px;
+}
+
+.drawerTop h2 {
+  margin: 0;
+}
+
+.drawerTop button,
+.propertyTop button,
+.menuTop button {
+  font-size: 25px;
+
+  padding: 2px 10px;
+}
+
+
+/* =====================================================
+   PROPERTY
+===================================================== */
+
+.propertyTop small {
+  font-size: 11px;
+
+  color: var(--muted);
+
+  letter-spacing: .12em;
+}
+
+.propertyTop h2 {
+  margin: 4px 0 0;
+}
+
+.field {
+  padding: 10px 0;
+
+  border-bottom: 1px solid var(--line);
+}
+
+.field b {
+  display: block;
+
+  color: var(--muted);
+
+  font-size: 12px;
+
+  margin-bottom: 3px;
+}
+
+.propertyActions {
+  display: grid;
+
+  gap: 8px;
+
+  margin-top: 16px;
+}
+
+
+/* =====================================================
+   SEARCH RESULTS
+===================================================== */
+
+.result {
+  width: 100%;
+
+  text-align: left;
+
+  margin: 5px 0;
+
+  background: transparent;
+}
+
+.result strong {
+  display: block;
+}
+
+.result small {
+  color: var(--muted);
+}
+
+
+/* =====================================================
+   MENU CONTENT
+===================================================== */
+
+.menu-page h3 {
+  font-size: 12px;
+
+  color: var(--muted);
+
+  text-transform: uppercase;
+
+  letter-spacing: .08em;
+
+  margin: 18px 0 8px;
+}
+
+.menu-page p {
+  line-height: 1.5;
+}
+
+.row {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 10px 0;
+
+  border-bottom: 1px solid var(--line);
+}
+
+
+/* =====================================================
+   NOTIFICATION DOT
+===================================================== */
+
+.red-dot {
+  display: inline-block;
+
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: var(--red);
+
+  float: right;
+
+  margin-top: 6px;
+}
+
+
+/* =====================================================
+   ADMIN
+===================================================== */
+
+.admin-card {
+  padding: 12px;
+
+  margin-bottom: 12px;
+
+  background: #0d1824;
 
   border: 1px solid var(--line);
 
   border-radius: 9px;
 }
 
-.account-banner small {
+.admin-card strong {
   display: block;
 
-  color: var(--muted);
-
-  font-size: 10px;
-
-  letter-spacing: .1em;
-
-  margin-bottom: 3px;
+  margin-bottom: 5px;
 }
 
-.account-banner strong {
-  font-size: 17px;
-}
-
-
-/* ======================================================
-   ADMIN
-====================================================== */
-
-.admin-menu-button {
-  border-color: var(--blue) !important;
-
-  color: var(--blue) !important;
-}
-
-.admin-section {
-  margin-bottom: 22px;
-}
-
-.admin-section h3 {
+.admin-section-title {
   color: var(--muted);
 
   font-size: 12px;
@@ -143,114 +551,237 @@
   text-transform: uppercase;
 
   letter-spacing: .08em;
+
+  margin: 18px 0 8px;
 }
 
-.admin-user {
-  padding: 12px 0;
+.admin-log {
+  padding: 9px 0;
 
   border-bottom: 1px solid var(--line);
+
+  font-size: 13px;
 }
 
-.admin-user strong {
+.admin-log small {
   display: block;
-}
 
-.admin-user small {
   color: var(--muted);
+
+  margin-top: 3px;
 }
 
-.admin-login {
-  padding: 10px 0;
+.admin-form input,
+.admin-form textarea,
+.admin-form select {
+  width: 100%;
 
-  border-bottom: 1px solid var(--line);
-}
+  padding: 10px;
 
-.admin-login strong {
-  display: block;
-}
-
-.admin-login small {
-  color: var(--muted);
-}
-
-
-/* ======================================================
-   NOTIFICATIONS
-====================================================== */
-
-.notification-toolbar {
-  display: flex;
-
-  justify-content: flex-end;
-
-  margin-bottom: 12px;
-}
-
-.notification-delete-all {
-  color: var(--red);
-
-  border-color: #5c2930;
-}
-
-.notification {
-  position: relative;
-
-  padding: 14px 42px 14px 12px;
-
-  margin-bottom: 8px;
-
-  background: #101c28;
+  margin: 5px 0;
 
   border: 1px solid var(--line);
 
+  border-radius: 8px;
+
+  background: #08111b;
+
+  color: white;
+}
+
+.admin-form textarea {
+  min-height: 100px;
+
+  resize: vertical;
+}
+
+.admin-form button {
+  width: 100%;
+
+  margin-top: 7px;
+}
+
+
+/* =====================================================
+   MEASURE
+===================================================== */
+
+.measure {
+  position: fixed;
+
+  z-index: 1200;
+
+  left: 50%;
+  top: 78px;
+
+  transform: translateX(-50%);
+
+  background: #0b1723;
+
+  border: 1px solid var(--line);
+
+  padding: 9px 10px;
+
   border-radius: 9px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  box-shadow: 0 10px 30px #0008;
 }
 
-.notification.unread {
-  border-color: var(--blue);
+.measure span {
+  color: var(--blue);
 }
 
-.notification strong {
+
+/* =====================================================
+   COORDINATES / TOAST
+===================================================== */
+
+.coords,
+.toast {
+  position: fixed;
+
+  z-index: 1300;
+
+  left: 50%;
+  bottom: 24px;
+
+  transform: translateX(-50%);
+
+  background: #0b1723;
+
+  border: 1px solid var(--line);
+
+  padding: 11px 14px;
+
+  border-radius: 9px;
+
+  box-shadow: 0 10px 30px #0008;
+}
+
+
+/* =====================================================
+   MODAL
+===================================================== */
+
+.modal {
+  position: fixed;
+
+  z-index: 1400;
+
+  inset: 0;
+
+  background: #0008;
+
+  display: grid;
+
+  place-items: center;
+}
+
+.modalCard {
+  width: min(360px, 90vw);
+
+  background: var(--panel);
+
+  border: 1px solid var(--line);
+
+  border-radius: 12px;
+
+  padding: 18px;
+
+  box-shadow: 0 20px 60px #000a;
+}
+
+.modalCard button {
   display: block;
 
-  margin-bottom: 4px;
+  width: 100%;
+
+  margin: 8px 0;
+
+  text-align: left;
 }
 
-.notification p {
-  margin: 0;
 
-  color: var(--text);
+/* =====================================================
+   LEAFLET
+===================================================== */
 
-  line-height: 1.45;
+.leaflet-control-zoom {
+  display: none !important;
 }
 
-.notification small {
-  display: block;
+.leaflet-control-attribution {
+  background: #080d14d9 !important;
 
-  margin-top: 8px;
-
-  color: var(--muted);
+  color: #8496a9 !important;
 }
 
-.notification-x {
-  position: absolute;
-
-  top: 7px;
-  right: 7px;
-
-  border: 0;
-
-  background: transparent;
-
-  font-size: 20px;
-
-  padding: 4px 8px;
+.leaflet-control-attribution a {
+  color: #8abbd4 !important;
 }
 
-.logout-button {
-  margin-top: 18px !important;
 
-  border-color: #54262c !important;
+/* =====================================================
+   HIDDEN
+===================================================== */
 
-  color: #ff737c !important;
+.hidden {
+  display: none !important;
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 720px) {
+
+  .topbar {
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    order: 2;
+  }
+
+  .search {
+    order: 4;
+
+    flex-basis: 100%;
+
+    max-width: none;
+  }
+
+  .locate {
+    order: 3;
+  }
+
+  .search select {
+    width: 120px;
+  }
+
+  .drawer {
+    width: 94vw;
+  }
+
+  .property {
+    right: 8px;
+    bottom: 8px;
+
+    width: calc(100vw - 16px);
+  }
+
+  .measure {
+    max-width: calc(100vw - 20px);
+
+    flex-wrap: wrap;
+
+    justify-content: center;
+  }
 }
