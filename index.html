@@ -22,31 +22,26 @@
 
   <div class="login-card">
 
-    <div class="login-logo">
-      ParcelScope
-    </div>
+    <div class="login-logo">ParcelScope</div>
 
-    <p class="login-subtitle">
-      Enter your 4-digit password
-    </p>
+    <div class="login-subtitle">
+      Enter your 4-digit access code
+    </div>
 
     <input
       id="loginPassword"
       type="password"
       inputmode="numeric"
-      pattern="[0-9]*"
       maxlength="4"
+      pattern="[0-9]*"
       autocomplete="off"
-      placeholder="••••"
-    >
+      placeholder="••••">
 
     <button id="loginBtn">
-      Log In
+      Login
     </button>
 
-    <div id="loginError" class="login-error hidden">
-      Invalid password.
-    </div>
+    <div id="loginError" class="login-error"></div>
 
   </div>
 
@@ -107,29 +102,13 @@
 
   <div class="menuTop">
 
-    <strong>
-      ParcelScope
-    </strong>
+    <strong>ParcelScope</strong>
 
     <button id="closeMenu">
       ×
     </button>
 
   </div>
-
-
-  <div class="account-banner">
-
-    <small>
-      SIGNED IN AS
-    </small>
-
-    <strong id="menuAccountName">
-      User
-    </strong>
-
-  </div>
-
 
   <button data-page="saved">
     Saved Properties
@@ -140,14 +119,8 @@
   </button>
 
   <button data-page="notifications">
-
     Notifications
-
-    <span
-      id="menuRedDot"
-      class="red-dot hidden">
-    </span>
-
+    <span id="redDot" class="red-dot hidden"></span>
   </button>
 
   <button data-page="layers">
@@ -166,25 +139,9 @@
     About ParcelScope
   </button>
 
-
-  <!-- ADMIN ONLY -->
-
-  <button
-    id="adminMenuButton"
-    class="admin-menu-button hidden"
-    data-page="admin">
-
+  <button id="adminMenuButton" class="admin-menu hidden">
     Admin
-
-  </button>
-
-
-  <button
-    id="logoutBtn"
-    class="logout-button">
-
-    Log Out
-
+    <span id="adminRedDot" class="red-dot hidden"></span>
   </button>
 
 </aside>
@@ -216,15 +173,11 @@
   <div class="propertyTop">
 
     <div>
-
-      <small>
-        SELECTED PARCEL
-      </small>
+      <small>SELECTED PARCEL</small>
 
       <h2 id="propertyTitle">
         Property
       </h2>
-
     </div>
 
     <button id="propertyClose">
