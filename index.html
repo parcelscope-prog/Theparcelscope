@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
   <meta name="theme-color" content="#080d14">
 
   <title>ParcelScope</title>
@@ -19,7 +21,7 @@
 
 <!-- =====================================================
      LOGIN
-===================================================== -->
+====================================================== -->
 
 <section id="loginScreen" class="login-screen">
 
@@ -29,29 +31,33 @@
       ParcelScope
     </div>
 
-    <div class="login-subtitle">
-      Private Property Map
-    </div>
-
-    <label for="passwordInput">
-      Account Password
-    </label>
+    <p class="login-subtitle">
+      Property Research Map
+    </p>
 
     <input
       id="passwordInput"
+      class="password-input"
       type="password"
       inputmode="numeric"
       pattern="[0-9]*"
       maxlength="4"
       autocomplete="off"
-      placeholder="••••"
+      placeholder="Enter 4-digit password"
     >
 
-    <button id="loginBtn" class="primary-btn">
+    <button
+      id="loginBtn"
+      class="login-button"
+      type="button"
+    >
       Login
     </button>
 
-    <div id="loginError" class="login-error hidden">
+    <div
+      id="loginError"
+      class="login-error hidden"
+    >
       Invalid password.
     </div>
 
@@ -61,302 +67,355 @@
 
 
 <!-- =====================================================
-     APP
-===================================================== -->
+     APPLICATION
+====================================================== -->
 
 <div id="app" class="hidden">
 
-  <header class="topbar">
-
-    <button id="menuBtn" class="hamburger" aria-label="Menu">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
-
-    <div class="brand">
-      ParcelScope
-    </div>
-
-    <div class="search">
-
-      <input
-        id="searchInput"
-        type="search"
-        placeholder="Search address, owner, parcel ID..."
-        autocomplete="off"
-      >
-
-      <select id="stateSelect">
-        <option value="ALL">All States</option>
-        <option value="WA">Washington</option>
-        <option value="OR">Oregon</option>
-        <option value="ID">Idaho</option>
-        <option value="MT">Montana</option>
-      </select>
-
-      <button id="searchBtn">
-        Search
-      </button>
-
-    </div>
-
-    <button id="locateBtn" class="locate">
-      Locate
-    </button>
-
-  </header>
-
-
-  <div id="map"></div>
-
-
-  <!-- ===================================================
-       MENU
-  ==================================================== -->
-
-  <aside id="menu" class="menu hidden">
-
-    <div class="menuTop">
-
-      <strong>ParcelScope</strong>
-
-      <button id="closeMenu">
-        ×
-      </button>
-
-    </div>
-
-    <div class="account-banner">
-
-      <div class="account-avatar" id="accountAvatar">
-        U
-      </div>
-
-      <div>
-        <strong id="accountName">
-          User
-        </strong>
-
-        <small id="accountType">
-          User Account
-        </small>
-      </div>
-
-    </div>
-
-
-    <button data-page="saved">
-      Saved Properties
-    </button>
-
-    <button data-page="recent">
-      Recent Properties
-    </button>
-
-    <button data-page="notifications" id="notificationsMenuBtn">
-      Notifications
-      <span id="redDot" class="red-dot hidden"></span>
-    </button>
-
-    <button data-page="layers">
-      Map Layers
-    </button>
-
-    <button data-page="measure">
-      Measure Distance
-    </button>
-
-    <button data-page="settings">
-      Settings
-    </button>
-
-    <button data-page="about">
-      About ParcelScope
-    </button>
-
-    <div id="adminMenuSection" class="hidden">
-
-      <div class="admin-divider"></div>
-
-      <button data-page="admin" class="admin-button">
-        Admin
-      </button>
-
-    </div>
-
-    <div class="menu-bottom">
-
-      <button id="logoutBtn">
-        Log Out
-      </button>
-
-    </div>
-
-  </aside>
-
-
-  <!-- ===================================================
-       DRAWER
-  ==================================================== -->
-
-  <section id="drawer" class="drawer hidden">
-
-    <div class="drawerTop">
-
-      <h2 id="drawerTitle"></h2>
-
-      <button id="drawerClose">
-        ×
-      </button>
-
-    </div>
-
-    <div id="drawerBody"></div>
-
-  </section>
-
-
-  <!-- ===================================================
-       PROPERTY
-  ==================================================== -->
-
-  <section id="property" class="property hidden">
-
-    <div class="propertyTop">
-
-      <div>
-
-        <small>SELECTED PARCEL</small>
-
-        <h2 id="propertyTitle">
-          Property
-        </h2>
-
-      </div>
-
-      <button id="propertyClose">
-        ×
-      </button>
-
-    </div>
-
-    <div id="propertyBody"></div>
-
-    <div class="propertyActions">
-
-      <button id="saveBtn">
-        Save Property
-      </button>
-
-      <button id="shareBtn">
-        Share Parcel Link
-      </button>
-
-      <button id="mapsBtn">
-        Open Property In
-      </button>
-
-    </div>
-
-  </section>
-
-
-  <!-- ===================================================
-       SEARCH RESULTS
-  ==================================================== -->
-
-  <section id="results" class="results hidden">
-
-    <div class="drawerTop">
-
-      <h2>
-        Search Results
-      </h2>
-
-      <button id="resultsClose">
-        ×
-      </button>
-
-    </div>
-
-    <div id="resultsBody"></div>
-
-  </section>
-
-
-  <!-- ===================================================
-       MAP CHOOSER
-  ==================================================== -->
-
-  <section id="mapsModal" class="modal hidden">
-
-    <div class="modalCard">
-
-      <div class="drawerTop">
-
-        <h2>
-          Open Property In
-        </h2>
-
-        <button id="mapsClose">
-          ×
-        </button>
-
-      </div>
-
-      <button id="appleBtn">
-        Apple Maps
-      </button>
-
-      <button id="googleBtn">
-        Google Maps
-      </button>
-
-      <button id="mapsCancel">
-        Cancel
-      </button>
-
-    </div>
-
-  </section>
-
-
-  <!-- ===================================================
-       DISTANCE
-  ==================================================== -->
-
-  <div id="measure" class="measure hidden">
-
-    <strong>
-      Measure Distance
-    </strong>
-
-    <span id="measureValue">
-      0 ft
-    </span>
-
-    <button id="finishMeasure">
-      Finish
-    </button>
-
-    <button id="clearMeasure">
-      Clear
+<header class="topbar">
+
+  <button
+    id="menuBtn"
+    class="hamburger"
+    type="button"
+    aria-label="Menu"
+  >
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <div class="brand">
+    ParcelScope
+  </div>
+
+  <div class="search">
+
+    <input
+      id="searchInput"
+      type="search"
+      placeholder="Search address..."
+      autocomplete="off"
+    >
+
+    <select id="stateSelect">
+      <option value="ALL">All States</option>
+      <option value="WA">Washington</option>
+      <option value="OR">Oregon</option>
+      <option value="ID">Idaho</option>
+      <option value="MT">Montana</option>
+    </select>
+
+    <button
+      id="searchBtn"
+      type="button"
+    >
+      Search
     </button>
 
   </div>
 
+  <button
+    id="locateBtn"
+    class="locate"
+    type="button"
+  >
+    Locate
+  </button>
 
-  <div id="coords" class="coords hidden"></div>
+</header>
 
-  <div id="toast" class="toast hidden"></div>
+
+<div id="map"></div>
+
+
+<!-- =====================================================
+     MENU
+====================================================== -->
+
+<aside id="menu" class="menu hidden">
+
+  <div class="menuTop">
+
+    <strong>ParcelScope</strong>
+
+    <button
+      id="closeMenu"
+      type="button"
+    >
+      ×
+    </button>
+
+  </div>
+
+  <div class="account-label">
+    <span>Signed in as</span>
+    <strong id="menuAccountName">User</strong>
+  </div>
+
+  <button data-page="saved" type="button">
+    Saved Properties
+  </button>
+
+  <button data-page="recent" type="button">
+    Recent Properties
+  </button>
+
+  <button
+    data-page="notifications"
+    id="notificationsMenuButton"
+    type="button"
+  >
+    Notifications
+    <span id="redDot" class="red-dot hidden"></span>
+  </button>
+
+  <button data-page="layers" type="button">
+    Map Layers
+  </button>
+
+  <button data-page="measure" type="button">
+    Measure Distance
+  </button>
+
+  <button data-page="settings" type="button">
+    Settings
+  </button>
+
+  <button data-page="about" type="button">
+    About ParcelScope
+  </button>
+
+  <button
+    id="adminMenuButton"
+    data-page="admin"
+    class="admin-menu-button hidden"
+    type="button"
+  >
+    Admin
+  </button>
+
+  <button
+    id="logoutBtn"
+    class="logout-button"
+    type="button"
+  >
+    Log Out
+  </button>
+
+</aside>
+
+
+<!-- =====================================================
+     DRAWER
+====================================================== -->
+
+<section id="drawer" class="drawer hidden">
+
+  <div class="drawerTop">
+
+    <h2 id="drawerTitle"></h2>
+
+    <button
+      id="drawerClose"
+      type="button"
+    >
+      ×
+    </button>
+
+  </div>
+
+  <div id="drawerBody"></div>
+
+</section>
+
+
+<!-- =====================================================
+     PROPERTY
+====================================================== -->
+
+<section id="property" class="property hidden">
+
+  <div class="propertyTop">
+
+    <div>
+
+      <small>SELECTED LOCATION</small>
+
+      <h2 id="propertyTitle">
+        Property
+      </h2>
+
+    </div>
+
+    <button
+      id="propertyClose"
+      type="button"
+    >
+      ×
+    </button>
+
+  </div>
+
+  <div id="propertyBody"></div>
+
+  <div class="propertyActions">
+
+    <button
+      id="saveBtn"
+      type="button"
+    >
+      Save Property
+    </button>
+
+    <button
+      id="shareBtn"
+      type="button"
+    >
+      Share Parcel Link
+    </button>
+
+    <button
+      id="mapsBtn"
+      type="button"
+    >
+      Open Property In
+    </button>
+
+  </div>
+
+</section>
+
+
+<!-- =====================================================
+     SEARCH RESULTS
+====================================================== -->
+
+<section id="results" class="results hidden">
+
+  <div class="drawerTop">
+
+    <h2>
+      Search Results
+    </h2>
+
+    <button
+      id="resultsClose"
+      type="button"
+    >
+      ×
+    </button>
+
+  </div>
+
+  <div id="resultsBody"></div>
+
+</section>
+
+
+<!-- =====================================================
+     MAPS MODAL
+====================================================== -->
+
+<section
+  id="mapsModal"
+  class="modal hidden"
+>
+
+  <div class="modalCard">
+
+    <div class="drawerTop">
+
+      <h2>
+        Open Property In
+      </h2>
+
+      <button
+        id="mapsClose"
+        type="button"
+      >
+        ×
+      </button>
+
+    </div>
+
+    <button
+      id="appleBtn"
+      type="button"
+    >
+      Apple Maps
+    </button>
+
+    <button
+      id="googleBtn"
+      type="button"
+    >
+      Google Maps
+    </button>
+
+    <button
+      id="mapsCancel"
+      type="button"
+    >
+      Cancel
+    </button>
+
+  </div>
+
+</section>
+
+
+<!-- =====================================================
+     MEASURE
+====================================================== -->
+
+<div
+  id="measure"
+  class="measure hidden"
+>
+
+  <strong>
+    Measure Distance
+  </strong>
+
+  <span id="measureValue">
+    0 ft
+  </span>
+
+  <button
+    id="finishMeasure"
+    type="button"
+  >
+    Finish
+  </button>
+
+  <button
+    id="clearMeasure"
+    type="button"
+  >
+    Clear
+  </button>
+
+</div>
+
+
+<div
+  id="coords"
+  class="coords hidden"
+></div>
+
+
+<div
+  id="toast"
+  class="toast hidden"
+></div>
 
 </div>
 
 
 <script
-  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-</script>
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
 
 <script src="script.js"></script>
 
